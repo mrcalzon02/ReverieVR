@@ -1,0 +1,9 @@
+{
+  "command": [
+    "bash",
+    "scripts/verify-featured-persistence.sh",
+    "/workspace/scratch/d76b27d6a834/repair-work/featured/captures"
+  ],
+  "exit": 0,
+  "seconds": 6.943
+}

@@ -61,6 +61,8 @@ struct ModuleState {
     reverie::authoring::VrWorkshop workshop;
     std::vector<float> room_avatar_prefix;
     bool workshop_hud_dirty = true;
+    bool save_failed=false,require_release=false;
+    float save_retry=2.f;
 
     std::vector<uint8_t> rgba;
     // Optional editor-authored primitives, identical across eye renders.
@@ -82,7 +84,7 @@ int ReadWorkshop(void* user,size_t slot,std::string& output){
         probe=state->host->read_save(filename.c_str(),nullptr,0u,&size);
     }
     if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND)return 0;
-    if(probe!=REVERIE_NATIVE_SAVE_OK||size==0u||
+    if((probe!=REVERIE_NATIVE_SAVE_OK&&probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL)||size==0u||
        size>reverie::authoring::kVrSlotMaxBytes)return -1;
     std::vector<char> bytes(size);
     uint32_t actual=0u;
@@ -119,35 +121,51 @@ void BakeWorkshopGeometry(ModuleState* state){
 }
 void UpdateWorkshopHud(ModuleState* state){
     state->font.Clear();
+    if(state->workshop.recovering) {
+        state->font.Fit("WORKSHOP SAVE RECOVERY",0.f,1.30f,3.85f,.045f,
+            .94f,.97f,.97f,-2.62f);
+        state->font.Fit(state->workshop.last_error.c_str(),0.f,.65f,3.85f,.035f,
+            1.f,.68f,.49f,-2.62f);
+        state->font.Fit(state->workshop.recovery_notice.c_str(),0.f,.32f,3.85f,.033f,
+            .96f,.86f,.66f,-2.62f);
+        state->font.Fit("PRIMARY OR SECONDARY: RETRY PROJECTS",0.f,-.25f,3.85f,.035f,
+            .86f,.96f,.90f,-2.62f);
+        state->font.Fit("PREVIEW ONLY - ORIGINAL SAVE BYTES ARE KEPT",0.f,-.65f,3.85f,.031f,
+            .91f,.88f,.75f,-2.62f);
+        return;
+    }
     if(!state->workshop.editing){
-        state->font.Text("PROCEDURAL TEST CHAMBER",-.98f,1.30f,.045f,
+        state->font.Fit("PROCEDURAL TEST CHAMBER",0.f,1.30f,3.85f,.045f,
             .90f,.97f,.97f,-2.62f);
-        state->font.Text("PRIMARY: NEXT LIGHT / AUDIO",-.97f,-1.24f,.033f,
+        state->font.Fit("PRIMARY: NEXT LIGHT / AUDIO",0.f,-1.24f,3.85f,.033f,
             .82f,.94f,.84f,-2.63f);
-        state->font.Text("SECONDARY: VR WORKSHOP",-.97f,-1.45f,.033f,
+        state->font.Fit("SECONDARY: VR WORKSHOP",0.f,-1.49f,3.85f,.033f,
             .94f,.85f,.53f,-2.63f);
+        if(!state->workshop.recovery_notice.empty())
+            state->font.Fit(state->workshop.recovery_notice.c_str(),0.f,.98f,3.85f,.030f,
+                1.f,.75f,.53f,-2.62f);
         return;
     }
     static const char* sceneActions[10]={
         "ADD BOX","ADD CYLINDER","MOVE X/Z","ROTATE","SCALE",
-        "DELETE","UNDO","SAVE","PLAY TEST","MOTION TOOLS >"};
+        "DELETE","UNDO","SAVE","PLAY TEST","MOTION TOOLS"};
     static const char* motionActions[10]={
         "BOB","SPIN","PULSE","CLEAR MOTION","SPEED +",
-        "SPEED -","AMPLITUDE +","AMPLITUDE -","LIGHT TOOLS >","< SCENE TOOLS"};
+        "SPEED -","AMPLITUDE +","AMPLITUDE -","LIGHT TOOLS","BACK TO SCENE"};
     static const char* lightActions[10]={
         "ATTACH LIGHT","REMOVE LIGHT","POWER +","POWER -","REACH +",
-        "REACH -","AMBIENT +","AMBIENT -","SOUND TOOLS >","< MOTION TOOLS"};
+        "REACH -","AMBIENT +","AMBIENT -","SOUND TOOLS","BACK TO MOTION"};
     static const char* soundActions[10]={
         "ATTACH SOUND","REMOVE SOUND","NEXT CUE","PREV CUE","INTERVAL +",
-        "INTERVAL -","RANGE +","RANGE -","NEXT PROJECT","< LIGHT TOOLS"};
+        "INTERVAL -","RANGE +","RANGE -","NEXT PROJECT","BACK TO LIGHTS"};
     const char* const* actions=state->workshop.audio_page?soundActions:
         state->workshop.lighting_page?lightActions:
         state->workshop.motion_page?motionActions:sceneActions;
-    state->font.Text(state->workshop.audio_page?
+    state->font.Fit(state->workshop.audio_page?
         "VR WORKSHOP / SOUND":state->workshop.lighting_page?
         "VR WORKSHOP / LIGHTS":state->workshop.motion_page?
         "VR WORKSHOP / MOTION":"VR WORKSHOP / SCENE",
-        -3.2f,1.43f,.044f,.93f,.96f,.99f,-2.62f);
+        0.f,1.48f,3.85f,.044f,.93f,.96f,.99f,-2.62f);
     for(int i=0;i<10;++i) {
         const auto* binding=state->workshop.SelectedMotion();
         const bool active=state->workshop.audio_page
@@ -160,25 +178,29 @@ void UpdateWorkshopHud(ModuleState* state){
               :((i==2&&state->workshop.tool==reverie::authoring::VrTool::Move)
               ||(i==3&&state->workshop.tool==reverie::authoring::VrTool::Rotate)
               ||(i==4&&state->workshop.tool==reverie::authoring::VrTool::Scale));
-        state->font.Text(actions[i],-3.16f,1.09f-i*.235f,.038f,
+        const float menuCentre=static_cast<float>((reverie::authoring::kVrMenuLeft+
+            reverie::authoring::kVrMenuRight)*.5);
+        const float menuY=static_cast<float>(reverie::authoring::kVrMenuTop-
+            (i+.5)*reverie::authoring::kVrMenuRowHeight);
+        state->font.Fit(actions[i],menuCentre,menuY,1.49f,.038f,
             active?1.f:.77f,active?.79f:.9f,active?.37f:1.f,-2.62f);
     }
     const std::string project="PROJECT "+std::to_string(state->workshop.slot+1)+
         " / "+std::to_string(reverie::authoring::kVrProjectSlots);
-    state->font.Text(project.c_str(),-.69f,1.32f,.039f,.82f,.94f,.99f,-2.62f);
+    state->font.Fit(project.c_str(),.92f,1.15f,2.10f,.039f,.82f,.94f,.99f,-2.62f);
     const std::string object=state->workshop.scene.pieces.empty()?
         "NO OBJECT SELECTED" : ("SELECTED: "+
         state->workshop.scene.pieces[state->workshop.selected].id);
-    state->font.Text(object.c_str(),-.69f,1.08f,.035f,.92f,.89f,.64f,-2.62f);
+    state->font.Fit(object.c_str(),.92f,.90f,2.10f,.035f,.92f,.89f,.64f,-2.62f);
     const std::string count="OBJECTS "+std::to_string(state->workshop.scene.pieces.size())+
         " / "+std::to_string(reverie::authoring::kVrEditMaxPieces);
-    state->font.Text(count.c_str(),-.69f,.85f,.034f,.8f,.93f,.89f,-2.62f);
+    state->font.Fit(count.c_str(),.92f,.65f,2.10f,.034f,.8f,.93f,.89f,-2.62f);
     if(const auto* motion=state->workshop.SelectedMotion()){
         const std::string line=std::string("MOTION: ")+
             reverie::authoring::MotionKindName(motion->kind)+
             " SPEED "+std::to_string(motion->speed).substr(0,4)+
             " AMP "+std::to_string(motion->amount).substr(0,4);
-        state->font.Fit(line.c_str(),-.69f,.70f,3.25f,.029f,
+        state->font.Fit(line.c_str(),.92f,.40f,2.10f,.029f,
             .95f,.83f,.50f,-2.62f);
     }
     if(state->workshop.light.enabled){
@@ -187,7 +209,7 @@ void UpdateWorkshopHud(ModuleState* state){
             " PWR "+std::to_string(light.power).substr(0,4)+
             " R "+std::to_string(light.radius).substr(0,4)+
             " AMB "+std::to_string(light.ambient).substr(0,4);
-        state->font.Fit(note.c_str(),-.69f,.49f,3.25f,.029f,
+        state->font.Fit(note.c_str(),.92f,.18f,2.10f,.029f,
             .95f,.89f,.66f,-2.62f);
     }
     if(state->workshop.sound.enabled){
@@ -196,17 +218,22 @@ void UpdateWorkshopHud(ModuleState* state){
             " CUE "+std::to_string(snd.cue)+
             " SEC "+std::to_string(snd.interval).substr(0,4)+
             " RANGE "+std::to_string(snd.radius).substr(0,4);
-        state->font.Fit(note.c_str(),-.69f,.27f,3.25f,.029f,
+        state->font.Fit(note.c_str(),.92f,-.04f,2.10f,.029f,
             .93f,.80f,.58f,-2.62f);
     }
-    state->font.Text("POINT AND CLICK TOOL",-.69f,.08f,.029f,.85f,.94f,.98f,-2.62f);
-    state->font.Text("DRAG OBJECT TO ADJUST",-.69f,.02f,.029f,.85f,.94f,.98f,-2.62f);
-    state->font.Text("SECONDARY: SAVE + TEST",-.69f,-.88f,.028f,.95f,.88f,.53f,-2.62f);
+    state->font.Fit("POINT AND CLICK TOOL",.92f,-.36f,2.10f,.029f,.85f,.94f,.98f,-2.62f);
+    state->font.Fit("DRAG OBJECT TO ADJUST",.92f,-.56f,2.10f,.029f,.85f,.94f,.98f,-2.62f);
+    state->font.Fit("SECONDARY: SAVE + TEST",.92f,-.82f,2.10f,.028f,.95f,.88f,.53f,-2.62f);
     if(state->workshop.dirty)
-        state->font.Text("UNSAVED EDITS",-.69f,-1.09f,.034f,1.f,.71f,.36f,-2.62f);
+        state->font.Fit("UNSAVED EDITS",.92f,-1.05f,2.10f,.034f,1.f,.71f,.36f,-2.62f);
+    else
+        state->font.Fit("ALL EDITS SAVED",.92f,-1.05f,2.10f,.030f,.76f,.94f,.81f,-2.62f);
     if(!state->workshop.last_error.empty())
-        state->font.Fit(state->workshop.last_error.c_str(),-.69f,-1.31f,3.8f,
+        state->font.Fit(state->workshop.last_error.c_str(),.92f,-1.30f,2.10f,
             .033f,1.f,.57f,.45f,-2.62f);
+    if(!state->workshop.recovery_notice.empty())
+        state->font.Fit(state->workshop.recovery_notice.c_str(),0.f,-1.63f,3.85f,.030f,
+            1.f,.75f,.53f,-2.62f);
 }
 
 void Log(
@@ -822,6 +849,7 @@ void ReleaseGlContext(void *instance) {
 void Resume(void *instance) {
     ModuleState *state =
         static_cast<ModuleState *>(instance);
+    if(state)state->require_release=true;
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
@@ -829,11 +857,32 @@ void Resume(void *instance) {
     );
 }
 
+bool FlushWorkshop(ModuleState* state) {
+    if(!state||state->workshop.recovering)return false;
+    if(!state->workshop.dirty){state->save_failed=false;return true;}
+    const bool saved=state->workshop.Save(WorkshopStore(state));
+    if(!saved&&!state->save_failed) {
+        Log(state,REVERIE_NATIVE_LOG_ERROR,"Workshop save failed; edits retained for retry.");
+        ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+    }
+    state->save_failed=!saved;state->save_retry=2.f;
+    UpdateWorkshopHud(state);
+    return saved;
+}
+
+int32_t PrepareExit(void* instance) {
+    auto* state=static_cast<ModuleState*>(instance);
+    if(state)state->workshop.EndDrag();
+    return FlushWorkshop(state)?1:0;
+}
+
 void Pause(void *instance) {
     ModuleState *state =
         static_cast<ModuleState *>(instance);
-    if(state&&state->workshop.dirty&&!state->workshop.Save(WorkshopStore(state)))
-        Log(state,REVERIE_NATIVE_LOG_ERROR,"Workshop save failed on pause.");
+    if(state) {
+        state->require_release=true;state->workshop.EndDrag();
+        FlushWorkshop(state);
+    }
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
@@ -854,10 +903,21 @@ void Update(
         return;
     }
 
-    const float delta=std::max(0.f,std::min(input->delta_seconds,.05f));
+    ReverieNativeInputV1 clean{};
+    std::memcpy(&clean,input,std::min(size_t(input->struct_size),sizeof(clean)));
+    ReverieNativeSanitizeBaseInputV1(&clean);
+    ReverieNativeSanitizePointerV1(&clean);
+    ReverieNativeSanitizeListenerV1(&clean);
+    if(state->require_release) {
+        if(!clean.primary_down&&!clean.secondary_down)state->require_release=false;
+        clean.primary_down=clean.secondary_down=0u;
+    }
+    input=&clean;
+    const float delta=std::min(input->delta_seconds,.05f);
     state->clock=std::fmod(state->clock+delta,3600.f);
     const bool primary=input->primary_down!=0u;
     const bool wasEditing=state->workshop.editing;
+    const bool wasRecovering=state->workshop.recovering;
     reverie::authoring::VrRay ray;
     if(ReverieNativeInputHasPointerV1(input)&&
        input->pointer_kind!=REVERIE_NATIVE_POINTER_NONE){
@@ -874,7 +934,12 @@ void Update(
         ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
     else if(event!=reverie::authoring::VrEvent::None)
         ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-    if(wasEditing||state->workshop.editing){
+    if(event==reverie::authoring::VrEvent::Modified)state->save_retry=2.f;
+    else if(state->workshop.dirty) {
+        state->save_retry-=delta;
+        if(state->save_retry<=0.f&&!primary)FlushWorkshop(state);
+    }
+    if(wasEditing||state->workshop.editing||wasRecovering||state->workshop.recovering){
         state->primary_was_down=primary;
         return; // Never advance the demo while editing or on a play transition.
     }
@@ -910,13 +975,9 @@ void Update(
             "MOVING SPOT / DOOR",
             "WARM LIGHT / MECHANISM"
         };
-        state->font.Clear();
-        state->font.Fit("PROCEDURAL TEST CHAMBER",0.f,1.31f,5.15f,
-            .044f,.90f,.97f,.97f,-2.62f);
-        state->font.Fit(kNames[state->demo_mode],0.f,-1.12f,4.96f,
+        UpdateWorkshopHud(state);
+        state->font.Fit(kNames[state->demo_mode],0.f,-.96f,3.85f,
             .036f,1.f,.86f,.49f,-2.62f);
-        state->font.Fit("PRESS: NEXT LIGHT / ANIMATION / AUDIO",0.f,-1.36f,
-            5.15f,.028f,.82f,.95f,.88f,-2.62f);
         if(!ReverieNativeRequestSoundV1(state->host,
             kCues[state->demo_mode])) {
             ReverieNativeRequestFeedbackV1(state->host,
@@ -1242,7 +1303,9 @@ const ReverieNativeModuleApiV1 kApi = {
     Pause,
     Update,
     RenderEye,
-    &kCapabilities
+    &kCapabilities,
+    nullptr,
+    PrepareExit
 };
 
 }  // namespace

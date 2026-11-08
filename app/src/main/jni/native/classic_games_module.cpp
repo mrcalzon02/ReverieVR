@@ -3,6 +3,7 @@
 #include "classic_vector_art.h"
 #include "classic_board_games.h"
 #include "classic_board_cpu.h"
+#include "classic_games_save.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -68,10 +69,13 @@ struct Module {
     reverie::boardgames::State board;
     reverie::boardgames::CpuWorker cpu;
     bool cpuFailed=false;
+    save::Store saves;
+    bool suspended=false,restorePrompt=false,releaseToArm=false;
+    bool saveHover=false;
+    int snakeHover=-1;
+    float saveRetry=0.f;
     int boardControlHover=0;
-#if CLASSIC_GAME_KIND == 6
     Breakout breakout;
-#endif
     int boardCursorX=0,boardCursorY=0;
     bool boardCursorActive=false;
     float cursorRepeat=0.f;
@@ -113,6 +117,90 @@ struct Module {
     GLsizei staticCount=0;
     std::vector<float> vertices,staticVertices;
 };
+struct SnakeButton {const char *label;float x,y,width;};
+constexpr SnakeButton kSnakeButtons[]={{"UP",0.f,1.02f,.89f},
+    {"RIGHT",1.70f,0.f,.79f},{"DOWN",0.f,-1.02f,.89f},
+    {"LEFT",-1.70f,0.f,.79f}};
+constexpr float kSnakeButtonZ=-2.97f,kSnakeButtonHeight=.36f;
+bool PointerAt(const ReverieNativeInputV1 &input,float z,float &x,float &y){
+    if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE||
+       std::abs(input.pointer_direction[2])<.00001f)return false;
+    const float t=(z-input.pointer_origin[2])/input.pointer_direction[2];
+    if(t<=0.f||t>=30.f)return false;
+    x=input.pointer_origin[0]+t*input.pointer_direction[0];
+    y=input.pointer_origin[1]+t*input.pointer_direction[1];
+    return std::isfinite(x)&&std::isfinite(y);
+}
+int SnakeButtonAt(const ReverieNativeInputV1 &input){
+    float x=0.f,y=0.f;if(!PointerAt(input,kSnakeButtonZ,x,y))return -1;
+    for(int i=0;i<4;++i){const auto &b=kSnakeButtons[i];
+        if(std::abs(x-b.x)<=b.width*.5f&&
+           std::abs(y-b.y)<=kSnakeButtonHeight*.5f)return i;}
+    return -1;
+}
+bool SaveProblem(const Module *m){
+    return m->saves.loadBlocked||(m->saves.dirty&&
+        (m->saves.status==save::Status::WriteError||
+         m->saves.status==save::Status::InvalidState||
+         m->saves.status==save::Status::Unavailable));
+}
+uint64_t StateFingerprint(const Module *m){
+    return save::Fingerprint(CLASSIC_GAME_KIND,m->game,m->breakout,m->board);
+}
+uint64_t SaveEvent(const Module *m){
+    save::Fingerprinter f;
+#if CLASSIC_GAME_KIND == 6
+    const auto &s=m->breakout;f.Int(s.score);f.Int(s.lives);f.Int(s.remaining);
+    f.Int(s.wall);f.Int(s.paddleHits);f.Bool(s.moving);f.Bool(s.finished);
+    f.Bool(s.narrowPaddle);f.Bool(s.topRowBroken);
+#elif CLASSIC_GAME_KIND >= 3
+    // Turn, selection, scoring review, difficulty and promotion changes are
+    // committed immediately. This scans no history and allocates no memory.
+    return StateFingerprint(m);
+#else
+    const auto &s=m->game;f.U32(s.seed);f.Int(s.score);f.Int(s.opponent);
+    f.Bool(s.finished);f.Bool(s.moving);f.Bool(s.player_turn);
+    f.Int(s.position);f.Int(s.rival);f.Int(s.die);f.Int(s.desired);
+#endif
+    return f.value;
+}
+bool Checkpoint(Module *m){
+    m->saves.Observe(StateFingerprint(m),0.f);
+    const auto before=m->saves.status;
+    const bool ok=m->saves.Flush(m->game,m->breakout,m->board);
+    if(!ok){
+        m->restorePrompt=true;m->releaseToArm=true;
+        if(before!=m->saves.status){
+            ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,"ClassicSave",m->saves.detail);
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        }
+    }
+    if(before!=m->saves.status||!ok)m->dirty=true;
+    return ok;
+}
+void ApplySaved(Module *m,save::Snapshot &&snapshot){
+    // The worker owns only a copy. A recreated match restarts pending CPU
+    // work from the exact committed position/RNG; no future is serialized.
+    m->cpu=reverie::boardgames::CpuWorker{};
+    m->game=std::move(snapshot.game);m->breakout=std::move(snapshot.breakout);
+    m->board=std::move(snapshot.board);m->cpuFailed=false;
+    m->restorePrompt=true;m->releaseToArm=true;m->dirty=true;
+    m->down=m->previousSecondary=true;m->boardCursorActive=false;
+#if CLASSIC_GAME_KIND == 5
+    m->chessTween=reverie::chesstween::Move{};
+    m->chessAnalyzedPly=-1;m->chessPreviewPly=-1;
+    m->chessLegalDestinations.clear();m->chessNewGameOpen=false;
+    m->chessWikiOpen=false;
+#endif
+}
+struct SaveUpdate {
+    Module *m;float delta;uint64_t event;
+    SaveUpdate(Module *value,float seconds):m(value),delta(seconds),event(SaveEvent(value)){}
+    ~SaveUpdate(){
+        m->saves.Observe(StateFingerprint(m),delta);
+        if(m->saves.dirty&&(SaveEvent(m)!=event||m->saves.elapsed>=2.f))Checkpoint(m);
+    }
+};
 std::vector<float> &Emit(Module *m){
     return m->staticPass ? m->staticVertices : m->vertices;
 }
@@ -130,6 +218,30 @@ void Text(Module *m,const char *s,float x,float y,float scale,
     reverie::breakwater::font::AppendText(v,s,x,y,
         reverie::breakwater::font::FittedScale(s,5.35f,scale),
         r,g,b,-2.885f);
+}
+void SaveOverlay(Module *m){
+    const bool problem=SaveProblem(m);
+    if(!problem&&!m->restorePrompt)return;
+    m->staticPass=false;
+    Rect(m,0.f,0.f,3.60f,1.62f,-2.74f,.025f,.045f,.065f);
+    Rect(m,0.f,-.43f,1.70f,.40f,-2.72f,
+         m->saveHover?.22f:.12f,m->saveHover?.55f:.32f,.39f);
+    const char *title=m->saves.loadBlocked?"SAVED MATCH UNAVAILABLE":
+        problem?"CHECKPOINT NOT SAVED":"MATCH PAUSED";
+    const char *detail=m->saves.loadBlocked?"Existing progress is preserved. Retry loading.":
+        m->saves.status==save::Status::InvalidState?
+            "Snapshot limit or validation failed. Match retained.":
+        problem?"Your match is retained. Retry before leaving.":
+            "Select Continue when you are ready.";
+    const char *action=problem?"RETRY":"CONTINUE";
+    auto label=[&](const char *text,float y,float size,float r,float g,float b){
+        reverie::breakwater::font::AppendText(m->fontVertices,text,0.f,y,
+            reverie::breakwater::font::FittedScale(text,3.20f,size),r,g,b,-2.68f);
+    };
+    label(title,.43f,.057f,.95f,.91f,.75f);
+    label(detail,.10f,.033f,.82f,.91f,.95f);
+    label(action,-.43f,.048f,.91f,1.f,.94f);
+    m->upload=true;
 }
 void Segment(Module *m,float x,float y,float xx,float yy,float width,
              float r,float g,float b){
@@ -1012,15 +1124,15 @@ void Rebuild(Module *m,bool fixed){
         }
         }
         if(fixed){
-        const char *dirs[]={"UP","RIGHT","DOWN","LEFT"};
-        const float x[]={0,1.70f,0,-1.70f};
-        const float y[]={1.02f,0,-1.02f,0};
-        for(int i=0;i<4;i++){
-            Rect(m,x[i],y[i],i%2?.79f:.89f,.36f,
-                 -2.97f,.20f,.33f,.39f);
-            Text(m,dirs[i],x[i],y[i],.041f,.85f,.93f,.88f);
+        for(const auto &button:kSnakeButtons){
+            Rect(m,button.x,button.y,button.width,kSnakeButtonHeight,
+                 kSnakeButtonZ,.20f,.33f,.39f);
+            Text(m,button.label,button.x,button.y,.041f,.85f,.93f,.88f);
         }
         }else{
+        if(m->snakeHover>=0){const auto &button=kSnakeButtons[m->snakeHover];
+            Rect(m,button.x,button.y,button.width,kSnakeButtonHeight,
+                 kSnakeButtonZ+.003f,.25f,.48f,.52f);}
         std::snprintf(status,sizeof(status),"FOOD %d",s.score);
         Text(m,status,1.87f,1.12f,
              reverie::breakwater::font::FittedScale(status,.58f,.034f),
@@ -1257,10 +1369,33 @@ void *Create(const ReverieNativeHostV1 *host){
 #else
         m->game.Reset(static_cast<Game>(CLASSIC_GAME_KIND));
 #endif
+        m->saves.Bind(host,CLASSIC_GAME_KIND);
+        save::Snapshot snapshot;
+        const int restored=m->saves.Load(snapshot);
+        if(restored==1)ApplySaved(m,std::move(snapshot));
+        else if(m->saves.loadBlocked){
+            m->releaseToArm=true;
+            ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,"ClassicSave",m->saves.detail);
+        }
+        m->saves.observed=StateFingerprint(m);
     }
     return m;
 }
-void Destroy(void *ptr){delete static_cast<Module *>(ptr);}
+void Destroy(void *ptr){
+    Module *m=static_cast<Module *>(ptr);if(!m)return;
+    // Last-chance flush for hosts without prepare_exit and process teardown.
+    // Failure never deletes the prior committed save or pretends success.
+    Checkpoint(m);delete m;
+}
+int32_t PrepareExit(void *ptr){
+    Module *m=static_cast<Module *>(ptr);if(!m)return 1;
+    if(m->saves.loadBlocked){
+        save::Snapshot snapshot;
+        if(m->saves.Load(snapshot)==1)ApplySaved(m,std::move(snapshot));
+        m->saves.observed=StateFingerprint(m);
+    }
+    return Checkpoint(m)?1:0;
+}
 int32_t GlCreate(void *ptr){
     Module *m=static_cast<Module *>(ptr);if(!m)return 0;
     ReverieNativeGlStateV1 saved={};
@@ -1337,14 +1472,34 @@ int32_t GlCreate(void *ptr){
     return ok?1:0;
 }
 void GlRelease(void *ptr){Module *m=static_cast<Module *>(ptr);if(m)DestroyGl(m);}
-void Resume(void *){}
-void Pause(void *){}
+void Resume(void *ptr){
+    Module *m=static_cast<Module *>(ptr);if(!m)return;
+    m->suspended=false;m->releaseToArm=true;
+    m->down=m->previousSecondary=true;
+}
+void Pause(void *ptr){
+    Module *m=static_cast<Module *>(ptr);if(!m)return;
+    m->suspended=true;Checkpoint(m);
+}
 void Update(void *ptr,const ReverieNativeInputV1 *input){
     Module *m=static_cast<Module *>(ptr);
-    if(!m||!ReverieNativeInputHasBaseV1(input))return;
-    ReverieNativeInputV1 copy=*input;
+    if(!m||m->suspended||!ReverieNativeInputHasBaseV1(input))return;
+    ReverieNativeInputV1 copy{};
+    std::memcpy(&copy,input,std::min<size_t>(input->struct_size,sizeof(copy)));
     ReverieNativeSanitizeBaseInputV1(&copy);
     ReverieNativeSanitizePointerV1(&copy);
+    if(m->releaseToArm){
+        // Storage recovery must not depend on a controller becoming neutral.
+        // Keep gameplay disarmed while still retrying a failed checkpoint.
+        if(SaveProblem(m)&&!m->saves.loadBlocked){
+            m->saveRetry+=std::clamp(copy.delta_seconds,0.f,.1f);
+            if(m->saveRetry>=2.f){m->saveRetry=0.f;Checkpoint(m);}
+        }
+        const bool neutral=copy.primary_down==0&&copy.secondary_down==0&&
+            std::abs(copy.move_x)<.12f&&std::abs(copy.move_y)<.12f;
+        if(neutral){m->releaseToArm=false;m->down=m->previousSecondary=false;}
+        return;
+    }
     const bool pressed=copy.primary_down!=0;
     const bool edge=pressed&&!m->down;
     m->down=pressed;
@@ -1359,6 +1514,31 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             aim=std::isfinite(hx)&&std::isfinite(hy);
         }
     }
+
+    if(SaveProblem(m)||m->restorePrompt){
+        float sx=0.f,sy=0.f;
+        const bool pointed=PointerAt(copy,-2.72f,sx,sy);
+        const bool hover=pointed&&std::abs(sx)<=.85f&&std::abs(sy+.43f)<=.20f;
+        if(hover!=m->saveHover){m->saveHover=hover;m->dirty=true;
+            if(hover)ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);}
+        m->saveRetry+=std::clamp(copy.delta_seconds,0.f,.1f);
+        const bool activated=edge&&(copy.pointer_kind==REVERIE_NATIVE_POINTER_NONE||hover);
+        if(activated||(SaveProblem(m)&&!m->saves.loadBlocked&&m->saveRetry>=2.f)){
+            m->saveRetry=0.f;
+            if(m->saves.loadBlocked){
+                save::Snapshot snapshot;const int restored=m->saves.Load(snapshot);
+                if(restored==1)ApplySaved(m,std::move(snapshot));
+                if(restored>=0)m->saves.observed=StateFingerprint(m);
+                m->restorePrompt=true;m->releaseToArm=true;
+            }else if(SaveProblem(m))Checkpoint(m);
+            else{m->restorePrompt=false;m->releaseToArm=true;}
+            m->dirty=true;
+            ReverieNativeRequestFeedbackV1(m->host,SaveProblem(m)?
+                REVERIE_NATIVE_FEEDBACK_FAILURE:REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+        return;
+    }
+    SaveUpdate persistence(m,copy.delta_seconds);
 
 #if CLASSIC_GAME_KIND == 6
     Breakout &game=m->breakout;
@@ -1737,11 +1917,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->game.Direction(std::abs(x)>std::abs(y)?
                 (x>0?1:3):(y>0?2:0));
         }
-        if(edge&&aim){
-            if(hx>1.57f)m->game.Direction(1);
-            else if(hx< -1.57f)m->game.Direction(3);
-            else if(hy>1.38f)m->game.Direction(0);
-            else if(hy< -1.38f)m->game.Direction(2);
+        const int hover=SnakeButtonAt(copy);
+        if(hover!=m->snakeHover){m->snakeHover=hover;m->dirty=true;
+            if(hover>=0)ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);}
+        if(edge&&hover>=0){
+            const bool allowed=(hover+2)%4!=m->game.heading;
+            m->game.Direction(hover);
+            ReverieNativeRequestFeedbackV1(m->host,allowed?
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
         }
     }
     if(edge)m->game.Press();
@@ -1766,7 +1949,7 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     Module *m=static_cast<Module *>(ptr);
     if(!m||!ReverieNativeEyeRenderableV1(eye)||!m->program||
        !m->vbo||!m->staticVbo)return 0;
-    if(m->dirty)Rebuild(m,false);
+    if(m->dirty){Rebuild(m,false);SaveOverlay(m);}
     ReverieNativeGlStateV1 prior={};
     ReverieNativeGlAttribStateV1 a={},b={};
     ReverieNativeGlStateCaptureV1(&prior);
@@ -1915,7 +2098,7 @@ const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1),
      REVERIE_NATIVE_MODULE_ABI_VERSION,kId,kTitle,2u,0u},
-    Create,Destroy,GlCreate,GlRelease,Resume,Pause,Update,Draw,nullptr
+    Create,Destroy,GlCreate,GlRelease,Resume,Pause,Update,Draw,nullptr,nullptr,PrepareExit
 };
 }
 extern "C" __attribute__((visibility("default")))

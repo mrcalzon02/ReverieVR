@@ -1,0 +1,2 @@
+{"command": ["python3", "scripts/verify-native-doc-sync.py", "--staged"], "layer": "contract sync", "started_at": "2026-11-08T19:23:37.479629+00:00", "status": "running", "log": "native-doc-sync-attempt-1.log", "timeout_seconds": 240}
+NATIVE DOC CONTRACT: PASS

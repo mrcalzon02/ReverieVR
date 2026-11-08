@@ -275,6 +275,51 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
     return true;
 }
 
+bool Campaign::SerializeCheckpoint(uint8_t *out,size_t capacity) const {
+    if(!out || capacity<kCheckpointSize ||
+       (phase_!=Phase::Shop && phase_!=Phase::Victory))return false;
+    Campaign snapshot=*this;
+    snapshot.phase_=Phase::Shop;
+    if(!snapshot.SerializeShop(out,capacity))return false;
+    out[4]=3u; // v3, checked and terminal-aware; original fields stay intact.
+    const uint32_t terminal=phase_==Phase::Victory?1u:0u;
+    for(size_t byte=0;byte<4;++byte)
+        out[80u+byte]=static_cast<uint8_t>(terminal>>(byte*8u));
+    uint32_t hash=2166136261u;
+    for(size_t i=0;i<84u;++i)hash=(hash^out[i])*16777619u;
+    for(size_t byte=0;byte<4;++byte)
+        out[84u+byte]=static_cast<uint8_t>(hash>>(byte*8u));
+    return true;
+}
+
+bool Campaign::DeserializeCheckpoint(const uint8_t *source,size_t length) {
+    if(length==kSerializedSize)return DeserializeShop(source,length);
+    if(!source || length!=kCheckpointSize || source[4]!=3u ||
+       source[5]!=0u || source[6]!=0u || source[7]!=0u)return false;
+    uint32_t hash=2166136261u,expected=0u,terminal=0u;
+    for(size_t i=0;i<84u;++i)hash=(hash^source[i])*16777619u;
+    for(size_t byte=0;byte<4;++byte) {
+        expected|=static_cast<uint32_t>(source[84u+byte])<<(byte*8u);
+        terminal|=static_cast<uint32_t>(source[80u+byte])<<(byte*8u);
+    }
+    if(hash!=expected || terminal>1u)return false;
+    std::array<uint8_t,kSerializedSize> legacy{};
+    std::copy(source,source+kSerializedSize,legacy.begin());
+    legacy[4]=2u;
+    Campaign candidate;
+    if(!candidate.DeserializeShop(legacy.data(),legacy.size()))return false;
+    if(terminal) {
+        // CompleteWave leaves the final campaign at day/period wave one.
+        if(candidate.location_!=kLocations-1u ||
+           candidate.day_!=kPlaces.back().days ||
+           candidate.period_!=Period::Day || candidate.wave_index_!=1u)
+            return false;
+        candidate.phase_=Phase::Victory;
+    }
+    *this=candidate;
+    return true;
+}
+
 uint8_t Campaign::NextCount() const {
     return waves::SpawnBudget(location_,day_,period_==Period::Night,
                               Tier(difficulty_),wave_index_,

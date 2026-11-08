@@ -1,0 +1,11 @@
+COMMAND ['bash', 'scripts/verify-recon-persistence.sh', '--gles', '/workspace/scratch/d76b27d6a834/repair-work/featured/recon-captures']
+Lantern Desk evidence-to-report cycle passed
+Forward Detachment patrol-to-debrief cycle passed
+PASS recon exact-phase/choice/evidence/results, cumulative sorties, finite patrol fuel, explicit refit, corrupt transactional rejection
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/recon_module_save_test.cpp: In function ‘int main(int, char**)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/recon_module_save_test.cpp:85:46: error: conflicting declaration ‘const auto current’
+   85 |     const auto valid=audit::saves;const auto current=Bytes(s);GlEnd(s);Destroy(s);
+      |                                              ^~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/recon_module_save_test.cpp:44:48: note: previous declaration as ‘const std::array<unsigned char, 128> current’
+   44 |     const auto visible=audit::saves;const auto current=Bytes(s);
+      |                                                ^~~~~~~

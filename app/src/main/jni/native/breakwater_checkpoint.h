@@ -7,8 +7,9 @@ namespace reverie { namespace breakwater {
 
 // The existing ABI-v1 host atomically replaces this module-private slot.
 // A successful zero-byte write invalidates an old shop checkpoint without
-// changing the shared host ABI or the 80-byte campaign save format.
-// New names intentionally invalidate the earlier single-save campaign.
+// changing the shared host save ABI. These established slot names retain
+// legacy 80-byte shop saves; new writes use checked 88-byte v3 checkpoints,
+// including campaign victory. Combat intentionally resumes at wave start.
 // Slots are module-scoped and have no impact on any other ReverieVR save.
 constexpr const char* kCheckpointSlots[] = {
     "breakwater-run-1-v2.bin",

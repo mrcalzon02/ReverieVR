@@ -1,0 +1,3 @@
+write failure: phase_shop=1 activation_feedback=1 writes=1 persisted_bytes=0 silent_failure=1
+after pause: write_calls=1 no_retry=1
+read I/O failure: treated_as_new=1 then_written_bytes=80 overwrote_unreadable_slot=1

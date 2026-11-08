@@ -1,0 +1,47 @@
+[
+  {
+    "path": "app/src/main/jni/native/breakwater_module.cpp",
+    "sha256": "615069133b251a3d6bf7ccaa61c2daccbb88706c51a38a67d656d62b1fc26fba",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/breakwater_campaign.cpp",
+    "sha256": "ae240e0cc30799726c4014e53aa952ef48cc9600a2074f45b83174ff5c054311",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/breakwater_campaign.h",
+    "sha256": "b8ff5e4c7fd12d8ada89b771a98bf2f9ea89daf92a2d2407e7143777c069ff75",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/breakwater_audio.h",
+    "sha256": "f3da80c46ac36ca392e35259fb66cd23fbd1ce581dbbc852d7b72c2e0017b005",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/breakwater_checkpoint.h",
+    "sha256": "3fc053f9d8c5bc3d4823d208a2671f6be25686791515909566216ccd7988bc7d",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/reverie_native_module.h",
+    "sha256": "dac64a3622366602751f0995013bcfc0a962afb1cbf702642f303a4b426279e8",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/reverie_native_sdk.h",
+    "sha256": "bf5e4fd5027ae28ebf48b92912ff702022b9c90e3f13582587aa9efaabe73e44",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/reverie_native_sound_queue.h",
+    "sha256": "caf3d98d4baa0de9f23cdfdf3a3c75da5546857bc8ebe61a5387a0e31f86707a",
+    "matches_authoritative": true
+  },
+  {
+    "path": "app/src/main/jni/native/reverie_native_spatial_sound_queue.h",
+    "sha256": "d38db3af85e0033449e3adb66116fee763ce04b8244dbfaf4a9e3ea4d1d463e1",
+    "matches_authoritative": true
+  }
+]

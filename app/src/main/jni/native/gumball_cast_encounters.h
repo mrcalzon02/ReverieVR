@@ -47,6 +47,7 @@ public:
     bool awarded()const{return paid_;}
     bool both_destroyed()const{return biff_&&baff_;}
 private:
+    friend class CampaignSave;
     bool biff_=false,baff_=false,paid_=false;
 };
 class CastEncounter {
@@ -79,6 +80,7 @@ public:
     int pulses()const{return pulses_;}
     bool triggered()const{return started_;}
 private:
+    friend class CampaignSave;
     CastGuest kind_=CastGuest::None;
     float elapsed_=0.f,start_time_=0.f,active_left_=0.f,cooldown_=0.f;
     int pulses_=0;

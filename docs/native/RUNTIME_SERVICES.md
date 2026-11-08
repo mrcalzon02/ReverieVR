@@ -455,7 +455,10 @@ ABI v1 receives only normalized pointer kinds/rays:
 
 Modules do not parse BLE packets or raw Android/controller quaternions. The JNI boundary uses `ReverieNativeSanitizePointerV1` to clear invalid rays to pointer kind `NONE`; Red Ledger applies the same helper defensively before target intersection.
 
-When the Quick Menu owns interaction, native module updates continue only under the shell's pause/input policy and do not receive a live native pointer ray.
+When the Quick Menu owns interaction, native module updates are stopped.
+The host pauses the live instance; GL preparation and rendering may keep
+its frozen scene visible. Closing the menu resets the update clock and
+resumes only if the Activity is also active.
 
 ## Recovery and input ownership
 
@@ -483,11 +486,87 @@ The shell owns Android/Cardboard lifecycle and forwards the native lifecycle in 
 
 Exact callbacks are defined in `API_V1.md`.
 
+### Native pause, input rearm and save-aware exit — 2026-11-08
+
+Controller Menu and headset-only recovery share the same native focus
+handoff. `InputBindingEngine` clears held outputs and queued taps on focus
+loss while retaining physical-input history. Releases and neutral axes
+continue to be observed while suppressed. After focus returns, each held
+digital control or axis must release/return to its configured neutral
+region before it can affect the guest. One held source does not disable an
+independent control. Relative motion accumulated during suppression is
+discarded. Activity pause and the shell menu are independent pause reasons;
+closing either cannot override the other.
+
+Ordinary native Home, Back and Exit Phone call the optional `prepare_exit`
+checkpoint before releasing GL resources or destroying the instance.
+Refusal leaves the game paused and alive with Retry Home / Close Menu and
+an explicit two-step Exit Anyway / Confirm Exit option, with possible progress
+loss. A failed durability acknowledgement does not promise that disk bytes
+were rolled back. Exit Phone is not dispatched when the
+save check refuses. Old ABI-v1 modules without that optional tail keep
+their previous lifecycle. Forced Android/process teardown remains a limit:
+the last successfully stored checkpoint is the recovery boundary.
+
+Local verification: real production bindings/bus JUnit checks and real
+Java-runtime dispatch assertions with a counting JNI test double, plus the
+native ABI compatibility executable. Those checks do not substitute for
+the installed-APK instrumentation or physical Daydream acceptance.
+
 ## Persistence service
 
 Native games use the ABI v1 host save functions rather than arbitrary filesystem access.
 
 The shell/runtime chooses the module-private storage root; the native host validates slot names and performs bounded save reads/writes. Save schema/versioning remains game-owned.
+
+The host writes a bounded temporary file, flushes it, closes it, atomically
+renames it over the slot, then flushes the parent directory. Only a fully
+acknowledged sequence returns `REVERIE_NATIVE_SAVE_OK`. An error after the
+rename may leave new bytes visible without confirming durability; modules
+must keep the latest state dirty and safely retry. A successful read of
+those visible bytes does not substitute for the failed flush. Save reads
+reject non-regular files and distinguish absence from I/O/capacity errors.
+The host still caps each slot at 65,536 bytes. This provides an acknowledged
+filesystem checkpoint, not a guarantee against faulty hardware or storage
+that violates its flush contract.
+
+### Integrated game checkpoints — 2026-11-08 repair
+
+This table supersedes earlier dated descriptions of the games' save payloads.
+All sixteen registered modules now participate in `prepare_exit`; the eight
+classics share one implementation compiled for each game. Admission and the
+single host APK remain unchanged. These are source/local diagnostic results,
+not an Android or reference-headset acceptance claim.
+
+| Module family | Current durable state | Recovery boundary |
+| --- | --- | --- |
+| Chess, Go, Checkers, Reversi, Chutes & Ladders, Pong, Snake, Breakout | Exact game state, history, SAN where applicable, RNG and pending CPU intent; checked manifests select alternating banks of up to 64 bounded pages, with a 4 MiB snapshot limit | Complete acknowledged snapshot; overflow refuses save rather than truncating history; invalid prior data remains protected |
+| Red Ledger | 396-byte `RLSTATE5` envelope in `state-v4.bin`, with full composite integrity; supported 332/372-byte imports | Latest acknowledged economy/session; dirty writes retry; corruption in an old unchecked base cannot be detected retroactively |
+| Gumball Armada | 4,096-byte `GUMFLY04` flight, campaign, shipyard, entity/RNG and paid-support state in `campaign.v1` | Exact active flight behind a release/Continue gate; supported legacy campaign and shipyard import |
+| Omega Front | Existing checked 2,048-byte campaign/session | Existing complete session; encode/read failures now participate in exit refusal and retry |
+| Breakwater | Checked 88-byte schema-3 Shop/Victory record; valid 80-byte legacy records accepted | Last Shop/wave start, including earned wave rewards and final victory; live combat is not serialized; ambiguous reset keeps clear-only intent |
+| Guess the Door | Checked 36-byte seed/progress record | Deterministic completed outcome of a choice; animation remains transient; corrupt originals require successful backup before replacement |
+| Lantern Desk / Forward Detachment | Kind-tagged checked 128-byte exact phase/menu/evidence/result records | Exact board session; Lantern totals survive Next Sortie; Forward condition/fuel survive Next Patrol and change to full values only after explicit base service |
+| Test Chamber | Existing bounded project slots and dirty project model | Prefer valid alternative projects on startup; all-invalid recovery is read-only; unresolved edits block switching, Play Test and ordinary exit |
+
+Every title retains pending state after an unacknowledged write and distinguishes
+an absent slot from a failed or invalid read. A storage failure that persists
+through forced process destruction can still lose changes newer than the last
+acknowledged checkpoint. Tests exercise rejected writes, post-replacement errors,
+recreation and held-input recovery at the appropriate module layer. See
+`docs/records/2026-11-08-native-game-repair-operations.md` and its linked evidence.
+
+## Red Ledger recorded-sound lifecycle — 2026-11-08 repair
+
+`RedLedgerSound` retains at most four owned stream IDs and explicitly stops
+those streams on activity pause, native-session replacement/exit and suspended
+or lost-focus native audio. Failed stop calls retain their IDs for bounded
+retry; close stops and releases the pool. A real-source harness reads the
+checked-in WAV durations and uses a named SoundPool double: the 905.578 ms
+drawer cue was still active after a pause at 100 ms before the repair, and
+12 scenarios / 75 checks pass after it. Existing Breakwater routing and bank
+harnesses remain green. Physical Android playback/listening remains a separate
+gate; this adds no new clip or device acceptance claim.
 
 ## Native feedback cue service
 

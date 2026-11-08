@@ -176,6 +176,9 @@ struct Status {
 class Campaign {
 public:
     static constexpr size_t kSerializedSize = 80;
+    // Checked v3 envelope retains the original shop payload and adds the
+    // terminal state and a checksum. Legacy 80-byte shop saves still load.
+    static constexpr size_t kCheckpointSize = 88;
     static constexpr size_t kMaxEnemies = 12;
     static constexpr size_t kMaxInfantry = 60; // ten transports x six passengers
     static constexpr size_t kMaxCover = 4;
@@ -187,6 +190,8 @@ public:
     bool Start();
     bool SerializeShop(uint8_t *buffer, size_t capacity) const;
     bool DeserializeShop(const uint8_t *buffer, size_t size);
+    bool SerializeCheckpoint(uint8_t *buffer, size_t capacity) const;
+    bool DeserializeCheckpoint(const uint8_t *buffer, size_t size);
     bool BeginWave();
     bool Purchase(Upgrade upgrade);
     bool PurchaseWeapon(WeaponKind weapon);

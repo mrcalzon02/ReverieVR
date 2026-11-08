@@ -1,5 +1,37 @@
 # Breakwater Battery VR — canonical native game specification
 
+## Durable checkpoint and console repair — 2026-11-08 source
+
+Current module saves use an **88-byte schema-3 checkpoint** in the existing
+`breakwater-run-1-v2.bin` through `breakwater-run-3-v2.bin` slot names.
+It includes a checksum and the terminal victory flag. The reader accepts
+the previous validated 80-byte schema-1/2 Shop records; historical 80-byte
+statements below describe those earlier formats. Combat resumes from its
+last Shop checkpoint at wave start. It does not resume live enemy positions,
+partial magazine use or damage partway through a wave.
+
+Wave rewards and final victory are checkpointed by the actual module
+update before the player presses the summary action. Purchases and wave
+launches honor the write result. An unacknowledged write keeps the latest
+state dirty, displays failure, retries at bounded two-second intervals,
+and blocks duplicate purchases or a new wave until recovery. Pause flushes;
+the optional `prepare_exit` callback refuses ordinary exit while a save or
+selected-slot read remains unresolved. Missing, invalid and I/O-failed
+slots are distinct; ordinary selection never replaces unreadable data.
+
+Shop and terminal restart both require two presses. A failed clear keeps
+the reset pending. Even if the host renamed new bytes and then reported
+an error while acknowledging directory durability, retries continue the
+clear and cannot restore the old in-memory campaign over the reset slot.
+Damage feedback and console guidance occupy separate visible rows.
+The short base-only input ABI is copied by its supplied byte count.
+
+Actual module fault tests, campaign regression, an ASan/UBSan short-input
+probe and real stereo Mesa GLES captures pass for this source change.
+Physical Galaxy S9/controller, sustained performance, Android packaging
+and real device storage interruption acceptance remain required. See
+`docs/project/NATIVE_RECENT_GAMES_REPAIR_2026-11-08.md` for scope and commands.
+
 ## Shared-library sound overhaul — 2026-11-08
 
 The current audio path uses 46 normalized PCM clips prepared from the approved

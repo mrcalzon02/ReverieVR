@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "checks": [
+    "SIGTERM checkpoint",
+    "passed case not rerun",
+    "interrupted case retried",
+    "attempt history preserved",
+    "all log hashes match"
+  ]
+}

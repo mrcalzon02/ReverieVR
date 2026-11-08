@@ -1,0 +1,2 @@
+{"command": ["python3", "scripts/modules/verify-game-identity-matrix.py"], "layer": "identity contract", "started_at": "2026-11-08T19:24:32.135147+00:00", "status": "running", "log": "game-identity-attempt-1.log", "timeout_seconds": 240}
+PASS: 16 game IDs, content namespaces, native libraries and companion package identities match across JSON, Java, C++ and Android.mk

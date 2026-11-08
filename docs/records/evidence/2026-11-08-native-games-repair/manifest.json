@@ -1,0 +1,219 @@
+{
+  "code_commit": "9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c",
+  "code_tree": "a767f60b07e673a7da07c860331f294d2f28458f",
+  "tracked_source_fingerprint": "0b093c03f3b39e3c0453ee6540099ede920b30030ad8f7b8b4369df86a1627cc",
+  "files": [
+    {
+      "path": "breakwater-before-after.png",
+      "bytes": 245976,
+      "sha256": "7a97db97eafa84c79e410fad36f95593a99546b909b7dc66bd18dceffe5235e5"
+    },
+    {
+      "path": "classic-input-prefix-after.log",
+      "bytes": 125,
+      "sha256": "2fb04c4bec90b5fd1c3b22318ecd144042f9fe3370d075464749dd9d96e8587f"
+    },
+    {
+      "path": "classic-input-prefix-before.log",
+      "bytes": 3105,
+      "sha256": "3fb9c3d02d23437c0b94eb594e811705a776038beabf737fca71394c7a28f94e"
+    },
+    {
+      "path": "classic-input-prefix-results.json",
+      "bytes": 1344,
+      "sha256": "c1e030e728ffdb783a231d282ba761244f285623904bb1973a1f380c2d75dfe7"
+    },
+    {
+      "path": "final-audio/.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-audio/cases.json",
+      "bytes": 788,
+      "sha256": "a27f172dd373a17955a1f97764f40ff31efa328f897970844952124a3736638a"
+    },
+    {
+      "path": "final-audio/checkpoint.json",
+      "bytes": 1822,
+      "sha256": "b271f43f746070997d8555294e400b1bf585fe32cd6f61e4ad8bd1c5d9dd79cb"
+    },
+    {
+      "path": "final-audio/red-ledger-audio-lifecycle-attempt-1.log",
+      "bytes": 1670,
+      "sha256": "6c798e9087f0a27249cee085a61484e09691714f9f3841f14f89be3c2ac75d76"
+    },
+    {
+      "path": "final-integrated/.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-integrated/audio-assets-attempt-1.log",
+      "bytes": 778,
+      "sha256": "10bd3143e8914dae33691ede2f10bac53918c03b05ba817d38db720208f5d950"
+    },
+    {
+      "path": "final-integrated/audio-backend-attempt-1.log",
+      "bytes": 1211,
+      "sha256": "350ac9b3c090fc7a7e5321d107dcd50fa8d28f972c65c843dabc830dfbaf6bba"
+    },
+    {
+      "path": "final-integrated/breakwater-audio-attempt-1.log",
+      "bytes": 696,
+      "sha256": "4af16e0d827e7349cdbd3d2b9709dd19dbc1e1d99e0a44c000859582ffced78e"
+    },
+    {
+      "path": "final-integrated/cases.json",
+      "bytes": 10304,
+      "sha256": "c529a65a88ff25e68850b897779a791361d4f617d72380f2bdd355ca0a152379"
+    },
+    {
+      "path": "final-integrated/checkpoint.json",
+      "bytes": 21999,
+      "sha256": "f11e0df8562a0c5166fcf6306dd449d8e0df0c7c7e4ac2723c5fb2ef7eb38ab2"
+    },
+    {
+      "path": "final-integrated/classic-input-prefix-attempt-1.log",
+      "bytes": 719,
+      "sha256": "9a737dd4e4f42a87e84cf7c19cf59dbaf2a4852a9a29ee19d5da1bacc955f8c5"
+    },
+    {
+      "path": "final-integrated/classic-rules-attempt-1.log",
+      "bytes": 603,
+      "sha256": "5873a3d69d21bf41c6f22f7e5be0b427a006b3a98072310ec04e60f7c9b8bc8e"
+    },
+    {
+      "path": "final-integrated/classic-saves-attempt-1.log",
+      "bytes": 2527,
+      "sha256": "219967abdb5d957d5ca1fa69e429f8dae627659e26f44322d5354e1cf5b97f76"
+    },
+    {
+      "path": "final-integrated/existing-breakwater-workshop-rules-attempt-1.log",
+      "bytes": 2109,
+      "sha256": "6f083ea2f7def6cc7ec93859f08f09ab9c70aaf4b3bddcaeb028a89618a40aa0"
+    },
+    {
+      "path": "final-integrated/featured-module-repair-attempt-1.log",
+      "bytes": 15695,
+      "sha256": "41ff120254ef47430831acf181b6a2f14aa7ab804aa495e85f057b2f831cd5a6"
+    },
+    {
+      "path": "final-integrated/game-identity-attempt-1.log",
+      "bytes": 371,
+      "sha256": "aaf3e55b35be3866862043784cddda1fcf19fa606f7f0a046a59681cbf52a1e7"
+    },
+    {
+      "path": "final-integrated/guess-rules-attempt-1.log",
+      "bytes": 453,
+      "sha256": "83aa430f19bb075b8729190f343ea794148eeb0b906a21ca02d5b2483099398d"
+    },
+    {
+      "path": "final-integrated/gumball-rules-attempt-1.log",
+      "bytes": 1038,
+      "sha256": "4577bf543dd92b3bfeaf3b4ac638b2f0ff51ecdeee3e2f01eb70d5b9babf44ba"
+    },
+    {
+      "path": "final-integrated/host-focus-and-storage-attempt-1.log",
+      "bytes": 1578,
+      "sha256": "c90eae1ebedae71fab7569e2f057321870c02ffce301ff745c7c5b0965bbb5b0"
+    },
+    {
+      "path": "final-integrated/merged-java-parse-attempt-1.log",
+      "bytes": 1023,
+      "sha256": "691c83487aa5dd006a711e58c8bd0e29893e8fdebfe1ce6e73f4f5eb354dd9fc"
+    },
+    {
+      "path": "final-integrated/native-abi-attempt-1.log",
+      "bytes": 252,
+      "sha256": "26e48f62b2918115fcc862cc31ac5aef2fadb507fdbe994cb4cdd93fb0756575"
+    },
+    {
+      "path": "final-integrated/native-doc-sync-attempt-1.log",
+      "bytes": 261,
+      "sha256": "571e900dbc1a5438c80e7639613b319ad53c460c0a569aaa20bba345c74410bd"
+    },
+    {
+      "path": "final-integrated/native-launch-attempt-1.log",
+      "bytes": 351,
+      "sha256": "34841be6f2049c9e70f3917fbc3684f6d73435197c60cf579f403f748965d8b2"
+    },
+    {
+      "path": "final-integrated/omega-module-repair-attempt-1.log",
+      "bytes": 3401,
+      "sha256": "a0b4400cffd32abe6b0a9e9e5a22726f19c5a3e1f89bb5adb521139efafeeee0"
+    },
+    {
+      "path": "final-integrated/recent-persistence-attempt-1.log",
+      "bytes": 1816,
+      "sha256": "45ea44c75bffd6e6cbdb3e6e1b3305717cfe92cc5082bcec469bc460c290244d"
+    },
+    {
+      "path": "final-integrated/recon-persistence-attempt-1.log",
+      "bytes": 12614,
+      "sha256": "ba7125e005744263b97b7ea53e9bd61bdb210ef621bd36c802ea6ceb2b2c8a49"
+    },
+    {
+      "path": "final-integrated/red-ledger-rules-attempt-1.log",
+      "bytes": 1074,
+      "sha256": "b4b91592dd3a8e9243a21ed2277c3faf84edc5e84628db29f79ed27c6a3f2ef8"
+    },
+    {
+      "path": "final-verification.json",
+      "bytes": 1524,
+      "sha256": "8b2d620d8ff6db3eec5443ef7b3723e69c172d1c2740a44d7ade9197d1b2ffe5"
+    },
+    {
+      "path": "guess-before-after.png",
+      "bytes": 69882,
+      "sha256": "ded95b9ce429562d8c67b8bd8d1dfd4cfa5e6e6a1a8da38d4729044d879a746b"
+    },
+    {
+      "path": "merged-breakwater-review.md",
+      "bytes": 5153,
+      "sha256": "37df0ec653491de610368a4c93f716a2c2f8cd767cdc15af00e8e05b2d63a094"
+    },
+    {
+      "path": "merged-breakwater-source-hashes.json",
+      "bytes": 1701,
+      "sha256": "142fe37a05a12a73a9caf8080db4d973f8c062c2f96c1863879d061df540d464"
+    },
+    {
+      "path": "omega-tactical-after.png",
+      "bytes": 58608,
+      "sha256": "ef3643fc7cd6b2c2679ec22a6579b6a87a9193d7f65cd33797f01d4698963ecc"
+    },
+    {
+      "path": "red-ledger-audio-after.log",
+      "bytes": 1016,
+      "sha256": "a3a23ffe18f8065956cb7e6350dcacbb7fd8309a3ab1cd276860c0d61a9479db"
+    },
+    {
+      "path": "red-ledger-audio-before.log",
+      "bytes": 1104,
+      "sha256": "5229f2862dec47dc0a87aa9055a63fcd2589a72864bb5e0a91780fb40b1fc291"
+    },
+    {
+      "path": "red-ledger-audio-durations.json",
+      "bytes": 1525,
+      "sha256": "652dc392fb501205285dd5f48c24cb7bc2adf41da95d663c370bb7feb00e2df6"
+    },
+    {
+      "path": "repair-release-matrix.json",
+      "bytes": 79591,
+      "sha256": "599ccd2c3e6e69c6b90527bd7f4a6102ccf96efb66fcf51044c9c130a72d1730"
+    },
+    {
+      "path": "test-chamber-before-after.png",
+      "bytes": 479210,
+      "sha256": "16e34e5966d822e5058d27971e60e9515a0720d1e88ed76477bd31ac08e6fc18"
+    }
+  ],
+  "limitations": [
+    "No integrated Android APK built for this repair revision here.",
+    "No physical Galaxy S9/Daydream/controller, thermal, audio-latency or true power-loss acceptance.",
+    "Real GLES means Mesa software-rendered module framebuffers; Java platform and audio harnesses use explicitly named doubles.",
+    "Breakwater checkpoints wave boundaries; Guess restores deterministic choice outcomes. Neither claims live animation/combat restoration.",
+    "All original intended-scope completion tracks remain open unless explicitly demonstrated by current tests."
+  ]
+}

@@ -270,6 +270,10 @@ int32_t HostReadSave(
         return REVERIE_NATIVE_SAVE_ERROR;
     }
 
+    if (!S_ISREG(info.st_mode)) {
+        SetError("Native save slot is not a regular file.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
     if (info.st_size < 0
         || static_cast<uint64_t>(info.st_size)
             > REVERIE_NATIVE_SAVE_MAX_BYTES) {
@@ -396,6 +400,24 @@ int32_t HostWriteSave(
         ) != 0) {
         unlink(temporary.c_str());
         SetError("Native save slot atomic replace failed.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    // File fsync protects the payload. The rename itself is not durably
+    // committed until its parent directory is flushed as well. A failure
+    // here is deliberately reported even though the new bytes may already
+    // be visible: callers must keep dirty state and retry, never assume
+    // SAVE_ERROR proves that the old file is still authoritative.
+    int directory_fd = open(session->storage_root.c_str(),
+                            O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (directory_fd < 0) {
+        SetError("Native save directory could not be opened for flushing.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+    const bool directory_flushed = fsync(directory_fd) == 0;
+    const bool directory_closed = close(directory_fd) == 0;
+    if (!directory_flushed || !directory_closed) {
+        SetError("Native save replacement could not be durably confirmed.");
         return REVERIE_NATIVE_SAVE_ERROR;
     }
 
@@ -1055,6 +1077,23 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePause(
         session->pending_sounds.Clear();
         session->pending_spatial_sounds.Clear();
     }
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePrepareExit(
+    JNIEnv *, jclass, jlong handle
+) {
+    NativeSession *session = FromHandle(handle);
+    if (session == nullptr || session->api == nullptr
+        || session->instance == nullptr) return JNI_TRUE;
+    // Older v1 modules keep their existing exit behavior. Never read beyond
+    // their advertised prefix merely because this host has a newer header.
+    if (!ReverieNativeApiSupportsPrepareExitV1(session->api)) return JNI_TRUE;
+    CallbackSessionScope scope(session);
+    if (session->api->prepare_exit(session->instance) == 1) return JNI_TRUE;
+    SetError("Save not confirmed. Retry Home or close the menu to continue.");
+    return JNI_FALSE;
 }
 
 extern "C"

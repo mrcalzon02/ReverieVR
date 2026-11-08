@@ -1,0 +1,106 @@
+{
+  "status": "passed",
+  "runner": "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/audit/checkpoint_runner.py",
+  "runner_sha256": "ac28f2a3a71a0902160665db0b52f3893c476e4cdfa29a2f6987ef92e6c31fad",
+  "fixture_subreaper": true,
+  "results": [
+    {
+      "name": "corrupt_unselected_log",
+      "status": "passed",
+      "details": {
+        "rejection_exit": 2,
+        "error": "Completed evidence missing or changed: b",
+        "initial_hashes": [
+          {
+            "case": "a",
+            "attempt": 1,
+            "status": "passed",
+            "sha256": "2441c70f10545baec578b36c973389541cf856f1eb50cd35c7cf5d91706b8ad5"
+          },
+          {
+            "case": "b",
+            "attempt": 1,
+            "status": "passed",
+            "sha256": "3020cbad8eb143337b270f6df0a83224fbc6b733357b7ec300a320d8d642bb5f"
+          }
+        ],
+        "intentional_corrupted_log": "/workspace/scratch/d76b27d6a834/audit-work/runner-acceptance-reviewed/01-corrupt-unselected/evidence/b-attempt-1.log",
+        "counter_a": "x",
+        "counter_b": "x",
+        "checkpoint_unchanged": true
+      },
+      "seconds": 0.536
+    },
+    {
+      "name": "parent_sigkill_and_explicit_recovery",
+      "status": "passed",
+      "details": {
+        "parent_exit": -9,
+        "worker_pid": 20,
+        "process_group": 20,
+        "both_live_resumes_rejected": true,
+        "cleanup_without_ack_rejected": true,
+        "explicit_recovery_exit": 0,
+        "worker_count": "xx",
+        "hashes": [
+          {
+            "case": "worker",
+            "attempt": 1,
+            "status": "interrupted",
+            "sha256": "45b9953a71b0818443b5510c6274609f82afa065987a6e7182f3eca4b739d50d"
+          },
+          {
+            "case": "worker",
+            "attempt": 2,
+            "status": "passed",
+            "sha256": "6814bbdeebc0819eba44f7fc5f972d8a2acb1ccb2fd70f6cf0c642ac15781e4f"
+          }
+        ]
+      },
+      "seconds": 0.799
+    },
+    {
+      "name": "term_ignoring_descendant_cleanup",
+      "status": "passed",
+      "details": {
+        "subcases": [
+          {
+            "mode": "timeout",
+            "runner_exit": 1,
+            "status": "timed_out",
+            "leader_group": 33,
+            "descendant_pid": 34,
+            "descendant_terminated_by_runner": true,
+            "group_absent_after_reaping": true,
+            "hashes": [
+              {
+                "case": "descendant",
+                "attempt": 1,
+                "status": "timed_out",
+                "sha256": "541e83dd49a47aa4fef9d202738929d4c7c8bc48d59d16ca6f92cf72b7892c34"
+              }
+            ]
+          },
+          {
+            "mode": "sigterm",
+            "runner_exit": 143,
+            "status": "interrupted",
+            "leader_group": 38,
+            "descendant_pid": 39,
+            "descendant_terminated_by_runner": true,
+            "group_absent_after_reaping": true,
+            "hashes": [
+              {
+                "case": "descendant",
+                "attempt": 1,
+                "status": "interrupted",
+                "sha256": "44bb29d3f8d5600e9dac659f9565f0cdf8ee8c72adda5ba08bc6701b1b76e186"
+              }
+            ]
+          }
+        ]
+      },
+      "seconds": 2.449
+    }
+  ]
+}

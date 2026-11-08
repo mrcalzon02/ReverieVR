@@ -629,6 +629,7 @@ public:
         return restore(migrated);
     }
 private:
+    friend class CampaignSave;
     uint32_t next(){rng_=Mix(rng_+0x9E3779B9u);return rng_;}
     unsigned rollKind(int spawn)const{
         return Mix(seed_^destination_.id^(static_cast<uint32_t>(spawn)*0xA511E9B3u))%3u;

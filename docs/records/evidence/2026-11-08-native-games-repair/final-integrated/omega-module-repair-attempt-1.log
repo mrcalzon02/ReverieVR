@@ -1,0 +1,41 @@
+{"command": ["env", "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include", "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "EGL_PLATFORM=surfaceless", "LIBGL_ALWAYS_SOFTWARE=1", "bash", "scripts/verify-omega-repairs.sh", "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/omega-captures"], "layer": "actual module and real Mesa GLES", "started_at": "2026-11-08T19:24:29.006201+00:00", "status": "running", "log": "omega-module-repair-attempt-1.log", "timeout_seconds": 240}
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+MODULE_LOG 1 omega-front Tactical PNG textures loaded: 121/121
+CAPTURE omega-title eye=0 hash=14941394279926931614 visible_pixels=24478
+CAPTURE omega-title eye=1 hash=2371881194611875292 visible_pixels=24519
+WRITE_OK frontier.v1 bytes=2048 attempt=1
+CAPTURE omega-continent eye=0 hash=17362430894034213414 visible_pixels=96201
+CAPTURE omega-continent eye=1 hash=10073964501983804060 visible_pixels=96069
+WRITE_OK frontier.v1 bytes=2048 attempt=2
+CAPTURE omega-region eye=0 hash=6765639995868915243 visible_pixels=75082
+CAPTURE omega-region eye=1 hash=13935740384658006256 visible_pixels=75116
+WRITE_OK frontier.v1 bytes=2048 attempt=3
+WRITE_OK frontier.v1 bytes=2048 attempt=4
+WRITE_OK frontier.v1 bytes=2048 attempt=5
+FAULT_INJECTED write_save frontier.v1 bytes=2048 attempt=6
+MODULE_LOG 3 omega-front Hearthwell checkpoint write failed; playing in memory
+CAPTURE omega-save-failure eye=0 hash=16991735883654544639 visible_pixels=158484
+CAPTURE omega-save-failure eye=1 hash=17975553936530525915 visible_pixels=158640
+WRITE_OK frontier.v1 bytes=2048 attempt=7
+CAPTURE omega-tactical eye=0 hash=13243132944774944172 visible_pixels=158108
+CAPTURE omega-tactical eye=1 hash=9036386851258940998 visible_pixels=158251
+MODULE_LOG 1 omega-front Tactical PNG textures loaded: 121/121
+CAPTURE omega-tactical-recreated eye=0 hash=13243132944774944172 visible_pixels=158108
+CAPTURE omega-tactical-recreated eye=1 hash=9036386851258940998 visible_pixels=158251
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+OMEGA_FAILURE_RECOVERY pause_retry=1 save_failed_after_retry=0 restored_checksum=2463315748711018088 ticks=1
+MISSING_ASSETS 0
+PASS actual Omega module menu/travel/deploy/order/turn/save-failure/pause/recreate/render audit
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+FAULT_INJECTED write_save frontier.v1 bytes=2048 attempt=8
+MODULE_LOG 3 omega-front Hearthwell checkpoint write failed; playing in memory
+WRITE_OK frontier.v1 bytes=2048 attempt=9
+MODULE_LOG 2 omega-front Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+MODULE_LOG 2 omega-front Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept
+MODULE_LOG 2 omega-front Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+MODULE_LOG 2 omega-front Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept
+WRITE_OK frontier.v1 bytes=2048 attempt=10
+PASS actual Omega ordinary-exit retry, corrupt/read-error protection and recovery

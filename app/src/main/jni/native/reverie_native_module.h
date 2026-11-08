@@ -349,6 +349,15 @@ typedef struct ReverieNativeModuleApiV1 {
 
     /* Optional GL-owner pre-eye stage, guarded by struct_size. */
     int32_t (*prepare_frame)(void *instance);
+
+    /*
+     * Optional ordinary-exit checkpoint, guarded by struct_size. The host
+     * pauses first. Return 1 when the latest progress is durable (or no
+     * progress needs saving); return 0 to keep the live instance for retry.
+     * Must be bounded, repeatable, and independent of the GL context.
+     * Forced teardown/explicit discard can still call destroy after 0.
+     */
+    int32_t (*prepare_exit)(void *instance);
 } ReverieNativeModuleApiV1;
 
 #define REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE \
@@ -360,6 +369,9 @@ typedef struct ReverieNativeModuleApiV1 {
 #define REVERIE_NATIVE_MODULE_API_V1_PREPARE_FRAME_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeModuleApiV1, prepare_frame) \
         + sizeof(((ReverieNativeModuleApiV1 *)0)->prepare_frame)))
+#define REVERIE_NATIVE_MODULE_API_V1_PREPARE_EXIT_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeModuleApiV1, prepare_exit) \
+        + sizeof(((ReverieNativeModuleApiV1 *)0)->prepare_exit)))
 
 typedef const ReverieNativeModuleApiV1 *
     (*ReverieNativeModuleEntryV1)(void);

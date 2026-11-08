@@ -1,0 +1,540 @@
+{
+  "cases": {
+    "audio-assets": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "python3",
+            "scripts/verify-breakwater-audio-assets.py"
+          ],
+          "duration_seconds": 0.517,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:51.789356+00:00",
+          "layer": "independent real PCM, mapping and provenance hashes",
+          "log": "audio-assets-attempt-1.log",
+          "log_sha256": "10bd3143e8914dae33691ede2f10bac53918c03b05ba817d38db720208f5d950",
+          "process_group": 672,
+          "started_at": "2026-11-08T19:24:51.270922+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "audio-backend": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "env",
+            "PATH=/workspace/scratch/d76b27d6a834/audit-work/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/override:/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin:/opt/codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/fallback",
+            "bash",
+            "scripts/audio/verify-breakwater-backend.sh"
+          ],
+          "duration_seconds": 2.134,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:51.268211+00:00",
+          "layer": "real playback source with named Android/audio doubles",
+          "log": "audio-backend-attempt-1.log",
+          "log_sha256": "350ac9b3c090fc7a7e5321d107dcd50fa8d28f972c65c843dabc830dfbaf6bba",
+          "process_group": 547,
+          "started_at": "2026-11-08T19:24:49.132573+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "breakwater-audio": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-breakwater-audio.sh"
+          ],
+          "duration_seconds": 4.931,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:25:08.210492+00:00",
+          "layer": "actual merged production module regression",
+          "log": "breakwater-audio-attempt-1.log",
+          "log_sha256": "4af16e0d827e7349cdbd3d2b9709dd19dbc1e1d99e0a44c000859582ffced78e",
+          "process_group": 728,
+          "started_at": "2026-11-08T19:25:03.276434+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "classic-input-prefix": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-classic-input-prefix.sh"
+          ],
+          "duration_seconds": 10.306,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:49.130187+00:00",
+          "layer": "actual module ASan/UBSan short allocation",
+          "log": "classic-input-prefix-attempt-1.log",
+          "log_sha256": "9a737dd4e4f42a87e84cf7c19cf59dbaf2a4852a9a29ee19d5da1bacc955f8c5",
+          "process_group": 536,
+          "started_at": "2026-11-08T19:24:38.819687+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "classic-rules": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "bash",
+            "scripts/verify-classic-pong.sh"
+          ],
+          "duration_seconds": 4.628,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:07.775280+00:00",
+          "layer": "production rules/CPU",
+          "log": "classic-rules-attempt-1.log",
+          "log_sha256": "5873a3d69d21bf41c6f22f7e5be0b427a006b3a98072310ec04e60f7c9b8bc8e",
+          "process_group": 166,
+          "started_at": "2026-11-08T19:24:03.145941+00:00",
+          "status": "passed",
+          "timeout_seconds": 360
+        }
+      ]
+    },
+    "classic-saves": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-classic-saves.sh"
+          ],
+          "duration_seconds": 25.595,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:03.143507+00:00",
+          "layer": "eight production module lifecycles and exact codecs",
+          "log": "classic-saves-attempt-1.log",
+          "log_sha256": "219967abdb5d957d5ca1fa69e429f8dae627659e26f44322d5354e1cf5b97f76",
+          "process_group": 96,
+          "started_at": "2026-11-08T19:23:37.547845+00:00",
+          "status": "passed",
+          "timeout_seconds": 360
+        }
+      ]
+    },
+    "existing-breakwater-workshop-rules": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "python3",
+            "/workspace/scratch/d76b27d6a834/repair-work/run_existing_rule_gates.py"
+          ],
+          "duration_seconds": 11.351,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:25:20.389152+00:00",
+          "layer": "five existing production rules/editor suites",
+          "log": "existing-breakwater-workshop-rules-attempt-1.log",
+          "log_sha256": "6f083ea2f7def6cc7ec93859f08f09ab9c70aaf4b3bddcaeb028a89618a40aa0",
+          "process_group": 758,
+          "started_at": "2026-11-08T19:25:09.036541+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "featured-module-repair": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-featured-persistence.sh",
+            "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/featured-captures"
+          ],
+          "duration_seconds": 7.342,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:29.000591+00:00",
+          "layer": "actual modules and real Mesa GLES",
+          "log": "featured-module-repair-attempt-1.log",
+          "log_sha256": "41ff120254ef47430831acf181b6a2f14aa7ab804aa495e85f057b2f831cd5a6",
+          "process_group": 352,
+          "started_at": "2026-11-08T19:24:21.657374+00:00",
+          "status": "passed",
+          "timeout_seconds": 360
+        }
+      ]
+    },
+    "game-identity": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "python3",
+            "scripts/modules/verify-game-identity-matrix.py"
+          ],
+          "duration_seconds": 0.033,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:32.170173+00:00",
+          "layer": "identity contract",
+          "log": "game-identity-attempt-1.log",
+          "log_sha256": "aaf3e55b35be3866862043784cddda1fcf19fa606f7f0a046a59681cbf52a1e7",
+          "process_group": 447,
+          "started_at": "2026-11-08T19:24:32.135147+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "guess-rules": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "bash",
+            "scripts/verify-guess-the-door.sh"
+          ],
+          "duration_seconds": 0.818,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:25:09.033956+00:00",
+          "layer": "strict production maze rules and checked outcome codec",
+          "log": "guess-rules-attempt-1.log",
+          "log_sha256": "83aa430f19bb075b8729190f343ea794148eeb0b906a21ca02d5b2483099398d",
+          "process_group": 741,
+          "started_at": "2026-11-08T19:25:08.213613+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "gumball-rules": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "bash",
+            "scripts/verify-gumball-armada.sh"
+          ],
+          "duration_seconds": 7.385,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:21.654914+00:00",
+          "layer": "12 strict rule/codec programs",
+          "log": "gumball-rules-attempt-1.log",
+          "log_sha256": "4577bf543dd92b3bfeaf3b4ac638b2f0ff51ecdeee3e2f01eb70d5b9babf44ba",
+          "process_group": 275,
+          "started_at": "2026-11-08T19:24:14.268373+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "host-focus-and-storage": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "python3",
+            "scripts/audit/run_host_focus_checks.py",
+            "--output",
+            "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/host",
+            "--junit-classpath",
+            "/workspace/scratch/d76b27d6a834/audit-work/deps/junit-4.13.2.jar:/workspace/scratch/d76b27d6a834/audit-work/deps/hamcrest-core-1.3.jar",
+            "--java-home",
+            "/workspace/scratch/d76b27d6a834/audit-work/deps/jdk/usr/lib/jvm/java-21-openjdk-amd64",
+            "--javac",
+            "/workspace/scratch/d76b27d6a834/audit-work/bin/javac"
+          ],
+          "duration_seconds": 2.824,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:23:37.206387+00:00",
+          "layer": "production Java+native host with named platform shims",
+          "log": "host-focus-and-storage-attempt-1.log",
+          "log_sha256": "c90eae1ebedae71fab7569e2f057321870c02ffce301ff745c7c5b0965bbb5b0",
+          "process_group": 8,
+          "started_at": "2026-11-08T19:23:34.381289+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "merged-java-parse": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "java",
+            "-cp",
+            "/workspace/scratch/d76b27d6a834/repair-work/host/java-parse:/workspace/scratch/2c6cab9e5294/audit-work/deps/gradle-8.11.1/lib/javaparser-core-3.17.0.jar",
+            "Parse",
+            "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+            "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java"
+          ],
+          "duration_seconds": 1.074,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:52.867914+00:00",
+          "layer": "Java syntax parse only; not Android typecheck",
+          "log": "merged-java-parse-attempt-1.log",
+          "log_sha256": "691c83487aa5dd006a711e58c8bd0e29893e8fdebfe1ce6e73f4f5eb354dd9fc",
+          "process_group": 673,
+          "started_at": "2026-11-08T19:24:51.791982+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "native-abi": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "python3",
+            "scripts/verify-native-abi-contract.py"
+          ],
+          "duration_seconds": 0.266,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:23:37.477653+00:00",
+          "layer": "native executable",
+          "log": "native-abi-attempt-1.log",
+          "log_sha256": "26e48f62b2918115fcc862cc31ac5aef2fadb507fdbe994cb4cdd93fb0756575",
+          "process_group": 87,
+          "started_at": "2026-11-08T19:23:37.209639+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "native-doc-sync": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "python3",
+            "scripts/verify-native-doc-sync.py",
+            "--staged"
+          ],
+          "duration_seconds": 0.065,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:23:37.545773+00:00",
+          "layer": "contract sync",
+          "log": "native-doc-sync-attempt-1.log",
+          "log_sha256": "571e900dbc1a5438c80e7639613b319ad53c460c0a569aaa20bba345c74410bd",
+          "process_group": 94,
+          "started_at": "2026-11-08T19:23:37.479629+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "native-launch": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "python3",
+            "scripts/verify-native-launch-handoff.py"
+          ],
+          "duration_seconds": 0.033,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:32.207877+00:00",
+          "layer": "source handoff contract",
+          "log": "native-launch-attempt-1.log",
+          "log_sha256": "34841be6f2049c9e70f3917fbc3684f6d73435197c60cf579f403f748965d8b2",
+          "process_group": 448,
+          "started_at": "2026-11-08T19:24:32.172981+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "omega-module-repair": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-omega-repairs.sh",
+            "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/omega-captures"
+          ],
+          "duration_seconds": 3.124,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:32.132037+00:00",
+          "layer": "actual module and real Mesa GLES",
+          "log": "omega-module-repair-attempt-1.log",
+          "log_sha256": "a0b4400cffd32abe6b0a9e9e5a22726f19c5a3e1f89bb5adb521139efafeeee0",
+          "process_group": 415,
+          "started_at": "2026-11-08T19:24:29.006201+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "recent-persistence": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-recent-game-persistence.sh"
+          ],
+          "duration_seconds": 10.4,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:25:03.273537+00:00",
+          "layer": "actual merged production module regression",
+          "log": "recent-persistence-attempt-1.log",
+          "log_sha256": "45ea44c75bffd6e6cbdb3e6e1b3305717cfe92cc5082bcec469bc460c290244d",
+          "process_group": 695,
+          "started_at": "2026-11-08T19:24:52.871448+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "recon-persistence": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+            "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+            "EGL_PLATFORM=surfaceless",
+            "LIBGL_ALWAYS_SOFTWARE=1",
+            "bash",
+            "scripts/verify-recon-persistence.sh",
+            "--gles",
+            "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/recon-captures"
+          ],
+          "duration_seconds": 6.595,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:38.806411+00:00",
+          "layer": "two actual prototype modules and real Mesa GLES",
+          "log": "recon-persistence-attempt-1.log",
+          "log_sha256": "ba7125e005744263b97b7ea53e9bd61bdb210ef621bd36c802ea6ceb2b2c8a49",
+          "process_group": 449,
+          "started_at": "2026-11-08T19:24:32.210008+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "red-ledger-rules": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "bash",
+            "scripts/verify-red-ledger.sh"
+          ],
+          "duration_seconds": 6.488,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:24:14.266253+00:00",
+          "layer": "12 strict rule/codec programs",
+          "log": "red-ledger-rules-attempt-1.log",
+          "log_sha256": "b4b91592dd3a8e9243a21ed2277c3faf84edc5e84628db29f79ed27c6a3f2ef8",
+          "process_group": 188,
+          "started_at": "2026-11-08T19:24:07.777292+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    }
+  },
+  "last_resumed_at": "2026-11-08T19:23:34.378898+00:00",
+  "manifest_sha256": "3b08d50b23dcb649d35894266b0cdf05e98cbaaa0e68b49abe22154704bfedac",
+  "schema": 1,
+  "source": {
+    "head_at_start": "3af395812fc062505e6afa05ff3a06063198189d",
+    "tracked_source_sha256": "0b093c03f3b39e3c0453ee6540099ede920b30030ad8f7b8b4369df86a1627cc"
+  },
+  "started_at": "2026-11-08T19:23:34.378805+00:00",
+  "summary": {
+    "audio-assets": "passed",
+    "audio-backend": "passed",
+    "breakwater-audio": "passed",
+    "classic-input-prefix": "passed",
+    "classic-rules": "passed",
+    "classic-saves": "passed",
+    "existing-breakwater-workshop-rules": "passed",
+    "featured-module-repair": "passed",
+    "game-identity": "passed",
+    "guess-rules": "passed",
+    "gumball-rules": "passed",
+    "host-focus-and-storage": "passed",
+    "merged-java-parse": "passed",
+    "native-abi": "passed",
+    "native-doc-sync": "passed",
+    "native-launch": "passed",
+    "omega-module-repair": "passed",
+    "recent-persistence": "passed",
+    "recon-persistence": "passed",
+    "red-ledger-rules": "passed"
+  },
+  "updated_at": "2026-11-08T19:25:20.391989+00:00"
+}

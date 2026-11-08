@@ -111,6 +111,7 @@ public final class VrActivity extends Activity
     private VrInputRouter inputRouter;
     private InputBindingManager inputBindingManager;
     private InputBindingEngine inputBindingEngine;
+    private volatile boolean hostedInputLifecyclePaused;
     private VirtualInputBus virtualInputBus;
     private StandardHidInputRouter standardHidInputRouter;
     private DosModuleRepository dosModuleRepository;
@@ -297,6 +298,9 @@ public final class VrActivity extends Activity
             return;
         }
 
+        hostedInputLifecyclePaused = false;
+        if (inputBindingEngine != null)
+            inputBindingEngine.setGuestInputSuppressed(isGuestInputSuppressed());
         activityResumed = true;
         if (breakwaterAudioFocusSession) {
             breakwaterAudioRouteInterrupted = false;
@@ -343,6 +347,8 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onPause() {
+        hostedInputLifecyclePaused = true;
+        if (renderer != null) renderer.requestLocomotionRearm();
         activityResumed = false;
         if (breakwaterAudioFocusSession) abandonBreakwaterAudioFocus();
         if (renderer != null) renderer.setPhysicalKeyboardAttached(false);
@@ -350,7 +356,7 @@ public final class VrActivity extends Activity
         unregisterHeadMotionSensor();
 
         if (inputBindingEngine != null) {
-            inputBindingEngine.releaseAll();
+            inputBindingEngine.setGuestInputSuppressed(true);
         }
         if (standardHidInputRouter != null) {
             standardHidInputRouter.reset();
@@ -1210,12 +1216,12 @@ public final class VrActivity extends Activity
         // Looking at an in-room DOS shell button blocks only gameplay
         // Select. Continuous head-view mouse axes, pad directions and
         // other held guest controls stay live without a mouse click.
-        if (isGuestInputSuppressed()
-            || (input == BindingInput.SELECT && renderer != null
-                && renderer.isDosShellControlFocused())) {
+        if (down && input == BindingInput.SELECT && renderer != null
+            && renderer.isDosShellControlFocused()) {
             return;
         }
         if (inputBindingEngine != null) {
+            inputBindingEngine.setGuestInputSuppressed(isGuestInputSuppressed());
             inputBindingEngine.submitDigital(
                 input,
                 down
@@ -1229,10 +1235,8 @@ public final class VrActivity extends Activity
         float value,
         String source
     ) {
-        if (isGuestInputSuppressed()) {
-            return;
-        }
         if (inputBindingEngine != null) {
+            inputBindingEngine.setGuestInputSuppressed(isGuestInputSuppressed());
             inputBindingEngine.submitAxis(
                 input,
                 value
@@ -1427,8 +1431,8 @@ public final class VrActivity extends Activity
     }
 
     private boolean isGuestInputSuppressed() {
-        return renderer != null
-            && renderer.isHostedInputSuppressed();
+        return hostedInputLifecyclePaused || (renderer != null
+            && renderer.isHostedInputSuppressed());
     }
 
     private void adjustMediaVolume(int direction) {
@@ -2145,19 +2149,17 @@ public final class VrActivity extends Activity
         final String hostedProfileId =
             BuiltInBindingProfiles.nativeProfileForModule(moduleId);
 
-        inputBindingManager.beginHostedProfile(
-            hostedProfileId
-        );
-
-        // Invalidate queued cues from a previously hosted guest immediately.
-        final int audioEpoch = nativeAudioSessionEpoch.incrementAndGet();
-        if (uiFeedback != null) uiFeedback.setNativeModuleSession(null);
         if (!nativeModuleRuntime.start(moduleId)) {
-            runOnUiThread(() -> {
-                if (audioEpoch == nativeAudioSessionEpoch.get())
-                    setBreakwaterAudioFocusSession(false);
-            });
-            inputBindingManager.endHostedProfile();
+            // A refused replacement retains the current game's input and audio.
+            if (!nativeModuleRuntime.isRunning()) {
+                final int failedAudioEpoch = nativeAudioSessionEpoch.incrementAndGet();
+                if (uiFeedback != null) uiFeedback.setNativeModuleSession(null);
+                runOnUiThread(() -> {
+                    if (failedAudioEpoch == nativeAudioSessionEpoch.get())
+                        setBreakwaterAudioFocusSession(false);
+                });
+                inputBindingManager.endHostedProfile();
+            }
             String message =
                 nativeModuleRuntime.getLastError();
             runOnUiThread(() ->
@@ -2172,6 +2174,9 @@ public final class VrActivity extends Activity
             return false;
         }
 
+        inputBindingManager.beginHostedProfile(hostedProfileId);
+        // The replacement succeeded; now invalidate the previous guest's cues.
+        final int audioEpoch = nativeAudioSessionEpoch.incrementAndGet();
         if (uiFeedback != null) uiFeedback.setNativeModuleSession(moduleId);
         runOnUiThread(() -> {
             if (audioEpoch != nativeAudioSessionEpoch.get()) return;
@@ -2209,6 +2214,16 @@ public final class VrActivity extends Activity
             inputBindingManager.endHostedProfile();
         }
         setShellMenuMusicActive(true);
+    }
+
+    @Override
+    public void onNativeGuestInputFocusChanged(boolean focused) {
+        if (!focused && renderer != null) renderer.requestLocomotionRearm();
+        if (inputBindingEngine != null)
+            inputBindingEngine.setGuestInputSuppressed(
+                !focused || hostedInputLifecyclePaused);
+        if (!focused && standardHidInputRouter != null)
+            standardHidInputRouter.reset();
     }
 
     @Override

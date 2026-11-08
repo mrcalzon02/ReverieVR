@@ -73,6 +73,8 @@ int32_t DummyReadAvatar(ReverieNativeAvatarV1 *out,uint32_t capacity) {
     return 1;
 }
 
+int32_t DummyPrepareExit(void *) { return 1; }
+
 }  // namespace
 
 static_assert(
@@ -600,6 +602,23 @@ int main() {
         ReverieNativeApiHasMandatoryV1(&api) == 0,
         "different ABI version must fail mandatory v1 helper"
     );
+
+    api.prepare_exit = DummyPrepareExit;
+    api.abi_version = REVERIE_NATIVE_MODULE_ABI_VERSION;
+    api.struct_size = REVERIE_NATIVE_MODULE_API_V1_PREPARE_FRAME_MIN_SIZE;
+    Check(!ReverieNativeApiSupportsPrepareExitV1(&api),
+        "older prepare-frame prefix must not expose an unseen exit callback");
+    api.struct_size = REVERIE_NATIVE_MODULE_API_V1_PREPARE_EXIT_MIN_SIZE - 1u;
+    Check(!ReverieNativeApiSupportsPrepareExitV1(&api),
+        "truncated exit pointer must not be read");
+    api.struct_size = REVERIE_NATIVE_MODULE_API_V1_PREPARE_EXIT_MIN_SIZE;
+    Check(ReverieNativeApiSupportsPrepareExitV1(&api),
+        "complete optional exit callback must be admitted");
+    api.prepare_exit = nullptr;
+    Check(!ReverieNativeApiSupportsPrepareExitV1(&api),
+        "null exit callback must keep legacy behavior");
+    Check(!ReverieNativeApiSupportsPrepareExitV1(nullptr),
+        "absent module must not expose an exit callback");
 
 
     // Shell avatar tail is strictly optional. Older hosts keep all services.

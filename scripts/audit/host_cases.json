@@ -1,0 +1,108 @@
+{
+  "cases": [
+    {
+      "id": "game-identity",
+      "command": [
+        "python3",
+        "scripts/modules/verify-game-identity-matrix.py"
+      ],
+      "layer": "source contract",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "functional-coverage-map",
+      "command": [
+        "python3",
+        "scripts/ci/verify-integrated-game-functional-coverage.py"
+      ],
+      "layer": "source contract",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "native-doc-sync",
+      "command": [
+        "python3",
+        "scripts/verify-native-doc-sync.py"
+      ],
+      "layer": "source contract",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "native-abi",
+      "command": [
+        "python3",
+        "scripts/verify-native-abi-contract.py"
+      ],
+      "layer": "native executable",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "launch-handoff",
+      "command": [
+        "python3",
+        "scripts/verify-native-launch-handoff.py"
+      ],
+      "layer": "source contract",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "font-contract",
+      "command": [
+        "python3",
+        "scripts/verify-native-vector-font.py"
+      ],
+      "layer": "source contract",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "shared-assets",
+      "command": [
+        "python3",
+        "scripts/verify-shared-native-assets.py"
+      ],
+      "layer": "source contract",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "module-package-tests",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/modules",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "layer": "host Python integration",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "desktop-player",
+      "command": [
+        "bash",
+        "tools/desktop/player/test.sh"
+      ],
+      "layer": "Java desktop rules/state",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "s9-sampler-tests",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/perf",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "layer": "diagnostic-parser tests only",
+      "timeout_seconds": 60
+    }
+  ]
+}

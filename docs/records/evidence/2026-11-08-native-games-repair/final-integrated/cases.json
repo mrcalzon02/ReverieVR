@@ -1,0 +1,269 @@
+{
+  "cases": [
+    {
+      "id": "host-focus-and-storage",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "python3",
+        "scripts/audit/run_host_focus_checks.py",
+        "--output",
+        "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/host",
+        "--junit-classpath",
+        "/workspace/scratch/d76b27d6a834/audit-work/deps/junit-4.13.2.jar:/workspace/scratch/d76b27d6a834/audit-work/deps/hamcrest-core-1.3.jar",
+        "--java-home",
+        "/workspace/scratch/d76b27d6a834/audit-work/deps/jdk/usr/lib/jvm/java-21-openjdk-amd64",
+        "--javac",
+        "/workspace/scratch/d76b27d6a834/audit-work/bin/javac"
+      ],
+      "layer": "production Java+native host with named platform shims",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "native-abi",
+      "command": [
+        "python3",
+        "scripts/verify-native-abi-contract.py"
+      ],
+      "layer": "native executable",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "native-doc-sync",
+      "command": [
+        "python3",
+        "scripts/verify-native-doc-sync.py",
+        "--staged"
+      ],
+      "layer": "contract sync",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "classic-saves",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-classic-saves.sh"
+      ],
+      "layer": "eight production module lifecycles and exact codecs",
+      "timeout_seconds": 360
+    },
+    {
+      "id": "classic-rules",
+      "command": [
+        "bash",
+        "scripts/verify-classic-pong.sh"
+      ],
+      "layer": "production rules/CPU",
+      "timeout_seconds": 360
+    },
+    {
+      "id": "red-ledger-rules",
+      "command": [
+        "bash",
+        "scripts/verify-red-ledger.sh"
+      ],
+      "layer": "12 strict rule/codec programs",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "gumball-rules",
+      "command": [
+        "bash",
+        "scripts/verify-gumball-armada.sh"
+      ],
+      "layer": "12 strict rule/codec programs",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "featured-module-repair",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-featured-persistence.sh",
+        "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/featured-captures"
+      ],
+      "layer": "actual modules and real Mesa GLES",
+      "timeout_seconds": 360
+    },
+    {
+      "id": "omega-module-repair",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-omega-repairs.sh",
+        "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/omega-captures"
+      ],
+      "layer": "actual module and real Mesa GLES",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "game-identity",
+      "command": [
+        "python3",
+        "scripts/modules/verify-game-identity-matrix.py"
+      ],
+      "layer": "identity contract",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "native-launch",
+      "command": [
+        "python3",
+        "scripts/verify-native-launch-handoff.py"
+      ],
+      "layer": "source handoff contract",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "recon-persistence",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-recon-persistence.sh",
+        "--gles",
+        "/workspace/scratch/d76b27d6a834/repair-work/final-integrated/recon-captures"
+      ],
+      "layer": "two actual prototype modules and real Mesa GLES",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "classic-input-prefix",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-classic-input-prefix.sh"
+      ],
+      "layer": "actual module ASan/UBSan short allocation",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "audio-backend",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "env",
+        "PATH=/workspace/scratch/d76b27d6a834/audit-work/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/override:/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin:/opt/codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/fallback",
+        "bash",
+        "scripts/audio/verify-breakwater-backend.sh"
+      ],
+      "layer": "real playback source with named Android/audio doubles",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "audio-assets",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "python3",
+        "scripts/verify-breakwater-audio-assets.py"
+      ],
+      "layer": "independent real PCM, mapping and provenance hashes",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "merged-java-parse",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "java",
+        "-cp",
+        "/workspace/scratch/d76b27d6a834/repair-work/host/java-parse:/workspace/scratch/2c6cab9e5294/audit-work/deps/gradle-8.11.1/lib/javaparser-core-3.17.0.jar",
+        "Parse",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java"
+      ],
+      "layer": "Java syntax parse only; not Android typecheck",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "recent-persistence",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-recent-game-persistence.sh"
+      ],
+      "layer": "actual merged production module regression",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "breakwater-audio",
+      "command": [
+        "env",
+        "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include",
+        "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu",
+        "EGL_PLATFORM=surfaceless",
+        "LIBGL_ALWAYS_SOFTWARE=1",
+        "bash",
+        "scripts/verify-breakwater-audio.sh"
+      ],
+      "layer": "actual merged production module regression",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "guess-rules",
+      "command": [
+        "bash",
+        "scripts/verify-guess-the-door.sh"
+      ],
+      "layer": "strict production maze rules and checked outcome codec",
+      "timeout_seconds": 240
+    },
+    {
+      "id": "existing-breakwater-workshop-rules",
+      "command": [
+        "python3",
+        "/workspace/scratch/d76b27d6a834/repair-work/run_existing_rule_gates.py"
+      ],
+      "layer": "five existing production rules/editor suites",
+      "timeout_seconds": 240
+    }
+  ]
+}

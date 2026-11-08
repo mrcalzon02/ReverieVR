@@ -70,7 +70,7 @@ The Development-only `omega-front` native module is registered in the built-in h
 
 ## Gumball Armada hosted module and admission (2026-10-15)
 
-The packaged `gumball-armada` module is an original Development-only GLES2 native game: compile-time host allowlist, unchanged ABI-v1 entry/lifecycle, module-private `campaign.v1` save slot (version-2 binary payload, with validated legacy version-1 migration preserving position/currency/upgrades) and bounded schema/seed/checksum validation, and no additional native ABI methods. `NativeModuleRuntime` rejects the title outside Development logging mode. Built-in module count increases by one; APK library/entry verification and Galaxy S9 Daydream acceptance must be re-run before release claims. The original project design is at `docs/project/GUMBALL_ARMADA.md`.
+The packaged `gumball-armada` module is an original Development-only GLES2 native game with a compile-time host allowlist and the ABI-v1 entry/lifecycle. The original October checkpoint used a version-2 campaign payload. As of the 2026-11-08 repair, its existing module-private `campaign.v1` slot contains a checked 4,096-byte `GUMFLY04` snapshot of the campaign, active flight and ship construction; validated legacy campaign and shipyard records import transactionally. It participates in the optional, size-gated `prepare_exit` tail described below. `NativeModuleRuntime` still rejects the title outside Development logging mode. APK library/entry verification and Galaxy S9 Daydream acceptance must be re-run before release claims. The original project design is at `docs/project/GUMBALL_ARMADA.md`.
 
 ## Module-reported shader failures in native GL initialization (2026-10-13)
 
@@ -480,6 +480,42 @@ Sitka remains a source-only unregistered prototype: this API hook
 does not by itself make the boat launchable or guarantee Android
 frame pacing. The current scoped asset reader is synchronous in
 `update`; worker-based async I/O remains a separate feature.
+
+### Optional ordinary-exit checkpoint (2026-11-08)
+
+The host's save success now includes a parent-directory flush after the
+temporary-file flush and atomic rename. `REVERIE_NATIVE_SAVE_ERROR` can
+follow that rename, so it does not prove the old bytes are still present.
+Modules retain/retry the latest state until a write acknowledges success.
+
+`ReverieNativeModuleApiV1.prepare_exit(void* instance)` is appended after
+`prepare_frame`. It returns **1** only when the latest progress can be
+destroyed safely because it is durable or no progress needs saving. It
+returns **0** when a write or load-recovery problem still needs the live
+instance. The host checks `REVERIE_NATIVE_MODULE_API_V1_PREPARE_EXIT_MIN_SIZE`
+and the optional pointer before reading/calling it; a null pointer or an
+older ABI-v1 prefix retains the previous exit behavior. The mandatory
+prefix, descriptor and ABI version remain unchanged.
+
+The host pauses before this bounded, repeatable callback. It must perform
+no GL work, must retain live state on refusal, and may retry persistence.
+Ordinary Home, Back-to-Home and Exit Phone keep the module alive after a
+refusal. The Quick Menu offers Retry Home, Close Menu to continue, and a
+separate two-step Exit Anyway / Confirm Exit action. This is an explicit
+override with possible progress loss, not a promise to roll back disk state:
+a post-rename durability failure may already have exposed the latest bytes.
+A new module
+launch cannot replace a session whose exit check fails. Forced teardown
+after a runtime failure or Android destruction cannot promise preservation
+of a write that storage never accepted.
+
+`NativeModuleRuntime` independently tracks Activity and shell-menu pause
+reasons. Any active reason blocks `nativeUpdate`. Only transition out of
+the final pause reason resumes the module and resets its update clock.
+Paused GL context recovery may call `prepare_frame` and render the frozen
+scene, but it does not advance simulation. Host JVM tests exercise the real
+Java bridge using an explicitly labelled counting JNI double; the Android
+hub instrumentation separately covers the real installed module callbacks.
 
 ## Guess the Door native game (2026-11-04 source milestone)
 

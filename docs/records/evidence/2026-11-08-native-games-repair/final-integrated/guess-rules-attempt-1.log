@@ -1,0 +1,3 @@
+{"command": ["bash", "scripts/verify-guess-the-door.sh"], "layer": "strict production maze rules and checked outcome codec", "started_at": "2026-11-08T19:25:08.213613+00:00", "status": "running", "log": "guess-rules-attempt-1.log", "timeout_seconds": 240}
+guess_the_door_game_test: feature-derived visual clues, deterministic doors, pitfalls, victory and quote PASS
+Guess save codec: safe phases, committed outcomes, victory, bounds and corruption PASS

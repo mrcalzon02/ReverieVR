@@ -7,6 +7,11 @@ final class InputBindingEngine {
 
     private BindingProfile profile;
     private boolean[] thresholdStates = new boolean[0];
+    private boolean guestInputSuppressed;
+    private final boolean[] rawDigital = new boolean[BindingInput.values().length];
+    private final float[] rawAxes = new float[BindingInput.values().length];
+    private final boolean[] blockedDigital = new boolean[BindingInput.values().length];
+    private final boolean[] blockedAxes = new boolean[BindingInput.values().length];
 
     // Vanilla Doom uses numeric slots 1..7; it has no next-weapon key.
     private static final VirtualKey[] DOOM_WEAPON_KEYS = {
@@ -61,6 +66,17 @@ final class InputBindingEngine {
         boolean down
     ) {
         if (input == null) {
+            return;
+        }
+
+        int inputIndex = input.ordinal();
+        rawDigital[inputIndex] = down;
+        if (guestInputSuppressed) {
+            blockedDigital[inputIndex] = down;
+            return;
+        }
+        if (blockedDigital[inputIndex]) {
+            if (!down) blockedDigital[inputIndex] = false;
             return;
         }
 
@@ -139,6 +155,17 @@ final class InputBindingEngine {
         }
 
         float safeValue = clampAxis(value);
+        int inputIndex = input.ordinal();
+        rawAxes[inputIndex] = safeValue;
+        boolean neutral = axisIsNeutral(input, safeValue);
+        if (guestInputSuppressed) {
+            blockedAxes[inputIndex] = !neutral;
+            return;
+        }
+        if (blockedAxes[inputIndex]) {
+            if (neutral) blockedAxes[inputIndex] = false;
+            return;
+        }
 
         if (ReverieLog.isDevelopment()) {
             ReverieLog.dev(
@@ -210,7 +237,8 @@ final class InputBindingEngine {
         BindingInput input,
         float delta
     ) {
-        if (input == null || delta == 0.0f) {
+        if (guestInputSuppressed || input == null || !Float.isFinite(delta)
+            || delta == 0.0f) {
             return;
         }
 
@@ -259,6 +287,43 @@ final class InputBindingEngine {
     }
 
     synchronized void releaseAll() {
+        java.util.Arrays.fill(rawDigital, false);
+        java.util.Arrays.fill(rawAxes, 0.0f);
+        java.util.Arrays.fill(blockedDigital, false);
+        java.util.Arrays.fill(blockedAxes, false);
+        releaseOutputs();
+    }
+
+    synchronized void setGuestInputSuppressed(boolean suppressed) {
+        if (guestInputSuppressed == suppressed) return;
+        guestInputSuppressed = suppressed;
+        if (!suppressed) return;
+        for (BindingInput input : BindingInput.values()) {
+            int index = input.ordinal();
+            blockedDigital[index] = rawDigital[index];
+            blockedAxes[index] = !axisIsNeutral(input, rawAxes[index]);
+        }
+        // Preserve physical state for rearming, but clear every held output
+        // and queued tap immediately when the shell takes guest focus.
+        releaseOutputs();
+    }
+
+    private boolean axisIsNeutral(BindingInput input, float value) {
+        float neutralLimit = 0.05f;
+        boolean found = false;
+        for (InputBinding binding : profile.bindings) {
+            if (binding.input != input || binding.transform == BindingTransform.DIGITAL)
+                continue;
+            float limit = binding.transform == BindingTransform.ANALOG
+                ? Math.max(0.001f, binding.deadzone)
+                : Math.max(0.001f, binding.threshold * 0.70f);
+            neutralLimit = found ? Math.min(neutralLimit, limit) : limit;
+            found = true;
+        }
+        return Math.abs(value) <= neutralLimit;
+    }
+
+    private void releaseOutputs() {
         doomVolumeUpHeld = false;
         doomVolumeDownHeld = false;
         for (int index = 0; index < thresholdStates.length; index++) {
@@ -313,6 +378,7 @@ final class InputBindingEngine {
     }
 
     private static float clampAxis(float value) {
-        return Math.max(-1.0f, Math.min(1.0f, value));
+        return Float.isFinite(value)
+            ? Math.max(-1.0f, Math.min(1.0f, value)) : 0.0f;
     }
 }

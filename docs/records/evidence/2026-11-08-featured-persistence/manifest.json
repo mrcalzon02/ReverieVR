@@ -1,0 +1,169 @@
+{
+  "base": "43a1626d40788067128915aa77deb356434ae9b3",
+  "evidence_type": "actual production modules + Mesa GLES offscreen; no device acceptance",
+  "validation": [
+    {
+      "file": "verify-featured-persistence-attempt-04.json",
+      "result": {
+        "command": [
+          "bash",
+          "scripts/verify-featured-persistence.sh",
+          "/workspace/scratch/d76b27d6a834/repair-work/featured/captures"
+        ],
+        "exit": 0,
+        "seconds": 6.943
+      }
+    },
+    {
+      "file": "verify-featured-persistence-attempt-03.json",
+      "result": {
+        "command": [
+          "bash",
+          "scripts/verify-featured-persistence.sh",
+          "/workspace/scratch/d76b27d6a834/repair-work/featured/captures"
+        ],
+        "exit": 139,
+        "seconds": 7.413
+      }
+    },
+    {
+      "file": "verify-red-ledger-attempt-02.json",
+      "result": {
+        "command": [
+          "bash",
+          "scripts/verify-red-ledger.sh"
+        ],
+        "exit": 0,
+        "seconds": 7.013
+      }
+    },
+    {
+      "file": "verify-gumball-armada-attempt-03.json",
+      "result": {
+        "command": [
+          "bash",
+          "scripts/verify-gumball-armada.sh"
+        ],
+        "exit": 0,
+        "seconds": 7.708
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "size": 1605,
+      "sha256": "07d6b3a3ae84733f2308ed94665b0eb22720c6b3e08caeada0e458900f847af2"
+    },
+    {
+      "path": "gumball-after-save-warning-left.png",
+      "size": 109912,
+      "sha256": "1368f43efb06fcdf63ce095f67dd3cbcac9a0210d743761943bf2ca3ebf23267"
+    },
+    {
+      "path": "gumball-flight-after-recreate-left.png",
+      "size": 64589,
+      "sha256": "4452b8dd16ffb9ba06e7c2886486f98e7d0fe24f0e4fdd4302f34e31b56b0e0d"
+    },
+    {
+      "path": "gumball-flight-after-recreate-right.png",
+      "size": 64737,
+      "sha256": "a0a00ed3dd6bab8c235020522a66c2f1050ddca3f3d697d00d68ca7b3a38eed8"
+    },
+    {
+      "path": "gumball-flight-before-recreate-left.png",
+      "size": 64589,
+      "sha256": "4452b8dd16ffb9ba06e7c2886486f98e7d0fe24f0e4fdd4302f34e31b56b0e0d"
+    },
+    {
+      "path": "gumball-flight-before-recreate-right.png",
+      "size": 64737,
+      "sha256": "a0a00ed3dd6bab8c235020522a66c2f1050ddca3f3d697d00d68ca7b3a38eed8"
+    },
+    {
+      "path": "gumball-load-recovery-left.png",
+      "size": 58596,
+      "sha256": "ad67e9b65fdf4e86827b28743134971ff6ae13edd5976035207fee7b243f199e"
+    },
+    {
+      "path": "gumball-ship-save-warning-left.png",
+      "size": 132230,
+      "sha256": "5c5e8e5b3f83cabbd7390ae607ef77a558e9b456e9c2b3976069892383c6a612"
+    },
+    {
+      "path": "red-ledger-after-bar-left.png",
+      "size": 250785,
+      "sha256": "9ba84457980c11a3bc90c5ce61bde7adc397e925e4b3a62963938fb1e0220374"
+    },
+    {
+      "path": "red-ledger-after-save-warning-left.png",
+      "size": 258531,
+      "sha256": "0f46864ca03d9d3dd6516532355571a2e42cd5b5f35bc7ef45207a5069ed6108"
+    },
+    {
+      "path": "red-ledger-recovered-context-left.png",
+      "size": 244983,
+      "sha256": "4035f0cc547251348e9c235fce420a7408445d0387611d9395b66115c0a68fb8"
+    },
+    {
+      "path": "red-ledger-recovered-context-right.png",
+      "size": 243831,
+      "sha256": "75e973f86d58c13d47f1b5f5b5aaea7d4edce7925b7827e16e546e6aa57720c7"
+    },
+    {
+      "path": "red-ledger-recovered-left.png",
+      "size": 244983,
+      "sha256": "4035f0cc547251348e9c235fce420a7408445d0387611d9395b66115c0a68fb8"
+    },
+    {
+      "path": "red-ledger-recovered-right.png",
+      "size": 243831,
+      "sha256": "75e973f86d58c13d47f1b5f5b5aaea7d4edce7925b7827e16e546e6aa57720c7"
+    },
+    {
+      "path": "red-ledger-save-recovery-left.png",
+      "size": 222067,
+      "sha256": "ec58e73e9e008e130fa66f43a2f4c64e20382c9a46d9a58dfea28b21d224dded"
+    },
+    {
+      "path": "verify-featured-persistence-attempt-03.json",
+      "size": 184,
+      "sha256": "dad79d494670bd0178b1c522b1925fc8fd04dea6e9c9efa65543abbb755e6ec5"
+    },
+    {
+      "path": "verify-featured-persistence-attempt-03.log",
+      "size": 30088,
+      "sha256": "41282b09547ee01ca481469e7a3c795baadadabdd9d0fb1d7b003d91ffe35e7a"
+    },
+    {
+      "path": "verify-featured-persistence-attempt-04.json",
+      "size": 182,
+      "sha256": "0e14197721c5168c58a31ebad792d6f1bb76183c4791fc5b0e78a2ff25d98374"
+    },
+    {
+      "path": "verify-featured-persistence-attempt-04.log",
+      "size": 37087,
+      "sha256": "a12320aee4db062293df1f46846e6af7280c0da15e7a10d0129fd64848ecff21"
+    },
+    {
+      "path": "verify-gumball-armada-attempt-03.json",
+      "size": 107,
+      "sha256": "4fbd9a637409143249b420ecd15514e43b11a2cecc4768ee8ea4998450da61a3"
+    },
+    {
+      "path": "verify-gumball-armada-attempt-03.log",
+      "size": 858,
+      "sha256": "0e573bafbd92fc0f0bdec675b49a2e8c45ae8ec86235d32b98215b5c86c34db3"
+    },
+    {
+      "path": "verify-red-ledger-attempt-02.json",
+      "size": 103,
+      "sha256": "6cc1840d7628cf8848b4e247ac825cf62b0bd906362f2a8c88da91e319de3b5c"
+    },
+    {
+      "path": "verify-red-ledger-attempt-02.log",
+      "size": 891,
+      "sha256": "b708ae14d6e7b4a316e1596cbe739706ac9e5040ad0138d365bdd18feb00c179"
+    }
+  ]
+}

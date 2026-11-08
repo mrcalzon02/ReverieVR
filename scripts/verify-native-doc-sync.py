@@ -120,6 +120,25 @@ def regex_value(pattern: str, text: str, label: str) -> str:
     return match.group(1)
 
 
+def size_constant(name: str, source: str, seen: frozenset[str] = frozenset()) -> int:
+    """Read literal/product size_t constants without evaluating C++ as code."""
+    require(name not in seen, f"recursive size constant: {name}")
+    expression = regex_value(
+        rf"constexpr\s+size_t\s+{re.escape(name)}\s*=\s*([^;]+);",
+        source, name,
+    )
+    result = 1
+    for raw in expression.split("*"):
+        factor = raw.strip()
+        if re.fullmatch(r"\d+u?", factor):
+            result *= int(factor.rstrip("u"))
+        elif re.fullmatch(r"[A-Za-z_]\w*", factor):
+            result *= size_constant(factor, source, seen | {name})
+        else:
+            raise ContractError(f"unsupported size expression for {name}: {expression}")
+    return result
+
+
 def check_current_content() -> None:
     header = read(API_HEADER)
     sdk_header = read(SDK_HEADER)
@@ -361,8 +380,14 @@ def check_current_content() -> None:
             (test_chamber_cpp, "test chamber"),
             (red_ledger_cpp, "Red Ledger"),
         ):
+            # BuildProgram owns shader compilation internally. Requiring a
+            # second direct CompileShader call rejects correct consumers.
+            consumer_token = (
+                "ReverieNativeBuildProgram"
+                if token == "ReverieNativeCompileShader" else token
+            )
             require(
-                token in module_source,
+                consumer_token in module_source,
                 f"{module_label} no longer consumes shared {label}: {token}",
             )
 
@@ -403,7 +428,8 @@ def check_current_content() -> None:
         )
         require(
             source.count("ReverieNativeGlStateCaptureV1(") == 2
-            and source.count("ReverieNativeGlStateRestoreV1(") == 2,
+            # Failure paths may restore before the normal terminal restore.
+            and source.count("ReverieNativeGlStateRestoreV1(") >= 2,
             f"{label} does not isolate shared GL state during initialization and rendering",
         )
         require(
@@ -458,7 +484,11 @@ def check_current_content() -> None:
             f"{label} does not include the shared native SDK helper header",
         )
         for token in required_tokens:
-            require(token in source, f"{label} lost shared SDK helper use: {token}")
+            uses_helper = token in source
+            if token == "ReverieNativeHostSupportsLogV1":
+                # The safe log wrapper performs this prefix/callback check.
+                uses_helper = uses_helper or "ReverieNativeLogV1(" in source
+            require(uses_helper, f"{label} lost shared SDK helper use: {token}")
 
     forbidden_full_size = (
         "struct_size < sizeof(ReverieNativeHostV1)",
@@ -580,8 +610,10 @@ def check_current_content() -> None:
         "native input routing regressed to game-id-specific binding profiles",
     )
     require(
-        "BuiltInBindingProfiles.ID_NATIVE_STANDARD" in activity_java,
-        "VrActivity no longer launches native games under the standard hosted profile",
+        "BuiltInBindingProfiles.nativeProfileForModule(moduleId)" in activity_java
+        and "inputBindingManager.beginHostedProfile(" in activity_java
+        and "? ID_NATIVE_CLASSICS : ID_NATIVE_STANDARD" in binding_profiles_java,
+        "VrActivity no longer uses the central native profile resolver with its standard default",
     )
     for token in (
         "BindingInput.SELECT",
@@ -632,7 +664,7 @@ def check_current_content() -> None:
         )
     require(
         "Haptics are also not implemented" in runtime_services_doc
-        and "not an arbitrary audio submission/mixing API" in api_doc,
+        and "not an arbitrary audio submission/mixing API" in api_doc.replace("**", ""),
         "native feedback documentation overstates audio/haptics capability",
     )
 
@@ -655,13 +687,7 @@ def check_current_content() -> None:
             "procedural material tile size",
         )
     )
-    static_cube_count = int(
-        regex_value(
-            r"constexpr\s+size_t\s+kStaticCubeCount\s*=\s*(\d+)u\s*;",
-            static_h,
-            "static cube count",
-        )
-    )
+    static_cube_count = size_constant("kStaticCubeCount", static_h)
     cube_vertex_count = int(
         regex_value(
             r"constexpr\s+size_t\s+kCubeVertexCount\s*=\s*(\d+)u\s*;",

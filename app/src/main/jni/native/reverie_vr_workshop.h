@@ -6,6 +6,7 @@
 #include "reverie_scene_document.h"
 #include "reverie_vr_project_motion.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <iomanip>
@@ -18,6 +19,8 @@
 namespace reverie { namespace authoring {
 constexpr size_t kVrProjectSlots=3, kVrEditMaxPieces=48, kVrUndo=16;
 constexpr size_t kVrSlotMaxBytes=65536;
+constexpr double kVrMenuLeft=-2.05,kVrMenuRight=-.45;
+constexpr double kVrMenuTop=1.11,kVrMenuRowHeight=.235;
 enum class VrTool { Move, Rotate, Scale };
 enum class VrEvent { None, Selected, Modified, Saved, Play, Edit, Project, Rejected };
 struct VrRay { double ox=0,oy=0,oz=0,dx=0,dy=0,dz=0;bool valid=false; };
@@ -45,8 +48,8 @@ inline int VrMenuHit(const VrRay& ray) {
     const double t=(-2.62-ray.oz)/ray.dz;
     if(t<.3||t>9.)return -1;
     const double x=ray.ox+t*ray.dx,y=ray.oy+t*ray.dy;
-    if(x< -3.25||x> -1.06)return -1;
-    const double row=(1.11-y)/.235;
+    if(x<kVrMenuLeft||x>kVrMenuRight)return -1;
+    const double row=(kVrMenuTop-y)/kVrMenuRowHeight;
     const int index=static_cast<int>(std::floor(row));
     return index>=0&&index<10?index:-1;
 }
@@ -92,15 +95,35 @@ public:
     size_t slot=0, selected=0;
     VrTool tool=VrTool::Move;
     std::string last_error;
+    bool recovering=false;
+    std::array<bool,kVrProjectSlots> blocked_slots{};
+    std::string recovery_notice;
     bool Open(const Scene& seed,const VrStore& store) {
+        if(dirty){last_error="SAVE CHANGES BEFORE REOPENING PROJECT";return false;}
         if(!ScenePlayable(seed)||!store.read||!store.write)return false;
-        seed_=seed;return LoadSlot(0,store);
+        seed_=seed;
+        if(LoadSlot(0,store))return true;
+        // Prefer an existing valid project before choosing a fresh fallback.
+        for(size_t target=1;target<kVrProjectSlots;++target)
+            if(LoadSlot(target,store,true))return true;
+        for(size_t target=1;target<kVrProjectSlots;++target)
+            if(LoadSlot(target,store))return true;
+        // A bad set of slots must not prevent launching the recovery screen.
+        // The preview is read-only and none of the original bytes are replaced.
+        scene=seed_;motions.clear();light=VrLight{};sound=VrSound{};
+        selected=slot=0;editing=false;recovering=true;dirty=false;mesh_dirty=true;
+        undo_.clear();motion_page=lighting_page=audio_page=false;
+        last_error="NO READABLE PROJECT - SELECT TO RETRY";
+        UpdateRecoveryNotice();
+        return true;
     }
-    bool LoadSlot(size_t target,const VrStore& store) {
+    bool LoadSlot(size_t target,const VrStore& store,bool existingOnly=false) {
         if(target>=kVrProjectSlots||!store.read)return false;
+        if(dirty){last_error="SAVE CHANGES BEFORE SWITCHING PROJECT";return false;}
         std::string bytes;
         const int rc=store.read(store.context,target,bytes);
-        if(rc<0){last_error="PROJECT READ FAILED";return false;}
+        if(rc<0){BlockSlot(target,"PROJECT READ FAILED");return false;}
+        if(rc==0&&existingOnly){blocked_slots[target]=false;return false;}
         Scene loaded;
         std::vector<VrMotion> loadedMotions;
         VrLight loadedLight;
@@ -108,7 +131,7 @@ public:
         if(rc==0){loaded=target==0?seed_:Scene{"white_room",{}};}
         else {
             if(bytes.empty()||bytes.size()>kVrSlotMaxBytes){
-                last_error="CORRUPT PROJECT";return false;
+                BlockSlot(target,"CORRUPT PROJECT");return false;
             }
             try {
                 auto result=DecodeVrBundle(bytes);
@@ -117,22 +140,26 @@ public:
                 loadedLight=std::move(result.light);
                 loadedSound=std::move(result.sound);
             }catch(const std::exception&){
-                last_error="CORRUPT PROJECT";return false;
+                BlockSlot(target,"CORRUPT PROJECT");return false;
             }
         }
         if(!ScenePlayable(loaded)||!ValidateMotions(loaded,loadedMotions)||
            !ValidLight(loaded,loadedLight)||!ValidVrSound(loaded,loadedSound)){
-            last_error="UNSUPPORTED PROJECT";return false;
+            BlockSlot(target,"UNSUPPORTED PROJECT");return false;
         }
         scene=std::move(loaded);motions=std::move(loadedMotions);
         light=std::move(loadedLight);
         sound=std::move(loadedSound);sound_elapsed_=0.;
         slot=target;selected=0;motion_page=false;lighting_page=false;
         audio_page=false;undo_.clear();
-        dirty=false;mesh_dirty=true;last_error.clear();
+        dirty=false;mesh_dirty=true;last_error.clear();recovering=false;
+        blocked_slots[target]=false;UpdateRecoveryNotice();
         return true;
     }
     bool Save(const VrStore& store) {
+        if(recovering||slot>=kVrProjectSlots||blocked_slots[slot]) {
+            last_error="UNREADABLE SLOT RETAINED - RETRY OR USE ANOTHER PROJECT";return false;
+        }
         if(!store.write){last_error="SAVE SERVICE ABSENT";return false;}
         try{
             const std::string data=EncodeVrBundle(EncodeVrScene(scene),
@@ -147,8 +174,13 @@ public:
         dirty=false;last_error.clear();return true;
     }
     bool NextProject(const VrStore& store) {
+        if(recovering)return Open(seed_,store)&&!recovering;
         if(dirty&&!Save(store))return false;
-        return LoadSlot((slot+1)%kVrProjectSlots,store);
+        const size_t previous=slot;
+        for(size_t offset=1;offset<kVrProjectSlots;++offset)
+            if(LoadSlot((previous+offset)%kVrProjectSlots,store))return true;
+        last_error="OTHER PROJECTS UNREADABLE - CURRENT KEPT";
+        return false;
     }
     bool Add(const std::string& kind) {
         if(!editing||(kind!="box"&&kind!="cylinder")||
@@ -379,6 +411,11 @@ public:
         const bool pressed=primary&&!last_primary;
         const bool secondary_pressed=secondary&&!last_secondary;
         last_primary=primary;last_secondary=secondary;
+        if(recovering) {
+            if(pressed||secondary_pressed)
+                return Open(seed_,store)&&!recovering?VrEvent::Project:VrEvent::Rejected;
+            return VrEvent::None;
+        }
         if(secondary_pressed){
             EndDrag();
             if(editing&&dirty&&!Save(store))return VrEvent::Rejected;
@@ -465,6 +502,17 @@ private:
     struct Snapshot {Scene scene;std::vector<VrMotion> motions;VrLight light;VrSound sound;};
     double sound_elapsed_=0.;
     std::vector<Snapshot> undo_;
+    void UpdateRecoveryNotice() {
+        recovery_notice.clear();
+        for(size_t index=0;index<kVrProjectSlots;++index)if(blocked_slots[index]) {
+            if(recovery_notice.empty())recovery_notice="UNREADABLE PROJECTS KEPT: ";
+            else recovery_notice+=", ";
+            recovery_notice+=std::to_string(index+1);
+        }
+    }
+    void BlockSlot(size_t target,const char* reason) {
+        blocked_slots[target]=true;last_error=reason;UpdateRecoveryNotice();
+    }
     bool HasId(const std::string& id)const{
         for(const auto& p:scene.pieces)if(p.id==id)return true;
         return false;

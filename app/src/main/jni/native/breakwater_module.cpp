@@ -55,6 +55,7 @@ constexpr float kShopZ = -3.0f;
 constexpr int kArmorTargetBase=kCoverTargetEnd;
 constexpr int kArmorTargetEnd=kArmorTargetBase+
     static_cast<int>(Campaign::kMaxArmor);
+enum class SlotRead { Missing, Valid, Invalid, IoError };
 struct State {
     const ReverieNativeHostV1 *host = nullptr;
     Campaign campaign{Difficulty::Regular, 1049u};
@@ -121,6 +122,12 @@ struct State {
     int32_t wave_credits_gained=0,wave_hull_lost=0;
     uint8_t save_slot=0u;
     bool slot_exists[3]={false,false,false};
+    SlotRead slot_read[3]={};
+    std::array<uint8_t,Campaign::kCheckpointSize> checkpoint{};
+    bool checkpoint_valid=false,save_dirty=false,save_failed=false;
+    bool read_blocked=false,reset_pending=false;
+    float save_retry=0.f;
+    const char* save_notice=nullptr;
     int menu_focus=-1;
     int rack_focus=-1;
     bool pointer_visible=false;
@@ -335,44 +342,111 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,bool gho
         input.pointer_direction,gravity,best,&terrain) && terrain<best-.02f)return -1;
     return selected;
 }
-bool ReadSlotState(State *s,uint8_t slot,Campaign *out) {
+SlotRead ReadSlotState(State *s,uint8_t slot,Campaign *out) {
     if(!s || !out || !ReverieNativeHostSupportsSaveV1(s->host) ||
-       !CheckpointSlot(slot))return false;
-    uint8_t bytes[Campaign::kSerializedSize]={};
+       !CheckpointSlot(slot))return SlotRead::IoError;
+    uint8_t bytes[Campaign::kCheckpointSize]={};
     uint32_t size=0;
     const int32_t result=s->host->read_save(CheckpointSlot(slot),bytes,
         static_cast<uint32_t>(sizeof(bytes)),&size);
-    if(result!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes))return false;
+    if(result==REVERIE_NATIVE_SAVE_NOT_FOUND ||
+       IsClearedCheckpoint(result,size))return SlotRead::Missing;
+    if(result==REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL)return SlotRead::Invalid;
+    if(result!=REVERIE_NATIVE_SAVE_OK)return SlotRead::IoError;
     Campaign snapshot;
-    if(!snapshot.DeserializeShop(bytes,size))return false;
+    if(!snapshot.DeserializeCheckpoint(bytes,size))return SlotRead::Invalid;
     *out=snapshot;
-    return true;
+    return SlotRead::Valid;
 }
-bool SaveState(State *s) {
-    if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return false;
-    uint8_t bytes[Campaign::kSerializedSize]={};
-    if(!s->campaign.SerializeShop(bytes,sizeof(bytes)))return false;
-    const bool saved=s->host->write_save(CheckpointSlot(s->save_slot),bytes,
-        static_cast<uint32_t>(sizeof(bytes)))==REVERIE_NATIVE_SAVE_OK;
-    if(saved)s->slot_exists[s->save_slot]=true;
+void FinishReset(State *s) {
+    s->campaign=Campaign(Difficulty::Regular,1049u);
+    s->slot_exists[s->save_slot]=false;
+    s->slot_read[s->save_slot]=SlotRead::Missing;
+    s->checkpoint_valid=s->save_dirty=s->save_failed=s->reset_pending=false;
+    s->save_notice="SAVE SLOT CLEARED";s->reset_armed=false;
+    s->round_summary=s->summary_requires_release=false;
+    s->impacts=ImpactEffects{};s->wrecks.Clear();s->world_impacts=ImpactEffects{};
+    s->battery_damage=BatteryDamageFeedback{};
+    s->reload_ready_flash=s->turret_flash=s->infantry_flash=0.f;
+    s->infantry_firing_mask=0u;s->gunboat_salvo_flash=0.f;
+    s->aircraft_aim={};s->surface_aim={};
+    s->cover_aim_index=s->armor_aim_index=-1;s->aircraft_hit=AircraftHitFeedback{};
+    s->sam_armed=s->armory_page=s->ghost_on=false;s->menu_focus=-1;
+    s->scene_dirty=true;
+}
+bool FlushState(State *s) {
+    if(!s || s->read_blocked)return false;
+    if(s->reset_pending) {
+        // ERROR can mean replacement happened but directory durability failed.
+        // Retain the reset intent; never rewrite the older campaign over it.
+        const bool cleared=ClearCheckpoint(s->host,s->save_slot);
+        if(cleared)FinishReset(s);
+        else {
+            s->save_dirty=s->save_failed=true;
+            s->save_notice="RESET NOT CONFIRMED - SELECT TO RETRY - GAME HELD";
+            s->scene_dirty=true;
+        }
+        s->save_retry=2.f;
+        return cleared;
+    }
+    if(!s->save_dirty)return true;
+    const bool saved=s->checkpoint_valid &&
+        ReverieNativeHostSupportsSaveV1(s->host) &&
+        s->host->write_save(CheckpointSlot(s->save_slot),s->checkpoint.data(),
+            static_cast<uint32_t>(s->checkpoint.size()))==REVERIE_NATIVE_SAVE_OK;
+    if(saved) {
+        s->save_dirty=s->save_failed=false;
+        s->slot_exists[s->save_slot]=true;
+        s->slot_read[s->save_slot]=SlotRead::Valid;
+        s->save_notice="CHECKPOINT SAVED - COMBAT RESTARTS AT WAVE START";
+    } else {
+        if(!s->save_failed)
+            ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_ERROR,"BreakwaterSave",
+                "Checkpoint write failed; unsaved progress retained for retry.");
+        s->save_failed=true;
+        s->save_notice="SAVE FAILED - SELECT TO RETRY - PROGRESS KEPT OPEN";
+    }
+    s->save_retry=2.f;
+    s->scene_dirty=true;
     return saved;
 }
+bool SaveState(State *s) {
+    if(!s || s->read_blocked)return false;
+    if(s->reset_pending)return FlushState(s);
+    std::array<uint8_t,Campaign::kCheckpointSize> bytes{};
+    if(!s->campaign.SerializeCheckpoint(bytes.data(),bytes.size()))return false;
+    if(!s->checkpoint_valid || bytes!=s->checkpoint) {
+        s->checkpoint=bytes;s->checkpoint_valid=true;s->save_dirty=true;
+    }
+    return FlushState(s);
+}
 bool SaveControlState(State *s) {
-    // Persistence is optional in ABI v1. A missing service must not turn a
-    // successful legacy-host control into an error; a rejected real write must.
-    if(!ReverieNativeHostSupportsSaveV1(s->host) || SaveState(s))return true;
+    if(SaveState(s))return true;
     Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"BreakwaterSave",
         "Checkpoint write failed; the current session remains active.");
     return false;
 }
+bool RequestReset(State *s) {
+    s->reset_pending=s->save_dirty=true;
+    return FlushState(s);
+}
+void AdoptCheckpoint(State *s,uint8_t slot,const Campaign& campaign) {
+    s->campaign=campaign;s->save_slot=slot;
+    s->checkpoint_valid=campaign.SerializeCheckpoint(
+        s->checkpoint.data(),s->checkpoint.size());
+    s->save_dirty=s->save_failed=s->read_blocked=s->reset_pending=false;
+    s->slot_exists[slot]=true;s->slot_read[slot]=SlotRead::Valid;
+    s->save_notice="CHECKPOINT LOADED - COMBAT RESTARTS AT WAVE START";
+}
 void LoadState(State *s) {
     Campaign snapshot;
-    if(ReadSlotState(s,s->save_slot,&snapshot))
-        s->campaign=snapshot;
+    if(ReadSlotState(s,s->save_slot,&snapshot)==SlotRead::Valid)
+        AdoptCheckpoint(s,s->save_slot,snapshot);
 }
 bool BeginActiveWave(State *s,bool captureSelect) {
-    if(!s || !s->campaign.BeginWave())return false;
+    // A new combat wave may only consume the durable shop checkpoint.
+    if(!s || !SaveState(s) || !s->campaign.BeginWave())return false;
     s->round_summary=false;s->summary_requires_release=false;
     s->wave_credits_before=s->campaign.credits();
     s->wave_hull_before=s->campaign.integrity();
@@ -413,17 +487,37 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
-        s->save_slot=static_cast<uint8_t>(slot);
         Campaign loaded;
-        if(ReadSlotState(s,s->save_slot,&loaded)) {
-            game=loaded;s->slot_exists[slot]=true;
-        } else {
+        const auto read=ReadSlotState(s,static_cast<uint8_t>(slot),&loaded);
+        s->slot_read[slot]=read;
+        if(read==SlotRead::Valid) {
+            AdoptCheckpoint(s,static_cast<uint8_t>(slot),loaded);
+        } else if(read==SlotRead::Missing) {
+            s->save_slot=static_cast<uint8_t>(slot);
             game=Campaign(Difficulty::Regular,1049u);
-            s->slot_exists[slot]=false;
+            s->slot_exists[slot]=false;s->checkpoint_valid=false;
+            s->save_dirty=s->save_failed=s->read_blocked=false;
+            s->save_notice="NEW SLOT - SHOP AND WAVE RESULTS ARE CHECKPOINTED";
+        } else {
+            // A failed read is never permission to replace existing progress.
+            s->read_blocked=true;
+            s->save_notice=read==SlotRead::Invalid?
+                "INVALID SAVE KEPT - RETRY OR SELECT ANOTHER SLOT":
+                "SAVE READ FAILED - RETRY OR SELECT ANOTHER SLOT";
+            s->scene_dirty=true;
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
         }
         s->slot_picker=false;s->reset_armed=false;
         s->menu_focus=-1;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
+    if(s->save_dirty && edge) {
+        // A retry press cannot also buy another upgrade, start combat or reset.
+        const bool saved=FlushState(s);
+        Feedback(s,saved?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                         REVERIE_NATIVE_FEEDBACK_FAILURE);
         return;
     }
     if(s->round_summary) {
@@ -436,6 +530,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             return;
         }
         const bool saved=SaveControlState(s);
+        if(!saved)return;
         s->round_summary=false;s->menu_focus=-1;
         if(action==1 && !BeginActiveWave(s,true)) {
             s->round_summary=true;
@@ -475,14 +570,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN,
                              REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             } else {
-                const bool cleared=!ReverieNativeHostSupportsSaveV1(s->host) ||
-                    ClearCheckpoint(s->host,s->save_slot);
-                if(cleared) {
-                    game=Campaign(Difficulty::Regular,1049u);
-                    s->slot_exists[s->save_slot]=false;
-                    s->reset_armed=false;s->armory_page=false;
-                    s->menu_focus=-1;
-                }
+                const bool cleared=RequestReset(s);
+                s->scene_dirty=true;
                 if(cleared)ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_RESTART,
                                         REVERIE_NATIVE_FEEDBACK_ACTIVATION);
                 else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
@@ -760,28 +849,13 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             ControlSound(s,rejection,REVERIE_NATIVE_FEEDBACK_FAILURE);
         }
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
-        // A restart must not resurrect the old shop checkpoint after app exit.
-        // Keep the in-memory restart usable on hosts without save support.
-        const bool checkpoint_cleared =
-            !ReverieNativeHostSupportsSaveV1(s->host) ||
-            ClearCheckpoint(s->host,s->save_slot);
-        if(!checkpoint_cleared)
-            ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"Breakwater",
-                "Restarted in memory, but clearing the old checkpoint failed.");
-        game=Campaign(Difficulty::Regular,1049u);
-        s->slot_exists[s->save_slot]=false;
-        s->reset_armed=false;
-        s->impacts=ImpactEffects{};
-        s->wrecks.Clear();s->world_impacts=ImpactEffects{};
-        s->battery_damage=BatteryDamageFeedback{};
-        s->reload_ready_flash=0.0f;
-        s->turret_flash=0.0f;
-        s->infantry_flash=0.0f;
-        s->infantry_firing_mask=0u;
-        s->gunboat_salvo_flash=0.0f;
-        s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
-        s->aircraft_hit=AircraftHitFeedback{};
-        s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
+        if(!s->reset_armed) {
+            s->reset_armed=true;s->scene_dirty=true;
+            ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN,
+                         REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            return;
+        }
+        const bool checkpoint_cleared=RequestReset(s);
         if(checkpoint_cleared)
             ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_RESTART,
                          REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -1272,7 +1346,10 @@ void BuildScene(State *s) {
             char number[18];
             std::snprintf(number,sizeof(number),"SLOT %d",slot+1);
             Text(s,number,tile.x,tile.y+.08f,-2.97f,.044f,.95f,.92f,.74f);
-            Text(s,s->slot_exists[slot]?"CONTINUE":"NEW GAME",
+            const char* label=s->slot_read[slot]==SlotRead::Invalid?"INVALID SAVE":
+                s->slot_read[slot]==SlotRead::IoError?"READ FAILED":
+                s->slot_exists[slot]?"CONTINUE":"NEW GAME";
+            Text(s,label,
                  tile.x,tile.y-.11f,-2.97f,.033f,
                  .81f,.91f,.82f);
         }
@@ -1472,8 +1549,8 @@ void BuildScene(State *s) {
             static_cast<unsigned>(game.magazine_left()));
         Text(s,ammo,0,1.42f,-1.79f,.055f,.88f,.9f,.68f);
         Text(s,"DOUBLE CLICK A SHORE POST",
-             0,-.12f,-1.79f,.025f,.80f,.93f,.79f);
-        Text(s,"WEAPONS: LEFT RACK / PAD",0,-.26f,-1.79f,.025f,
+             0,-1.86f,-1.79f,.025f,.80f,.93f,.79f);
+        Text(s,"WEAPONS: LEFT RACK / PAD",0,-2.05f,-1.79f,.025f,
              .75f,.87f,.76f);
         if(game.reloading()) {
             // Bounded progress bar: computed once during update, rendered
@@ -1649,13 +1726,22 @@ void BuildScene(State *s) {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
         Text(s,game.phase()==Phase::Victory?"VICTORY":"BATTERY LOST",
              0,.3f,-2.95f,.09f,.9f,.81f,.50f);
-        Text(s,"FIRE TO RESTART",0,-.35f,-2.95f,.06f,.87f,.82f,.69f);
+        Text(s,s->reset_armed?"SELECT AGAIN TO RESTART":
+             "SELECT TO RESTART CAMPAIGN",0,-.35f,-2.95f,.045f,.87f,.82f,.69f);
         if(game.phase()==Phase::Defeat && s->battery_damage.active()) {
             char damage[28];
             std::snprintf(damage,sizeof(damage),"LAST HIT -%d",
                           s->battery_damage.damage());
             Text(s,damage,0,-.75f,-2.95f,.044f,1.0f,.65f,.62f);
         }
+    }
+    if(s->save_notice && game.phase()!=Phase::Combat) {
+        const bool failed=s->save_failed || s->read_blocked;
+        Panel(s,0,-1.22f,-3.02f,4.80f,.28f,
+              failed?.30f:.07f,failed?.08f:.15f,failed?.09f:.17f);
+        Text(s,s->save_notice,0,-1.22f,-2.97f,
+             font::FittedScale(s->save_notice,4.60f,.030f),
+             1.f,failed?.74f:.91f,failed?.64f:.80f);
     }
 }
 void DestroyGl(State *s) {
@@ -1729,11 +1815,18 @@ void *Create(const ReverieNativeHostV1 *host) {
     // All launches choose a slot explicitly. Pre-v2 saves are ignored.
     for(uint8_t slot=0;slot<3u;++slot) {
         Campaign loaded;
-        s->slot_exists[slot]=ReadSlotState(s,slot,&loaded);
+        s->slot_read[slot]=ReadSlotState(s,slot,&loaded);
+        s->slot_exists[slot]=s->slot_read[slot]==SlotRead::Valid;
     }
     return s;
 }
-void Destroy(void *instance) { delete static_cast<State *>(instance); }
+void Destroy(void *instance) {
+    auto* s=static_cast<State *>(instance);
+    if(s && s->save_dirty && !FlushState(s))
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_ERROR,"BreakwaterSave",
+            "Forced destruction with unsaved progress; last durable wave checkpoint retained.");
+    delete s;
+}
 int32_t GlCreate(void *instance) {
     State *s=static_cast<State *>(instance);
     if(!s)return 0;
@@ -1899,9 +1992,14 @@ void UpdateSoundscape(State *s,const ReverieNativeInputV1 &input) {
     loops.Flush(s->host,input.delta_seconds);
 }
 void Resume(void *) {}
+int32_t PrepareExit(void *instance) {
+    auto* s=static_cast<State *>(instance);
+    return s && FlushState(s)?1:0;
+}
 void Pause(void *instance) {
     State *s=static_cast<State *>(instance);
     if(!s)return;
+    FlushState(s);
     s->pointer_focus.RequireRelease();
     s->defense_points.LostFocus();
     s->pointer_visible=false;
@@ -1932,6 +2030,11 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     ReverieNativeSanitizePointerV1(&copy);
     ReverieNativeSanitizeListenerV1(&copy);
     s->audio_frame.Begin();
+    const bool pending_save_at_frame_start=s->save_dirty;
+    if(s->save_dirty) {
+        s->save_retry=std::max(0.f,s->save_retry-copy.delta_seconds);
+        if(s->save_retry<=0.f)FlushState(s);
+    }
     bool down=copy.primary_down!=0;
     bool secondary=copy.secondary_down!=0;
     const Phase phase_before=s->campaign.phase();
@@ -2080,6 +2183,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         // fires merely for an enemy disappearing or while paused.
         if(s->campaign.phase()!=Phase::Combat) {
             const Phase completed=s->campaign.phase();
+            if(completed==Phase::Shop || completed==Phase::Victory)
+                SaveState(s); // Earned result is durable before any summary click.
             BattleSound(s,completed==Phase::Shop?
                 REVERIE_NATIVE_SOUND_WAVE_CLEAR:
                 completed==Phase::Victory?
@@ -2223,10 +2328,21 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->summary_requires_release=false;
     }
     // Reload takes priority if both controls are pressed on the same frame.
-    if(down && !started_reload)Interact(s,copy,!s->held);
+    if(pending_save_at_frame_start &&
+       ((down&&!s->held)||(secondary&&!s->secondary_held))) {
+        // An automatic retry earlier in this frame may have succeeded. The
+        // player's retry edge still belongs to that save, never a new purchase,
+        // wave launch or reset that happens to sit under the same pointer.
+        const bool saved=FlushState(s);
+        Feedback(s,saved?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                         REVERIE_NATIVE_FEEDBACK_FAILURE);
+    }
+    if(!pending_save_at_frame_start && down && !started_reload)
+        Interact(s,copy,!s->held);
     // A double-click can change the station inside Interact itself.
     const ReverieNativeInputV1 worldPointer=WorldPointer(s,copy);
-    if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop &&
+    if(!pending_save_at_frame_start && !s->save_dirty && secondary&&!s->secondary_held &&
+       s->campaign.phase()==Phase::Shop &&
        !s->round_summary) {
         if(!BeginActiveWave(s,down))Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
@@ -2483,7 +2599,7 @@ const ReverieNativeModuleApiV1 kApi={
     {sizeof(ReverieNativeModuleDescriptorV1),
      REVERIE_NATIVE_MODULE_ABI_VERSION,
      "breakwater-battery","Breakwater Battery VR [DEV]",2u,0u},
-    Create,Destroy,GlCreate,GlRelease,Resume,Pause,Update,Draw,nullptr,PrepareFrame
+    Create,Destroy,GlCreate,GlRelease,Resume,Pause,Update,Draw,nullptr,PrepareFrame,PrepareExit
 };
 } // namespace
 extern "C" __attribute__((visibility("default")))

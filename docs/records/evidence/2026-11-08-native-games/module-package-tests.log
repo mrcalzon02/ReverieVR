@@ -1,0 +1,220 @@
+{"command": ["python3", "-m", "unittest", "discover", "-s", "scripts/modules", "-p", "test_*.py", "-v"], "layer": "host Python integration", "started_at": "2026-11-08T17:02:07.988812+00:00", "status": "running", "log": "module-package-tests-attempt-2.log", "timeout_seconds": 240}
+test_bad_semantic_version_rejected_before_writing (test_all_game_content_packages.AllGameContentPackagesTest.test_bad_semantic_version_rejected_before_writing) ... ok
+test_breakwater_real_mesh_format_is_downloadable_and_corruption_rejected (test_all_game_content_packages.AllGameContentPackagesTest.test_breakwater_real_mesh_format_is_downloadable_and_corruption_rejected) ... ok
+test_every_registered_game_builds_independent_verified_revision (test_all_game_content_packages.AllGameContentPackagesTest.test_every_registered_game_builds_independent_verified_revision) ... ok
+test_unknown_classic_and_unknown_native_games_refused (test_all_game_content_packages.AllGameContentPackagesTest.test_unknown_classic_and_unknown_native_games_refused) ... ok
+test_wrong_game_asset_namespace_rejected_by_verifier (test_all_game_content_packages.AllGameContentPackagesTest.test_wrong_game_asset_namespace_rejected_by_verifier) ... ok
+test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes) ... 
+  test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes) (game='breakwater-battery') ... ERROR
+  test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes) (game='omega-front') ... ERROR
+test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes) ... FAIL
+test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets) ... 
+  test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets) (game='breakwater-battery') ... ERROR
+  test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets) (game='omega-front') ... ERROR
+test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets) ... ERROR
+test_unapproved_game_refused (test_bundled_psx_content.BundledPSXContentTest.test_unapproved_game_refused) ... ok
+test_cross_game_tag_blocked (test_prepare_catalog_candidate.CatalogCandidateTests.test_cross_game_tag_blocked) ... ok
+test_draft_cannot_be_advertised_as_published (test_prepare_catalog_candidate.CatalogCandidateTests.test_draft_cannot_be_advertised_as_published) ... ok
+test_existing_game_revision_must_be_strictly_older (test_prepare_catalog_candidate.CatalogCandidateTests.test_existing_game_revision_must_be_strictly_older) ... ok
+test_new_catalog_never_overwrites_existing_file (test_prepare_catalog_candidate.CatalogCandidateTests.test_new_catalog_never_overwrites_existing_file) ... ok
+test_operator_cannot_publish_unregistered_game (test_prepare_catalog_candidate.CatalogCandidateTests.test_operator_cannot_publish_unregistered_game) ... ok
+test_published_receipt_creates_next_unsigned_revision (test_prepare_catalog_candidate.CatalogCandidateTests.test_published_receipt_creates_next_unsigned_revision) ... ok
+test_registered_unbuilt_apk_refused (test_prepare_catalog_candidate.CatalogCandidateTests.test_registered_unbuilt_apk_refused) ... ok
+test_unready_receipt_cannot_be_advertised (test_prepare_catalog_candidate.CatalogCandidateTests.test_unready_receipt_cannot_be_advertised) ... ok
+test_corrupt_private_room_models_do_not_enter_release (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_corrupt_private_room_models_do_not_enter_release) ... ok
+test_five_checked_in_geometry_assets_have_known_blob_hashes (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_five_checked_in_geometry_assets_have_known_blob_hashes) ... ERROR
+test_mutated_real_bytes_or_foreign_game_namespace_are_rejected (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_mutated_real_bytes_or_foreign_game_namespace_are_rejected) ... FAIL
+test_pack_and_independent_verify_are_reproducible (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_pack_and_independent_verify_are_reproducible) ... FAIL
+test_already_existing_draft_makes_no_create_request (test_publish_module_release.TestReleaseReconciliation.test_already_existing_draft_makes_no_create_request) ... ok
+test_create_timeout_after_remote_acceptance_does_not_duplicate (test_publish_module_release.TestReleaseReconciliation.test_create_timeout_after_remote_acceptance_does_not_duplicate) ... ok
+test_existing_name_with_wrong_size_is_not_overwritten (test_publish_module_release.TestReleaseReconciliation.test_existing_name_with_wrong_size_is_not_overwritten) ... ok
+test_published_release_is_never_mutated (test_publish_module_release.TestReleaseReconciliation.test_published_release_is_never_mutated) ... ok
+test_transient_upload_failure_stops_after_three_attempts (test_publish_module_release.TestReleaseReconciliation.test_transient_upload_failure_stops_after_three_attempts) ... ok
+test_upload_timeout_after_acceptance_rechecks_before_retry (test_publish_module_release.TestReleaseReconciliation.test_upload_timeout_after_acceptance_rechecks_before_retry) ... ok
+test_full_room_content_merge_preserves_all_existing_private_models (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_full_room_content_merge_preserves_all_existing_private_models) ... ERROR
+test_real_six_sources_and_hashes (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_real_six_sources_and_hashes) ... 
+  test_real_six_sources_and_hashes (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_real_six_sources_and_hashes) (file='beckenburg/patron_gopnick.rlprop') ... FAIL
+  test_real_six_sources_and_hashes (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_real_six_sources_and_hashes) (file='beckenburg/patron_pink_dress.rlprop') ... FAIL
+test_signed_ready_content_candidate_is_deterministic_and_verified (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_signed_ready_content_candidate_is_deterministic_and_verified) ... ERROR
+test_unapproved_fbx_and_damaged_owner_model_are_refused (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_unapproved_fbx_and_damaged_owner_model_are_refused) ... ok
+test_exact_fourteen_real_format_models_packaged_with_provenance (test_red_ledger_psx_pack.RedLedgerPSXPackTest.test_exact_fourteen_real_format_models_packaged_with_provenance) ... ok
+test_flat_and_beckenburg_prefixed_inputs_are_equivalent (test_red_ledger_psx_pack.RedLedgerPSXPackTest.test_flat_and_beckenburg_prefixed_inputs_are_equivalent) ... ok
+test_invalid_geometry_is_never_built (test_red_ledger_psx_pack.RedLedgerPSXPackTest.test_invalid_geometry_is_never_built) ... ok
+test_missing_or_extra_asset_fails_before_creating_archive (test_red_ledger_psx_pack.RedLedgerPSXPackTest.test_missing_or_extra_asset_fails_before_creating_archive) ... ok
+test_actual_registered_game_and_version_accepted (test_release_package_identity.ReleasePackageIdentityTest.test_actual_registered_game_and_version_accepted) ... ok
+test_apk_must_have_trusted_signer_digest (test_release_package_identity.ReleasePackageIdentityTest.test_apk_must_have_trusted_signer_digest) ... ok
+test_apk_requires_known_companion_target (test_release_package_identity.ReleasePackageIdentityTest.test_apk_requires_known_companion_target) ... ok
+test_correct_apk_identity_signed_by_other_key_is_rejected (test_release_package_identity.ReleasePackageIdentityTest.test_correct_apk_identity_signed_by_other_key_is_rejected) ... ok
+test_correct_signed_companion_package_is_accepted (test_release_package_identity.ReleasePackageIdentityTest.test_correct_signed_companion_package_is_accepted) ... ok
+test_duplicate_manifest_not_accepted (test_release_package_identity.ReleasePackageIdentityTest.test_duplicate_manifest_not_accepted) ... /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/zipfile/__init__.py:1625: UserWarning: Duplicate name: 'module.json'
+  return self._open_to_write(zinfo, force_zip64=force_zip64)
+ok
+test_other_games_tag_cannot_take_valid_game_payload (test_release_package_identity.ReleasePackageIdentityTest.test_other_games_tag_cannot_take_valid_game_payload) ... ok
+test_publisher_main_wires_identity_preflight_before_network (test_release_package_identity.ReleasePackageIdentityTest.test_publisher_main_wires_identity_preflight_before_network) ... ok
+test_tag_version_must_match_manifest_version (test_release_package_identity.ReleasePackageIdentityTest.test_tag_version_must_match_manifest_version) ... ok
+test_unknown_game_even_with_self_consistent_tag_is_blocked (test_release_package_identity.ReleasePackageIdentityTest.test_unknown_game_even_with_self_consistent_tag_is_blocked) ... ok
+test_wrong_companion_package_is_rejected (test_release_package_identity.ReleasePackageIdentityTest.test_wrong_companion_package_is_rejected) ... ok
+test_wrong_companion_version_is_rejected (test_release_package_identity.ReleasePackageIdentityTest.test_wrong_companion_version_is_rejected) ... ok
+test_duplicated_game_revision_rejected_before_signing (test_sign_catalog_contract.SignedCatalogContractTests.test_duplicated_game_revision_rejected_before_signing) ... ok
+test_mismatched_catalog_url_rejected_before_signing (test_sign_catalog_contract.SignedCatalogContractTests.test_mismatched_catalog_url_rejected_before_signing) ... ok
+test_reuse_catalog_revision_rejected_before_signing (test_sign_catalog_contract.SignedCatalogContractTests.test_reuse_catalog_revision_rejected_before_signing) ... ok
+test_rollback_catalog_revision_rejected_before_signing (test_sign_catalog_contract.SignedCatalogContractTests.test_rollback_catalog_revision_rejected_before_signing) ... ok
+test_unbuilt_companion_apk_advertisement_refused (test_sign_catalog_contract.SignedCatalogContractTests.test_unbuilt_companion_apk_advertisement_refused) ... ok
+test_unknown_game_id_refused (test_sign_catalog_contract.SignedCatalogContractTests.test_unknown_game_id_refused) ... ok
+test_valid_existing_breakwater_companion_identity_accepted (test_sign_catalog_contract.SignedCatalogContractTests.test_valid_existing_breakwater_companion_identity_accepted) ... ok
+test_valid_registered_game_tag_matches_version (test_sign_catalog_contract.SignedCatalogContractTests.test_valid_registered_game_tag_matches_version) ... ok
+test_wrong_release_tag_refused (test_sign_catalog_contract.SignedCatalogContractTests.test_wrong_release_tag_refused) ... ok
+test_wrong_release_version_refused (test_sign_catalog_contract.SignedCatalogContractTests.test_wrong_release_version_refused) ... ok
+test_changed_manifest_hash_is_rejected (test_verify_content_pack.ContentReleaseVerifierTests.test_changed_manifest_hash_is_rejected) ... ok
+test_duplicate_assets_rejected (test_verify_content_pack.ContentReleaseVerifierTests.test_duplicate_assets_rejected) ... /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/zipfile/__init__.py:1625: UserWarning: Duplicate name: 'assets/native/red-ledger/beckenburg/wall.rlprop'
+  return self._open_to_write(zinfo, force_zip64=force_zip64)
+ok
+test_missing_models_are_rejected (test_verify_content_pack.ContentReleaseVerifierTests.test_missing_models_are_rejected) ... ok
+test_nan_position_rejected_with_matching_hash (test_verify_content_pack.ContentReleaseVerifierTests.test_nan_position_rejected_with_matching_hash) ... ok
+test_other_games_assets_cannot_be_smuggled_in (test_verify_content_pack.ContentReleaseVerifierTests.test_other_games_assets_cannot_be_smuggled_in) ... ok
+test_out_of_range_uv_rejected_even_with_valid_digest (test_verify_content_pack.ContentReleaseVerifierTests.test_out_of_range_uv_rejected_even_with_valid_digest) ... ok
+test_real_model_is_accepted (test_verify_content_pack.ContentReleaseVerifierTests.test_real_model_is_accepted) ... ok
+
+======================================================================
+ERROR: test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes) (game='breakwater-battery')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_bundled_psx_content.py", line 33, in test_builds_actual_shipped_content_in_separate_game_scopes
+    result=tool.build(game,out,1,"0.1.0")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 56, in build
+    source,selected=source_files(game)
+                    ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 45, in source_files
+    raise ValueError("Missing checked-in game art: "+", ".join(missing))
+ValueError: Missing checked-in game art: ammo_box_mp_1.bwm, concrete_block_1.bwm, wooden_crate_1.bwm
+
+======================================================================
+ERROR: test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes) (game='omega-front')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_bundled_psx_content.py", line 33, in test_builds_actual_shipped_content_in_separate_game_scopes
+    result=tool.build(game,out,1,"0.1.0")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 56, in build
+    source,selected=source_files(game)
+                    ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 45, in source_files
+    raise ValueError("Missing checked-in game art: "+", ".join(missing))
+ValueError: Missing checked-in game art: concrete.png, steel.png
+
+======================================================================
+ERROR: test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets) (game='breakwater-battery')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_bundled_psx_content.py", line 18, in test_sources_are_real_repository_assets
+    root,files=tool.source_files(game)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 45, in source_files
+    raise ValueError("Missing checked-in game art: "+", ".join(missing))
+ValueError: Missing checked-in game art: ammo_box_mp_1.bwm, concrete_block_1.bwm, wooden_crate_1.bwm
+
+======================================================================
+ERROR: test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets) (game='omega-front')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_bundled_psx_content.py", line 18, in test_sources_are_real_repository_assets
+    root,files=tool.source_files(game)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 45, in source_files
+    raise ValueError("Missing checked-in game art: "+", ".join(missing))
+ValueError: Missing checked-in game art: concrete.png, steel.png
+
+======================================================================
+ERROR: test_sources_are_real_repository_assets (test_bundled_psx_content.BundledPSXContentTest.test_sources_are_real_repository_assets)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_bundled_psx_content.py", line 22, in test_sources_are_real_repository_assets
+    root,files=tool.source_files("breakwater-battery")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-bundled-psx-content.py", line 45, in source_files
+    raise ValueError("Missing checked-in game art: "+", ".join(missing))
+ValueError: Missing checked-in game art: ammo_box_mp_1.bwm, concrete_block_1.bwm, wooden_crate_1.bwm
+
+======================================================================
+ERROR: test_five_checked_in_geometry_assets_have_known_blob_hashes (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_five_checked_in_geometry_assets_have_known_blob_hashes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_psx_integration_acceptance.py", line 54, in test_five_checked_in_geometry_assets_have_known_blob_hashes
+    data=(source()/"beckenburg"/name).read_bytes()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1019, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/assets/native/breakwater/beckenburg/ammo_box_mp_1.bwm'
+
+======================================================================
+ERROR: test_full_room_content_merge_preserves_all_existing_private_models (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_full_room_content_merge_preserves_all_existing_private_models)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_red_ledger_owned_pack.py", line 55, in test_full_room_content_merge_preserves_all_existing_private_models
+    result=mod.build(output,3,"0.1.2",private)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-red-ledger-owned-pack.py", line 61, in build
+    raise ValueError("Missing approved owner-authored model: "+entry)
+ValueError: Missing approved owner-authored model: beckenburg/patron_gopnick.rlprop
+
+======================================================================
+ERROR: test_signed_ready_content_candidate_is_deterministic_and_verified (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_signed_ready_content_candidate_is_deterministic_and_verified)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_red_ledger_owned_pack.py", line 33, in test_signed_ready_content_candidate_is_deterministic_and_verified
+    first=mod.build(a,1,"0.1.0")
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/build-red-ledger-owned-pack.py", line 61, in build
+    raise ValueError("Missing approved owner-authored model: "+entry)
+ValueError: Missing approved owner-authored model: beckenburg/patron_gopnick.rlprop
+
+======================================================================
+FAIL: test_builds_actual_shipped_content_in_separate_game_scopes (test_bundled_psx_content.BundledPSXContentTest.test_builds_actual_shipped_content_in_separate_game_scopes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_bundled_psx_content.py", line 42, in test_builds_actual_shipped_content_in_separate_game_scopes
+    self.assertEqual(len(hashes),2)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_mutated_real_bytes_or_foreign_game_namespace_are_rejected (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_mutated_real_bytes_or_foreign_game_namespace_are_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_psx_integration_acceptance.py", line 92, in test_mutated_real_bytes_or_foreign_game_namespace_are_rejected
+    with self.assertRaisesRegex(ValueError,"Unapproved game asset"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_pack_and_independent_verify_are_reproducible (test_psx_integration_acceptance.PSXIntegrationAcceptance.test_pack_and_independent_verify_are_reproducible)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_psx_integration_acceptance.py", line 75, in test_pack_and_independent_verify_are_reproducible
+    self.assertEqual(validated["assets"],5)
+AssertionError: 2 != 5
+
+======================================================================
+FAIL: test_real_six_sources_and_hashes (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_real_six_sources_and_hashes) (file='beckenburg/patron_gopnick.rlprop')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_red_ledger_owned_pack.py", line 26, in test_real_six_sources_and_hashes
+    self.assertTrue(path.is_file())
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_real_six_sources_and_hashes (test_red_ledger_owned_pack.OwnerRedLedgerPackAcceptance.test_real_six_sources_and_hashes) (file='beckenburg/patron_pink_dress.rlprop')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/d76b27d6a834/ReverieVR/scripts/modules/test_red_ledger_owned_pack.py", line 26, in test_real_six_sources_and_hashes
+    self.assertTrue(path.is_file())
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 63 tests in 0.120s
+
+FAILED (failures=5, errors=8)

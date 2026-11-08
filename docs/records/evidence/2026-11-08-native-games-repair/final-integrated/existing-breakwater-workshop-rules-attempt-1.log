@@ -1,0 +1,16 @@
+{"command": ["python3", "/workspace/scratch/d76b27d6a834/repair-work/run_existing_rule_gates.py"], "layer": "five existing production rules/editor suites", "started_at": "2026-11-08T19:25:09.036541+00:00", "status": "running", "log": "existing-breakwater-workshop-rules-attempt-1.log", "timeout_seconds": 240}
+{"command": ["g++", "-std=c++17", "-O1", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Iapp/src/main/jni/native", "app/src/test/native/breakwater_campaign_test.cpp", "app/src/main/jni/native/breakwater_campaign.cpp", "-o", "/tmp/reverie-existing-rules-18b8s5w2/breakwater_campaign"]}
+Breakwater boat / landing / upgrade smoke passed
+PASS breakwater_campaign
+{"command": ["g++", "-std=c++17", "-O1", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Iapp/src/main/jni/native", "app/src/test/native/reverie_vr_workshop_test.cpp", "-o", "/tmp/reverie-existing-rules-18b8s5w2/reverie_vr_workshop"]}
+VR workshop editing, save slots, undo, play recovery and corrupt data PASS
+PASS reverie_vr_workshop
+{"command": ["g++", "-std=c++17", "-O1", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Iapp/src/main/jni/native", "app/src/test/native/reverie_vr_project_motion_test.cpp", "-o", "/tmp/reverie-existing-rules-18b8s5w2/reverie_vr_project_motion"]}
+PASS: VR authorable spin/bob/pulse, atomic scene+motion storage, legacy upgrade, undo and rejection
+PASS reverie_vr_project_motion
+{"command": ["g++", "-std=c++17", "-O1", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Iapp/src/main/jni/native", "app/src/test/native/reverie_vr_project_lighting_test.cpp", "-o", "/tmp/reverie-existing-rules-18b8s5w2/reverie_vr_project_lighting"]}
+PASS VR light anchor, attenuation parity, motion-follow, undo, V1->V2, atomic save failure
+PASS reverie_vr_project_lighting
+{"command": ["g++", "-std=c++17", "-O1", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Iapp/src/main/jni/native", "app/src/test/native/reverie_vr_project_sound_test.cpp", "-o", "/tmp/reverie-existing-rules-18b8s5w2/reverie_vr_project_sound"]}
+PASS VR sound cue binding, V3 save/migration, stereo distance, rate cap and undo
+PASS reverie_vr_project_sound

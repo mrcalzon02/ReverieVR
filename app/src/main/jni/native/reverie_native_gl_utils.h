@@ -24,9 +24,17 @@ static inline void ReverieNativeGlDiagnosticWriteV1(
     char *output, size_t capacity, const char *phase, const char *detail
 ) {
     if (output == NULL || capacity == 0u) return;
-    snprintf(output, capacity, "%s: %s",
-        phase != NULL ? phase : "GLES2",
-        detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+    const char *parts[3] = {
+        phase != NULL ? phase : "GLES2", ": ",
+        detail != NULL && detail[0] != '\0' ? detail : "no driver detail"
+    };
+    size_t used = 0u;
+    for (size_t part = 0u; part < 3u; ++part) {
+        const char *cursor = parts[part];
+        while (*cursor != '\0' && used < capacity - 1u)
+            output[used++] = *cursor++;
+    }
+    output[used] = '\0';
 }
 
 static inline GLuint ReverieNativeCompileShaderDiagnosticV1(

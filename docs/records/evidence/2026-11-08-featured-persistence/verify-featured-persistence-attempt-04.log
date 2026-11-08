@@ -1,0 +1,396 @@
+COMMAND ['bash', 'scripts/verify-featured-persistence.sh', '/workspace/scratch/d76b27d6a834/repair-work/featured/captures']
+In file included from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/red_ledger_module_save_test.cpp:1:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/red_ledger_module.cpp: In function ‘bool {anonymous}::IsTargetAvailable(const ModuleState*, WorkTarget)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/red_ledger_module.cpp:327:43: warning: suggest parentheses around ‘&&’ within ‘||’ [-Wparentheses]
+  327 |             return room==trade::Room::Bar && (
+      |                    ~~~~~~~~~~~~~~~~~~~~~~~^~~~
+  328 |                 drink_state
+      |                 ~~~~~~~~~~~                
+  329 |                     == DrinkState::None
+      |                     ~~~~~~~~~~~~~~~~~~~    
+  330 |                 && no_payment
+      |                 ~~~~~~~~~~~~~              
+  331 |                 && patron_waiting
+      |                 ~~~~~~~~~~~~~~~~~          
+  332 |                 && simulation.clean_cups() > 0
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  333 |             )
+      |             ~                              
+In file included from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/red_ledger_module.cpp:3:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/gumball_module_save_test.cpp: In function ‘int main(int, char**)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/gumball_module_save_test.cpp:71:5: warning: this ‘for’ clause does not guard... [-Wmisleading-indentation]
+   71 |     for(int i=0;i<30;++i)Update(state,&input);Pause(state);
+      |     ^~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/gumball_module_save_test.cpp:71:47: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+   71 |     for(int i=0;i<30;++i)Update(state,&input);Pause(state);
+      |                                               ^~~~~
+In file included from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:10,
+                 from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:8,
+                 from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/gumball_module_save_test.cpp:1:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:845:62:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:845:62:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:845:62:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:810:53:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:810:53:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/gumball_armada_module.cpp:810:53:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+MODULE_LOG 1 ReverieRedLedger Original Unreal shop icons loaded: 24/24
+MODULE_LOG 1 ReverieRedLedger Original Unreal product models loaded: 16/16
+MODULE_LOG 2 ReverieRedLedger Beckenburg curated meshes loaded: 0/14
+MODULE_LOG 1 ReverieRedLedger Owner-authored smoking meshes loaded: 4/4
+MODULE_LOG 2 ReverieRedLedger Real owner patron meshes loaded: 0/6
+MODULE_LOG 1 ReverieRedLedger Red Ledger real Lato font and static room geometry created.
+CAPTURE red-ledger-after-bar eye=0 hash=9849668973675488545 visible_pixels=127566
+CAPTURE red-ledger-after-bar eye=1 hash=2538119942987027313 visible_pixels=129306
+MODULE_LOG 0 ReverieRedLedger cup stack
+WRITE_OK state-v4.bin bytes=396 attempt=1
+MODULE_LOG 0 ReverieRedLedger tap
+WRITE_OK state-v4.bin bytes=396 attempt=2
+MODULE_LOG 0 ReverieRedLedger patron
+WRITE_OK state-v4.bin bytes=396 attempt=3
+MODULE_LOG 0 ReverieRedLedger payment
+FAULT_INJECTED write_save state-v4.bin bytes=396 attempt=4
+MODULE_LOG 2 ReverieRedLedger Red Ledger save failed; changes retained for retry.
+FAULT_INJECTED write_save state-v4.bin bytes=396 attempt=5
+CAPTURE red-ledger-after-save-warning eye=0 hash=11807722443116303697 visible_pixels=115385
+CAPTURE red-ledger-after-save-warning eye=1 hash=15392960959625152098 visible_pixels=115651
+WRITE_OK state-v4.bin bytes=396 attempt=6
+MODULE_LOG 1 ReverieRedLedger Red Ledger GL resources released.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MODULE_LOG 1 ReverieRedLedger Red Ledger checked economy, stock, renovations and clientele restored.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+PASS_RED_IDLE_RECOVERY cash=2480 pending=0 bytes=396
+MODULE_LOG 0 ReverieRedLedger cup stack
+WRITE_OK state-v4.bin bytes=396 attempt=7
+MODULE_LOG 0 ReverieRedLedger tap
+WRITE_OK state-v4.bin bytes=396 attempt=8
+MODULE_LOG 0 ReverieRedLedger patron
+WRITE_OK state-v4.bin bytes=396 attempt=9
+MODULE_LOG 0 ReverieRedLedger payment
+FAULT_INJECTED write_save state-v4.bin bytes=396 attempt=10
+MODULE_LOG 2 ReverieRedLedger Red Ledger save failed; changes retained for retry.
+FAULT_INJECTED write_save state-v4.bin bytes=396 attempt=11
+MODULE_LOG 1 ReverieRedLedger Red Ledger module paused.
+FAULT_INJECTED write_save state-v4.bin bytes=396 attempt=12
+WRITE_OK state-v4.bin bytes=396 attempt=13
+MODULE_LOG 1 ReverieRedLedger Red Ledger module paused.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MODULE_LOG 2 ReverieRedLedger Red Ledger save unavailable or corrupt; original retained, click to retry.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+MODULE_LOG 1 ReverieRedLedger Original Unreal shop icons loaded: 24/24
+MODULE_LOG 1 ReverieRedLedger Original Unreal product models loaded: 16/16
+MODULE_LOG 2 ReverieRedLedger Beckenburg curated meshes loaded: 0/14
+MODULE_LOG 1 ReverieRedLedger Owner-authored smoking meshes loaded: 4/4
+MODULE_LOG 2 ReverieRedLedger Real owner patron meshes loaded: 0/6
+MODULE_LOG 1 ReverieRedLedger Red Ledger real Lato font and static room geometry created.
+MODULE_LOG 2 ReverieRedLedger Red Ledger save unavailable or corrupt; original retained, click to retry.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module paused.
+CAPTURE red-ledger-save-recovery eye=0 hash=11535480178473815629 visible_pixels=119885
+CAPTURE red-ledger-save-recovery eye=1 hash=16034943750140231429 visible_pixels=121680
+MODULE_LOG 1 ReverieRedLedger Red Ledger checked economy, stock, renovations and clientele restored.
+CAPTURE red-ledger-recovered eye=0 hash=1495220500986180341 visible_pixels=134143
+CAPTURE red-ledger-recovered eye=1 hash=5341931494724261825 visible_pixels=132566
+MODULE_LOG 1 ReverieRedLedger Red Ledger GL resources released.
+MODULE_LOG 1 ReverieRedLedger Original Unreal shop icons loaded: 24/24
+MODULE_LOG 1 ReverieRedLedger Original Unreal product models loaded: 16/16
+MODULE_LOG 2 ReverieRedLedger Beckenburg curated meshes loaded: 0/14
+MODULE_LOG 1 ReverieRedLedger Owner-authored smoking meshes loaded: 4/4
+MODULE_LOG 2 ReverieRedLedger Real owner patron meshes loaded: 0/6
+MODULE_LOG 1 ReverieRedLedger Red Ledger real Lato font and static room geometry created.
+CAPTURE red-ledger-recovered-context eye=0 hash=1495220500986180341 visible_pixels=134143
+CAPTURE red-ledger-recovered-context eye=1 hash=5341931494724261825 visible_pixels=132566
+MODULE_LOG 1 ReverieRedLedger Red Ledger GL resources released.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MODULE_LOG 2 ReverieRedLedger Red Ledger save unavailable or corrupt; original retained, click to retry.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+MODULE_LOG 1 ReverieRedLedger Red Ledger checked economy, stock, renovations and clientele restored.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module resumed.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MODULE_LOG 1 ReverieRedLedger Red Ledger legacy composite validated; checked upgrade pending.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+WRITE_OK state-v4.bin bytes=396 attempt=14
+MODULE_LOG 1 ReverieRedLedger Red Ledger module paused.
+MODULE_LOG 0 ReverieRedLedger cup stack
+WRITE_OK state-v4.bin bytes=396 attempt=15
+MODULE_LOG 0 ReverieRedLedger tap
+WRITE_OK state-v4.bin bytes=396 attempt=16
+MODULE_LOG 0 ReverieRedLedger patron
+WRITE_OK state-v4.bin bytes=396 attempt=17
+MODULE_LOG 0 ReverieRedLedger payment
+FAULT_INJECTED visible-but-unacknowledged write_save state-v4.bin bytes=396 attempt=18
+MODULE_LOG 2 ReverieRedLedger Red Ledger save failed; changes retained for retry.
+FAULT_INJECTED visible-but-unacknowledged write_save state-v4.bin bytes=396 attempt=19
+WRITE_OK state-v4.bin bytes=396 attempt=20
+MODULE_LOG 1 ReverieRedLedger Red Ledger module paused.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+PASS actual Red Ledger payment failure/retry, Pause, prepare_exit, corruption/read protection, legacy import and real stereo recovery
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+WRITE_OK campaign.v1 bytes=4096 attempt=1
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=2
+MODULE_LOG 3 gumball-armada Full Gumball checkpoint failed; changes retained for retry
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=3
+WRITE_OK campaign.v1 bytes=4096 attempt=4
+WRITE_OK campaign.v1 bytes=4096 attempt=5
+WRITE_OK campaign.v1 bytes=4096 attempt=6
+WRITE_OK campaign.v1 bytes=4096 attempt=7
+WRITE_OK campaign.v1 bytes=4096 attempt=8
+WRITE_OK campaign.v1 bytes=4096 attempt=9
+FAULT_INJECTED visible-but-unacknowledged write_save campaign.v1 bytes=4096 attempt=10
+MODULE_LOG 3 gumball-armada Full Gumball checkpoint failed; changes retained for retry
+FAULT_INJECTED visible-but-unacknowledged write_save campaign.v1 bytes=4096 attempt=11
+WRITE_OK campaign.v1 bytes=4096 attempt=12
+CAPTURE gumball-flight-before-recreate eye=0 hash=4503214449296051931 visible_pixels=25506
+CAPTURE gumball-flight-before-recreate eye=1 hash=4618306667329437605 visible_pixels=25506
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+CAPTURE gumball-flight-after-recreate eye=0 hash=4503214449296051931 visible_pixels=25506
+CAPTURE gumball-flight-after-recreate eye=1 hash=4618306667329437605 visible_pixels=25506
+WRITE_OK campaign.v1 bytes=4096 attempt=13
+WRITE_OK campaign.v1 bytes=4096 attempt=14
+WRITE_OK campaign.v1 bytes=4096 attempt=15
+WRITE_OK campaign.v1 bytes=4096 attempt=16
+WRITE_OK campaign.v1 bytes=4096 attempt=17
+WRITE_OK campaign.v1 bytes=4096 attempt=18
+WRITE_OK campaign.v1 bytes=4096 attempt=19
+WRITE_OK campaign.v1 bytes=4096 attempt=20
+WRITE_OK campaign.v1 bytes=4096 attempt=21
+WRITE_OK campaign.v1 bytes=4096 attempt=22
+WRITE_OK campaign.v1 bytes=4096 attempt=23
+WRITE_OK campaign.v1 bytes=4096 attempt=24
+PASS_GUMBALL_ACTIVE_RESTORE elapsed=5.600 support_pulses=1 cash=72 bytes=4096
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=25
+MODULE_LOG 3 gumball-armada Full Gumball checkpoint failed; changes retained for retry
+CAPTURE gumball-after-save-warning eye=0 hash=14146122119742847176 visible_pixels=39727
+CAPTURE gumball-after-save-warning eye=1 hash=9633372426896320370 visible_pixels=39656
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=26
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=27
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=28
+WRITE_OK campaign.v1 bytes=4096 attempt=29
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=30
+MODULE_LOG 3 gumball-armada Full Gumball checkpoint failed; changes retained for retry
+FAULT_INJECTED write_save campaign.v1 bytes=4096 attempt=31
+CAPTURE gumball-ship-save-warning eye=0 hash=561709933606821796 visible_pixels=46633
+CAPTURE gumball-ship-save-warning eye=1 hash=2068658304202731785 visible_pixels=46601
+WRITE_OK campaign.v1 bytes=4096 attempt=32
+MODULE_LOG 2 gumball-armada Invalid full Gumball checkpoint; original retained
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+CAPTURE gumball-load-recovery eye=0 hash=4653078728410654393 visible_pixels=20866
+CAPTURE gumball-load-recovery eye=1 hash=6995852062377772690 visible_pixels=20712
+MODULE_LOG 2 gumball-armada Campaign read failed; retry before playing or saving
+MODULE_LOG 2 gumball-armada Construction read failed; original retained
+WRITE_OK campaign.v1 bytes=4096 attempt=33
+MODULE_LOG 2 gumball-armada Gumball persistent host unavailable; no save replaced
+PASS actual Gumball flight/save-failure/next-state/shipyard/read-corruption/legacy/prepare_exit and stereo checkpoint regression
+PASS actual featured persistence; stereo PPM captures: /workspace/scratch/d76b27d6a834/repair-work/featured/captures

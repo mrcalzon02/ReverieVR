@@ -109,3 +109,7 @@ The `reverie_native_lato_text.h` GLES2 helper is the shared genuine-font text ut
 ## Bounded panorama decoder opt-in — 2026-11-06
 
 The existing game-private/shared-use `omega_front_png.h::DecodePng` accepts an optional `maximumWidth` argument, default 512 and never exceeding 1024. Height remains bounded at 512; CRC validation and the 2MiB inflated-byte cap remain enforced. The exact shared panorama loader opts into 1024 for its archived indexed 1024×512 images. Existing Omega/material/sprite call sites keep the old default limit. Tests decode all four actual panorama files and reject their width under the default policy, corrupt CRCs, and overbroad opt-in requests.
+
+## Bounded shader diagnostics — 2026-11-08
+
+`ReverieNativeGlDiagnosticWriteV1` preserves the existing phase/detail message, defaults and NUL-terminated truncation contract using explicit bounded copies. It performs no allocation and writes nothing when the destination is null or capacity is zero. This removes the optimized GCC format-truncation warning without suppressing compiler diagnostics. The capacity/guard-byte regression is `app/src/test/native/native_gl_diagnostic_bounds_test.cpp`; actual module shaders still compile/link through the existing shared helpers.

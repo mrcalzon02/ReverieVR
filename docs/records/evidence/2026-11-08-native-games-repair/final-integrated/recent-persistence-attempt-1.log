@@ -1,0 +1,17 @@
+{"command": ["env", "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include", "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "EGL_PLATFORM=surfaceless", "LIBGL_ALWAYS_SOFTWARE=1", "bash", "scripts/verify-recent-game-persistence.sh"], "layer": "actual merged production module regression", "started_at": "2026-11-08T19:24:52.871448+00:00", "status": "running", "log": "recent-persistence-attempt-1.log", "timeout_seconds": 240}
+PASS actual Breakwater: read safety, dirty retry, earned wave/victory checkpoints, migration, corruption and guarded reset/exit
+Guess module: safe resume, New Seed, write/read faults, backup recovery, held input and rocker PASS
+Workshop recovery: valid-first fallback, all-bad retry, original-byte preservation, ambiguous writes and menu bounds PASS
+In file included from app/src/test/native/../../main/jni/native/test_chamber_module.cpp:10,
+                 from app/src/test/native/test_chamber_persistence_test.cpp:2:
+third_party/openktg/src/gentexture.hpp:18:3: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   18 |   {
+      |   ^
+In file included from third_party/openktg/src/gentexture.cpp:8:
+third_party/openktg/src/gentexture.hpp:18:3: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   18 |   {
+      |   ^
+third_party/openktg/src/gentexture.cpp:147:13: warning: ‘sF32 PNoise2(sInt, sInt, sInt, sInt, sInt)’ defined but not used [-Wunused-function]
+  147 | static sF32 PNoise2(sInt x,sInt y,sInt maskx,sInt masky,sInt seed)
+      |             ^~~~~~~
+Test Chamber module: valid fallback, dirty pause/exit retry, applied-error writes, held input, recreation and all-bad recovery PASS

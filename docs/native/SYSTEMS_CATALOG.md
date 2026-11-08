@@ -1,5 +1,16 @@
 ## Shared native wardrobe apparel renderer — 2026-10-26
 
+## Checked native session checkpoints — 2026-11-08
+
+Game-private `classic_games_save.h`, `red_ledger_save.h`,
+`gumball_campaign_save.h`, `recon_projects_save.h` and
+`guess_the_door_save.h` implement the title-specific checked snapshots and
+recovery described in `RUNTIME_SERVICES.md`. They are not new shared SDK
+formats. Breakwater keeps its checkpoint helper, and Test Chamber keeps its
+bounded workshop slots. The shared service change is the append-only,
+size-gated `prepare_exit` callback plus acknowledged parent-directory flush;
+see `API_V1.md` and `SDK_HELPERS.md`.
+
 Source-implemented reusable `reverie_native_avatar_wardrobe.h` defines
 profile-driven, low-poly geometry for 24 outfits, 12 hairstyles,
 16 headwear choices, 16 accessories and 4 eye styles. Each optional
@@ -269,3 +280,7 @@ promoted. Sources and reproduction: `docs/project/BREAKWATER_SOUND_SOURCES.md`.
 ### Shared visual asset catalog
 
 **Implemented (source integration; device proof pending):** `reverie_native_shared_asset_catalog.h` provides host-scoped exact grants for nineteen `native/shared/v1/` assets, sixteen 64×64 coastal textures and three BWM1 compiled prop models. Breakwater reads them through existing PNG and BWM parsers; Omega Front reuses shared concrete and steel in its existing texture renderer, eliminating the old duplicate packaged files. `shared-assets/catalog-v1.json` and `scripts/verify-shared-native-assets.py` provide a versioned cross-repository source manifest and source-byte regression. See [shared assets](SHARED_ASSETS.md) (source: `docs/native/SHARED_ASSETS.md`). This is *not* a networked/shared-package cache and does not grant arbitrary native games reads.
+
+## Shared asset path ownership review — 2026-11-08
+
+The existing exact shared path catalog is `app/src/main/jni/native/reverie_native_shared_asset_catalog.h`; game-specific read admission is `app/src/main/jni/native/reverie_native_asset_scope.h`. Their current contract is `docs/native/SHARED_ASSETS.md` with `docs/native/PROCEDURAL_CONTENT_STANDARD.md`. This catalog repair records those existing authoritative sources and changes no runtime asset permissions.

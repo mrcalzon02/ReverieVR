@@ -92,10 +92,10 @@ int main(){
     // Corruption, duplicate ID, illegal values, and dangling asset bindings
     // must not partially replace the current project.
     s.present[2]=true;s.data[2]="RVPROJECT\t1\nscene\t999999\n";
-    assert(!restore.NextProject(store)&&restore.slot==1);
+    assert(!restore.LoadSlot(2,store)&&restore.slot==1);
     s.data[2]=EncodeVrBundle(EncodeVrScene(seed),
         "RVMOTION\t1\nmotion\tmissing\tSPIN\t1\t1\n");
-    assert(!restore.NextProject(store)&&restore.slot==1);
+    assert(!restore.LoadSlot(2,store)&&restore.slot==1);
     const std::string legal=EncodeVrBundle(EncodeVrScene(seed),
         EncodeMotions(seed,{VrMotion{"crate01",VrMotionKind::Bob,1.,.5}}));
     assert(!invalid(legal));

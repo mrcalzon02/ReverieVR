@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-08",
+  "module": "classic-snake (shared classic Update input-copy path)",
+  "prefix_sizes": [
+    24,
+    52,
+    80
+  ],
+  "before": {
+    "build_exit": 0,
+    "run_exit": 1,
+    "observation": "AddressSanitizer reports an 80-byte read from a 24-byte allocation at the full structure copy",
+    "log": "classic-input-prefix-before.log"
+  },
+  "scratch_bounded_copy_candidate": {
+    "build_exit": 0,
+    "run_exit": 0,
+    "observation": "All three supported prefixes accepted without ASan or UBSan diagnostics"
+  },
+  "integrated_authoritative_source": {
+    "build_exit": 0,
+    "run_exit": 0,
+    "observation": "All three supported prefixes accepted without ASan or UBSan diagnostics",
+    "log": "classic-input-prefix-after.log"
+  },
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "leak_detection": "Disabled: environment tracing prevents LeakSanitizer operation; no leak-check pass claimed",
+  "limits": [
+    "No render callback is invoked",
+    "No Android APK, physical controller or headset execution",
+    "The single shared pre-branch copy is exercised using CLASSIC_GAME_KIND=1"
+  ],
+  "packaged_verifier": {
+    "compile_and_execute_exit": 0,
+    "observation": "The packaged verifier ran against authoritative native sources through a scratch validation tree and accepted all three prefixes"
+  }
+}

@@ -1,0 +1,6 @@
+{"command": ["bash", "scripts/verify-classic-pong.sh"], "layer": "production rules/CPU", "started_at": "2026-11-08T19:24:03.145941+00:00", "status": "running", "log": "classic-rules-attempt-1.log", "timeout_seconds": 360}
+Testing classic_pong_dynamics with g++
+Pong swing transfer, inverse braking, rebound bounds, and CPU target passed
+Testing classic_games with g++
+Classic Breakout physics, scoring and lives passed\nCheckers, Go 19x19 and Chess deterministic rules/CPU passed\nReversi 8x8 flip, pass, scores and CPU passed\nClassic games deterministic simulation passed
+SKIP clang++ (not installed)

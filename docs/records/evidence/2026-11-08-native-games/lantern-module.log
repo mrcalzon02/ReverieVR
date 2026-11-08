@@ -1,0 +1,67 @@
+COMMAND ['g++', '-std=c++17', '-O1', '-Wall', '-Wextra', '-Wpedantic', '-Iapp/src/main/jni/native', '-I/workspace/scratch/d76b27d6a834/audit-work/featured', '-DRECON_PROJECT_KIND=0', '/workspace/scratch/d76b27d6a834/audit-work/featured/recon_module_probe.cpp', 'app/src/main/jni/native/lantern_desk_simulation.cpp', '-lEGL', '-lGLESv2', '-lz', '-o', '/workspace/scratch/d76b27d6a834/audit-work/featured/lantern_module_probe']
+In file included from /workspace/scratch/d76b27d6a834/audit-work/featured/recon_module_probe.cpp:1:
+app/src/main/jni/native/recon_projects_module.cpp:289:1: warning: missing initializer for member ‘ReverieNativeModuleApiV1::prepare_frame’ [-Wmissing-field-initializers]
+  289 | };
+      | ^
+In file included from app/src/main/jni/native/recon_projects_module.cpp:3:
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+COMMAND ['/workspace/scratch/d76b27d6a834/audit-work/featured/lantern_module_probe', '/workspace/scratch/d76b27d6a834/audit-work/featured']
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE ministry-lantern-desk-briefing eye=0 hash=5907047432432594175 visible_pixels=20265
+CAPTURE ministry-lantern-desk-briefing eye=1 hash=17005420489586962806 visible_pixels=20242
+CAPTURE lantern-photo eye=0 hash=6274641131390968278 visible_pixels=24649
+CAPTURE lantern-photo eye=1 hash=16175224571007411546 visible_pixels=24515
+CAPTURE lantern-filed eye=0 hash=7390228750863334741 visible_pixels=24723
+CAPTURE lantern-filed eye=1 hash=3445269222117660785 visible_pixels=24678
+OBSERVED_LANTERN_NEXT_SORTIE credibility=0 operational_effect=0 after +3/+2 report
+CAPTURE ministry-lantern-desk-before-context-loss eye=0 hash=5907047432432594175 visible_pixels=20265
+CAPTURE ministry-lantern-desk-before-context-loss eye=1 hash=17005420489586962806 visible_pixels=20242
+CAPTURE ministry-lantern-desk-after-context-loss eye=0 hash=5907047432432594175 visible_pixels=20265
+CAPTURE ministry-lantern-desk-after-context-loss eye=1 hash=17005420489586962806 visible_pixels=20242
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+OBSERVED_RECON_LIFECYCLE module=ministry-lantern-desk read_save_calls=0 write_save_calls=0
+PASS actual recon module control/render/lifecycle audit (prototype scope gaps remain)

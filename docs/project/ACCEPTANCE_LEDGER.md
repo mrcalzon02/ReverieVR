@@ -1,3 +1,23 @@
+## 2026-11-08 — Native-game repairs, source and local execution
+
+**Accepted at the demonstrated source/host layer:** code checkpoint
+`9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c`; 21/21 final groups passed with
+one shared source fingerprint. All eight classics preserve exact snapshots;
+Red/Gumball use full checked sessions; Breakwater protects slots, earned
+boundaries and reset intent; Guess preserves deterministic progress; Test
+Chamber recovers valid projects and guards dirty edits; Lantern/Forward retain
+their actual board-session consequences. Shared pause/input/exit/durable-write
+contracts and bounded Red Ledger sound shutdown are covered at the documented
+execution layers. The independently authored Breakwater sound overhaul is
+preserved and its retry interaction is tested in actual Update.
+
+**Not accepted by these results:** current repaired-source Android packaging,
+installed shell recovery, physical controllers/headset/audio, thermal/frame
+budgets, real power-loss storage, complete intended campaigns or Sitka
+admission. The per-game completion tracks remain in the
+[repair matrix and evidence](../records/evidence/2026-11-08-native-games-repair/README.md).
+No publication criterion is weakened or replaced by visual diagnostics.
+
 ## 2026-11-08 — Breakwater sound overhaul
 
 **RV-0640-AUDIO-20261108 | Source, local tests, full Android build and signed
@@ -15,6 +35,14 @@ matching embedded source and all 46 exact uncompressed WAVs. Accept
 reference-device sound only after listening to controls, combat,
 night/boat/aircraft loops, music coexistence, Quick Menu, controller loss,
 focus/output interruption and resume. Device latency/thermal proof is open.
+
+## 2026-11-08 — Native-library audit and recovery evidence
+
+**Audit accepted as diagnostic evidence; game completion remains open.** Production baseline `12d4018c`, sixteen registered modules plus source-only Sitka. [Report](../records/2026-11-08-native-games-release-audit.md), [evidence](../records/evidence/2026-11-08-native-games/README.md), and per-title matrix record current functions and observable completion stages.
+
+Actual module tests reproduce missing saves in eight classics/Guess/Lantern/Forward, Red/Gumball/Breakwater preservation failures, Snake button mismatch and Guess restart double action. Omega complete-session restore after recovered-storage Pause retry passes. Twenty Chess reference move-tree checks and eight actual input/menu scenarios pass without reproducing the reported incident. Shared Quick Menu simulation/release behavior is source-traced; no new Android menu replay is claimed. Thirteen retrieved Android tests and sixteen real initial frames are parent-revision emulator evidence, not physical-device acceptance.
+
+The diagnostic runner passes graceful interruption, corrupt unselected-log rejection, live-orphan exclusion, explicit cleaned recovery and TERM-ignoring descendant cleanup checks. No game fix, completed full campaign, new signed candidate or physical S9/Daydream acceptance is claimed. Required existing publication policy is unchanged; visual/style/balance findings remain diagnostics. Explicit approval is pending only for publishing the prepared audit-only repository changes after automatic review blocked that remote action.
 
 ## 2026-11-07 — Sitka starter harbor loop
 

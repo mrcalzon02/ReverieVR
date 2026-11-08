@@ -13,11 +13,11 @@ for compiler in g++ clang++; do
     continue
   fi
   ran=$((ran + 1))
-  for name in red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout red_ledger_original_assets red_ledger_owned_smoking red_ledger_signage red_ledger_mug_mesh red_ledger_static_geometry red_ledger_simulation red_ledger_clientele; do
+  for name in red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout red_ledger_original_assets red_ledger_owned_smoking red_ledger_signage red_ledger_mug_mesh red_ledger_static_geometry red_ledger_simulation red_ledger_clientele red_ledger_save; do
     extra=()
     if [[ "$name" == red_ledger_static_geometry ]]; then
       extra=("$INC/red_ledger_static_geometry.cpp")
-    elif [[ "$name" == red_ledger_simulation || "$name" == red_ledger_faction_integration || "$name" == red_ledger_wholesale ]]; then
+    elif [[ "$name" == red_ledger_simulation || "$name" == red_ledger_faction_integration || "$name" == red_ledger_wholesale || "$name" == red_ledger_save ]]; then
       extra=("$INC/red_ledger_simulation.cpp")
     fi
     link=()

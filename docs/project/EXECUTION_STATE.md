@@ -1,3 +1,28 @@
+## 2026-11-08 — Native-game repair integration completed locally
+
+**Source checkpoint:** `9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c`, following
+`3af395812fc062505e6afa05ff3a06063198189d`. All sixteen registered modules
+participate in save-aware exit; the eleven titles previously without saves
+now preserve their tested game/session boundaries. Shared Quick Menu pause,
+input rearm, brief-tap delivery and durable host writes are repaired. Red,
+Gumball, Breakwater, Guess, Test Chamber and the two recon boards have the
+recorded fault/recovery and readability repairs. Sitka remains source-only.
+
+**Verified:** final 20-group integrated run plus one independent Red Ledger
+audio lifecycle run, all passing on identical source fingerprint
+`0b093c03f3b39e3c0453ee6540099ede920b30030ad8f7b8b4369df86a1627cc`.
+The concurrent Breakwater audio work and its separately verified release
+receipt at `e96cb946` are preserved. That earlier APK does not contain or
+certify this broader repair checkpoint. [Repair record](../records/2026-11-08-native-game-repair-operations.md)
+and [hashed evidence](../records/evidence/2026-11-08-native-games-repair/README.md)
+retain exact layers, failed/fixed probes and all original completion tracks.
+
+**Next:** publish the concrete source checkpoint when authorized; execute
+one authorized current-source Android/installed-hub validation, then physical
+S9/Daydream save/menu/input/audio and sustained performance acceptance.
+No new workflow, repaired-source APK release or conservatively completed game
+is claimed. Existing development admission and publication policy remain.
+
 ## 2026-11-08 — Breakwater shared-library sound overhaul
 
 **Intent and source:** overhaul the hosted Breakwater game's control, combat
@@ -28,6 +53,16 @@ reviewed bank byte-for-byte; every release payload checksum passes.
 music coexistence, loop joins, interrupted-output recovery and sustained
 thermal behavior. The unified APK is published and independently checked;
 physical device acceptance remains open.
+
+## 2026-11-08 — Complete native-library diagnostic audit
+
+**Audited production baseline:** `12d4018c90e56a3767b8ffc58a2e5394440caec1`. All sixteen registered native modules plus source-only Sitka have individual current-state, preservation, menu/QoL and intended-completion tracks in [the consolidated audit](../records/2026-11-08-native-games-release-audit.md), with [compact evidence and matrix](../records/evidence/2026-11-08-native-games/README.md). No production game source, workflow or APK changed in this audit.
+
+**Verified findings:** eleven registered modules make no save calls and lose progress on recreation; Red/Gumball/Breakwater have reproduced persistence faults; Snake's visible UP/DOWN buttons and Guess's New Seed transition fail actual module input probes. Shared Quick Menu continues updates and has a source-traced dropped-release path; Home destroys/recreates the native module. Omega's rejected-write/Pause/recreate session recovery passes. The reported Chess illegal move remains unreplicated after independent rule/input checks. Sitka remains unregistered despite passing synthetic source integrations.
+
+**Evidence limits:** current phone publisher workflow only ran its gate, with build-and-release skipped. Retrieved parent-revision Android integration ran thirteen tests and captured sixteen modules; no physical S9/Daydream acceptance is claimed. Broad package diagnostics and the stale Test Chamber doc guard remain failed. Existing development-APK publication policy is unchanged; completed-game acceptance is separately defined. The new diagnostic runner has executed corruption/interruption/orphan/descendant recovery checks; full logs and attempts are retained.
+
+**Next:** shared menu pause/release and Breakwater slot safety, then exact classic persistence; parallel Sitka world assembly/admission. Audit-only repository publication awaits explicit approval after automatic approval review rejected a push under the audit request. Preserve the completed evidence and use the per-title exit criteria; do not restart the same baseline audit or label these games completed.
 
 ## 2026-11-07 — Sitka starter harbor gameplay iteration
 

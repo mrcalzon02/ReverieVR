@@ -63,9 +63,11 @@ int main(){
     m.fail=false;
     assert(restored.Save(m.store()));
     m.data[2]="CORRUPT";m.present[2]=true;
-    assert(!restored.NextProject(m.store())&&restored.slot==1);
+    assert(!restored.LoadSlot(2,m.store())&&restored.slot==1);
     assert(restored.last_error=="CORRUPT PROJECT");
     assert(restored.scene.pieces.size()==2);
+    assert(restored.NextProject(m.store())&&restored.slot==0);
+    assert(restored.blocked_slots[2]&&m.data[2]=="CORRUPT");
     assert(!ScenePlayable(Scene{"white_room",{Piece{"bad","obj","thing.obj",0,0,-2,0,1}}}));
     assert(ParseScene(EncodeVrScene(restored.scene)).pieces.size()==2);
     std::cout<<"VR workshop editing, save slots, undo, play recovery and corrupt data PASS\n";

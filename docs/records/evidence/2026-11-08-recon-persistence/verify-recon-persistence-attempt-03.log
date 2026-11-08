@@ -1,0 +1,254 @@
+COMMAND ['bash', 'scripts/verify-recon-persistence.sh', '--gles', '/workspace/scratch/d76b27d6a834/repair-work/featured/recon-captures']
+Lantern Desk evidence-to-report cycle passed
+Forward Detachment patrol-to-debrief cycle passed
+PASS recon exact-phase/choice/evidence/results, cumulative sorties, finite patrol fuel, explicit refit, corrupt transactional rejection
+In file included from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/recon_projects_module.cpp:3,
+                 from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/recon_module_save_test.cpp:1:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+WRITE_OK session-v1.bin bytes=128 attempt=1
+WRITE_OK session-v1.bin bytes=128 attempt=2
+CAPTURE lantern-briefing-before eye=0 hash=10497330244199096342 visible_pixels=23122
+CAPTURE lantern-briefing-before eye=1 hash=940426299008648288 visible_pixels=23144
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE lantern-briefing-after eye=0 hash=10497330244199096342 visible_pixels=23122
+CAPTURE lantern-briefing-after eye=1 hash=940426299008648288 visible_pixels=23144
+WRITE_OK session-v1.bin bytes=128 attempt=3
+CAPTURE lantern-in-flight-before eye=0 hash=11793792321934479754 visible_pixels=18872
+CAPTURE lantern-in-flight-before eye=1 hash=5098671317680256335 visible_pixels=18966
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE lantern-in-flight-after eye=0 hash=11793792321934479754 visible_pixels=18872
+CAPTURE lantern-in-flight-after eye=1 hash=5098671317680256335 visible_pixels=18966
+WRITE_OK session-v1.bin bytes=128 attempt=4
+WRITE_OK session-v1.bin bytes=128 attempt=5
+WRITE_OK session-v1.bin bytes=128 attempt=6
+WRITE_OK session-v1.bin bytes=128 attempt=7
+CAPTURE lantern-photo-before eye=0 hash=2449246740672143449 visible_pixels=25724
+CAPTURE lantern-photo-before eye=1 hash=14414602521975125231 visible_pixels=25618
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE lantern-photo-after eye=0 hash=2449246740672143449 visible_pixels=25724
+CAPTURE lantern-photo-after eye=1 hash=14414602521975125231 visible_pixels=25618
+FAULT_INJECTED write_save session-v1.bin bytes=128 attempt=8
+MODULE_LOG 2 ministry-lantern-desk Checkpoint failed; latest progress retained for retry
+FAULT_INJECTED write_save session-v1.bin bytes=128 attempt=9
+CAPTURE lantern-save-warning eye=0 hash=11707050559248261508 visible_pixels=28387
+CAPTURE lantern-save-warning eye=1 hash=9071711917693725693 visible_pixels=28426
+WRITE_OK session-v1.bin bytes=128 attempt=10
+CAPTURE lantern-filed-before eye=0 hash=6317859039698678544 visible_pixels=24928
+CAPTURE lantern-filed-before eye=1 hash=143238791220946653 visible_pixels=24991
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE lantern-filed-after eye=0 hash=6317859039698678544 visible_pixels=24928
+CAPTURE lantern-filed-after eye=1 hash=143238791220946653 visible_pixels=24991
+WRITE_OK session-v1.bin bytes=128 attempt=11
+CAPTURE lantern-next-sortie-before eye=0 hash=4516793543634531710 visible_pixels=22715
+CAPTURE lantern-next-sortie-before eye=1 hash=288261374433054055 visible_pixels=22680
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE lantern-next-sortie-after eye=0 hash=4516793543634531710 visible_pixels=22715
+CAPTURE lantern-next-sortie-after eye=1 hash=288261374433054055 visible_pixels=22680
+WRITE_OK session-v1.bin bytes=128 attempt=12
+WRITE_OK session-v1.bin bytes=128 attempt=13
+WRITE_OK session-v1.bin bytes=128 attempt=14
+FAULT_INJECTED visible-but-unacknowledged write_save session-v1.bin bytes=128 attempt=15
+MODULE_LOG 2 ministry-lantern-desk Checkpoint failed; latest progress retained for retry
+FAULT_INJECTED visible-but-unacknowledged write_save session-v1.bin bytes=128 attempt=16
+WRITE_OK session-v1.bin bytes=128 attempt=17
+CAPTURE lantern-second-report-before eye=0 hash=5337927513939028224 visible_pixels=20161
+CAPTURE lantern-second-report-before eye=1 hash=15313189007255200660 visible_pixels=20261
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+CAPTURE lantern-second-report-after eye=0 hash=5337927513939028224 visible_pixels=20161
+CAPTURE lantern-second-report-after eye=1 hash=15313189007255200660 visible_pixels=20261
+WRITE_OK session-v1.bin bytes=128 attempt=18
+PASS_LANTERN cumulative trust=5 effect=3; all four phases/evidence/choice/results recreated exactly
+MODULE_LOG 2 ministry-lantern-desk Checkpoint unavailable or corrupt; original retained, Select retries
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+MODULE_LOG 2 ministry-lantern-desk Checkpoint unavailable or corrupt; original retained, Select retries
+CAPTURE lantern-read-recovery eye=0 hash=10496032157001952460 visible_pixels=20504
+CAPTURE lantern-read-recovery eye=1 hash=5583772720772502958 visible_pixels=20506
+MODULE_LOG 2 ministry-lantern-desk Checkpoint unavailable or corrupt; original retained, Select retries
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+MODULE_LOG 2 ministry-lantern-desk Checkpoint unavailable or corrupt; original retained, Select retries
+MODULE_LOG 1 ministry-lantern-desk Native prototype started
+PASS lantern actual module fault/retry/current-phase recreation, held-input safety, exact stereo and guarded exit
+In file included from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/recon_projects_module.cpp:3,
+                 from /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/test/native/recon_module_save_test.cpp:1:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at /workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+/workspace/scratch/d76b27d6a834/repair-work/featured/repo/app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+WRITE_OK session-v1.bin bytes=128 attempt=1
+CAPTURE forward-travelling-before eye=0 hash=12996908238141002609 visible_pixels=20679
+CAPTURE forward-travelling-before eye=1 hash=9150422435359432967 visible_pixels=20642
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-travelling-after eye=0 hash=12996908238141002609 visible_pixels=20679
+CAPTURE forward-travelling-after eye=1 hash=9150422435359432967 visible_pixels=20642
+WRITE_OK session-v1.bin bytes=128 attempt=2
+WRITE_OK session-v1.bin bytes=128 attempt=3
+WRITE_OK session-v1.bin bytes=128 attempt=4
+CAPTURE forward-contact-before eye=0 hash=14396044427968841091 visible_pixels=27156
+CAPTURE forward-contact-before eye=1 hash=17455837117168928731 visible_pixels=27223
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-contact-after eye=0 hash=14396044427968841091 visible_pixels=27156
+CAPTURE forward-contact-after eye=1 hash=17455837117168928731 visible_pixels=27223
+FAULT_INJECTED write_save session-v1.bin bytes=128 attempt=5
+MODULE_LOG 2 iron-sight-forward-detachment Checkpoint failed; latest progress retained for retry
+FAULT_INJECTED write_save session-v1.bin bytes=128 attempt=6
+FAULT_INJECTED write_save session-v1.bin bytes=128 attempt=7
+CAPTURE forward-save-warning eye=0 hash=4043537350400738323 visible_pixels=23876
+CAPTURE forward-save-warning eye=1 hash=15860382000111971298 visible_pixels=23898
+WRITE_OK session-v1.bin bytes=128 attempt=8
+CAPTURE forward-resolved-before eye=0 hash=17835034762686120411 visible_pixels=20417
+CAPTURE forward-resolved-before eye=1 hash=1370669687360953958 visible_pixels=20463
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-resolved-after eye=0 hash=17835034762686120411 visible_pixels=20417
+CAPTURE forward-resolved-after eye=1 hash=1370669687360953958 visible_pixels=20463
+WRITE_OK session-v1.bin bytes=128 attempt=9
+CAPTURE forward-returned-before eye=0 hash=18296866311200978491 visible_pixels=20150
+CAPTURE forward-returned-before eye=1 hash=16643559312811607279 visible_pixels=20082
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-returned-after eye=0 hash=18296866311200978491 visible_pixels=20150
+CAPTURE forward-returned-after eye=1 hash=16643559312811607279 visible_pixels=20082
+WRITE_OK session-v1.bin bytes=128 attempt=10
+CAPTURE forward-debriefed-before eye=0 hash=5064514835890518848 visible_pixels=25956
+CAPTURE forward-debriefed-before eye=1 hash=5419924104514691787 visible_pixels=26141
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-debriefed-after eye=0 hash=5064514835890518848 visible_pixels=25956
+CAPTURE forward-debriefed-after eye=1 hash=5419924104514691787 visible_pixels=26141
+WRITE_OK session-v1.bin bytes=128 attempt=11
+CAPTURE forward-next-patrol-before eye=0 hash=6562777606745390565 visible_pixels=27503
+CAPTURE forward-next-patrol-before eye=1 hash=13529040640977475078 visible_pixels=27668
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-next-patrol-after eye=0 hash=6562777606745390565 visible_pixels=27503
+CAPTURE forward-next-patrol-after eye=1 hash=13529040640977475078 visible_pixels=27668
+WRITE_OK session-v1.bin bytes=128 attempt=12
+CAPTURE forward-insufficient-fuel eye=0 hash=446209787744373282 visible_pixels=29871
+CAPTURE forward-insufficient-fuel eye=1 hash=14597125107642022372 visible_pixels=29907
+WRITE_OK session-v1.bin bytes=128 attempt=13
+WRITE_OK session-v1.bin bytes=128 attempt=14
+CAPTURE forward-service-cancel-before eye=0 hash=4211643967216997675 visible_pixels=24418
+CAPTURE forward-service-cancel-before eye=1 hash=11553134831899803863 visible_pixels=24473
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-service-cancel-after eye=0 hash=4211643967216997675 visible_pixels=24418
+CAPTURE forward-service-cancel-after eye=1 hash=11553134831899803863 visible_pixels=24473
+WRITE_OK session-v1.bin bytes=128 attempt=15
+WRITE_OK session-v1.bin bytes=128 attempt=16
+WRITE_OK session-v1.bin bytes=128 attempt=17
+WRITE_OK session-v1.bin bytes=128 attempt=18
+WRITE_OK session-v1.bin bytes=128 attempt=19
+WRITE_OK session-v1.bin bytes=128 attempt=20
+WRITE_OK session-v1.bin bytes=128 attempt=21
+WRITE_OK session-v1.bin bytes=128 attempt=22
+CAPTURE forward-empty-fuel eye=0 hash=5896468486442074780 visible_pixels=29077
+CAPTURE forward-empty-fuel eye=1 hash=13064740517004851091 visible_pixels=29167
+WRITE_OK session-v1.bin bytes=128 attempt=23
+WRITE_OK session-v1.bin bytes=128 attempt=24
+WRITE_OK session-v1.bin bytes=128 attempt=25
+WRITE_OK session-v1.bin bytes=128 attempt=26
+FAULT_INJECTED visible-but-unacknowledged write_save session-v1.bin bytes=128 attempt=27
+MODULE_LOG 2 iron-sight-forward-detachment Checkpoint failed; latest progress retained for retry
+FAULT_INJECTED visible-but-unacknowledged write_save session-v1.bin bytes=128 attempt=28
+CAPTURE forward-refit-save-warning eye=0 hash=10227830528356151930 visible_pixels=31214
+CAPTURE forward-refit-save-warning eye=1 hash=9230970750459482129 visible_pixels=31371
+WRITE_OK session-v1.bin bytes=128 attempt=29
+CAPTURE forward-confirmed-refit-before eye=0 hash=3920056725520190686 visible_pixels=27755
+CAPTURE forward-confirmed-refit-before eye=1 hash=6480698246583496569 visible_pixels=27936
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+CAPTURE forward-confirmed-refit-after eye=0 hash=3920056725520190686 visible_pixels=27755
+CAPTURE forward-confirmed-refit-after eye=1 hash=6480698246583496569 visible_pixels=27936
+PASS_FORWARD normal continuation retains75/10, safe second patrol75/0, Cancel unchanged, explicit confirmed refit100/20
+MODULE_LOG 2 iron-sight-forward-detachment Checkpoint unavailable or corrupt; original retained, Select retries
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+MODULE_LOG 2 iron-sight-forward-detachment Checkpoint unavailable or corrupt; original retained, Select retries
+CAPTURE forward-read-recovery eye=0 hash=13255599478613559099 visible_pixels=24047
+CAPTURE forward-read-recovery eye=1 hash=17173460753468060619 visible_pixels=24049
+MODULE_LOG 2 iron-sight-forward-detachment Checkpoint unavailable or corrupt; original retained, Select retries
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+MODULE_LOG 2 iron-sight-forward-detachment Checkpoint unavailable or corrupt; original retained, Select retries
+MODULE_LOG 1 iron-sight-forward-detachment Native prototype started
+PASS forward actual module fault/retry/current-phase recreation, held-input safety, exact stereo and guarded exit
+PASS actual recon module persistence; stereo PPM captures: /workspace/scratch/d76b27d6a834/repair-work/featured/recon-captures

@@ -1,0 +1,30 @@
+{
+  "source_baseline": "12d4018c90e56a3767b8ffc58a2e5394440caec1",
+  "checkout_head": "8a5196aa97a73cdae1393e27529bd51914fc1b0f",
+  "build_command": [
+    "g++",
+    "-std=c++17",
+    "-O1",
+    "-pthread",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-Wl,--gc-sections",
+    "-DCLASSIC_GAME_KIND=1",
+    "-I",
+    "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+    "-I",
+    "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+    "/workspace/scratch/d76b27d6a834/audit-work/classics/snake_pointer_probe.cpp",
+    "-o",
+    "/workspace/scratch/d76b27d6a834/audit-work/classics/snake_pointer_probe"
+  ],
+  "build_exit": 0,
+  "build_output": "",
+  "fixture": "Fresh Create(nullptr) for each case; no direct mutation of game state. Pointer rays from origin through exact rendered rectangle centers (z=-2.97), or control points on input plane z=-2.91. Primary sequence0,1,0; three extra0.1s production updates; unused graphics linked out.",
+  "run_command": [
+    "/workspace/scratch/d76b27d6a834/audit-work/classics/snake_pointer_probe"
+  ],
+  "run_exit": 1,
+  "output": "visible_up_background_center world=(0,1.020000,-2.970000) hit_plane_y=0.999394 primary_sequence=0,1,0 fresh_edge=1 released_after_click=1 initial_direction=RIGHT initial_head=77 expected_direction=UP desired_after_press=RIGHT moving_after_press=1 actual_heading_after_tick=RIGHT actual_head=78 expected_head=65 result=FAIL_DIRECTION_TARGET\nvisible_down_background_center world=(0,-1.020000,-2.970000) hit_plane_y=-0.999394 primary_sequence=0,1,0 fresh_edge=1 released_after_click=1 initial_direction=RIGHT initial_head=77 expected_direction=DOWN desired_after_press=RIGHT moving_after_press=1 actual_heading_after_tick=RIGHT actual_head=78 expected_head=89 result=FAIL_DIRECTION_TARGET\naccepted_up_region_control world=(0,1.500000,-2.910000) hit_plane_y=1.500000 primary_sequence=0,1,0 fresh_edge=1 released_after_click=1 initial_direction=RIGHT initial_head=77 expected_direction=UP desired_after_press=UP moving_after_press=1 actual_heading_after_tick=UP actual_head=65 expected_head=65 result=PASS\naccepted_down_region_control world=(0,-1.500000,-2.910000) hit_plane_y=-1.500000 primary_sequence=0,1,0 fresh_edge=1 released_after_click=1 initial_direction=RIGHT initial_head=77 expected_direction=DOWN desired_after_press=DOWN moving_after_press=1 actual_heading_after_tick=DOWN actual_head=89 expected_head=89 result=PASS\nSUMMARY visible_button_failures=2/2 actual_hit_region_controls_passed=2/2 total_failures=2\n",
+  "source_sha256": "b1aa3c69edf908f0a94d9e496048e5521afcc1ffcd2903842330452a0dfc525b"
+}

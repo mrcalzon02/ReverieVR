@@ -1,0 +1,37 @@
+{"command": ["env", "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include", "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "EGL_PLATFORM=surfaceless", "LIBGL_ALWAYS_SOFTWARE=1", "bash", "scripts/verify-classic-saves.sh"], "layer": "eight production module lifecycles and exact codecs", "started_at": "2026-11-08T19:23:37.547845+00:00", "status": "running", "log": "classic-saves-attempt-1.log", "timeout_seconds": 360}
+codec kind=0 bytes=683 PASS
+codec kind=1 bytes=683 PASS
+codec kind=2 bytes=683 PASS
+codec kind=3 bytes=995 PASS
+codec kind=4 bytes=1151 PASS
+codec kind=5 bytes=1005 PASS
+codec kind=6 bytes=193 PASS
+codec kind=7 bytes=874 PASS
+rule history and pending phases PASS
+terminal match states PASS
+bank interruption, read failures, corruption, retry and limits PASS
+classic save checks=25386 PASS
+classic-pong lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-pong checks=48 reads=12 writes=8 PASS
+classic-snake lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+snake visible UP desired=0 head=77->65 PASS
+snake visible RIGHT desired=1 head=77->78 PASS
+snake visible DOWN desired=2 head=77->89 PASS
+snake visible LEFT desired=3 head=65->64 PASS
+classic-snake checks=79 reads=17 writes=26 PASS
+classic-chutes-ladders lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-chutes-ladders checks=48 reads=12 writes=8 PASS
+classic-checkers lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-checkers pending CPU destruction/rebuild PASS
+classic-checkers checks=62 reads=14 writes=12 PASS
+classic-go lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-go pending CPU destruction/rebuild PASS
+classic-go checks=60 reads=14 writes=10 PASS
+classic-chess lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-chess pending CPU destruction/rebuild PASS
+classic-chess checks=60 reads=14 writes=12 PASS
+classic-breakout lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-breakout checks=48 reads=12 writes=8 PASS
+classic-reversi lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS
+classic-reversi pending CPU destruction/rebuild PASS
+classic-reversi checks=60 reads=14 writes=10 PASS

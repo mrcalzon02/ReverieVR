@@ -1,0 +1,15 @@
+classic-pong progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-snake progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-chutes-ladders progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-checkers progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-go progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-chess progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-breakout progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE
+
+classic-reversi progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE

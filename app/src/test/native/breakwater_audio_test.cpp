@@ -32,6 +32,8 @@ struct Capture {
     unsigned rejected=0u,callbacks=0u;
     unsigned feedback_calls=0u,save_calls=0u;
     int32_t save_result=REVERIE_NATIVE_SAVE_OK;
+    bool save_present=false,apply_then_error=false;
+    std::vector<uint8_t> saved;
     Record Drain() {
         Record r;r.feedback=feedback;feedback=0u;
         auto packet=sound.Drain();
@@ -53,18 +55,30 @@ void OnLog(int32_t,const char *,const char *) {}
 void OnFeedback(uint32_t flags) {
     capture->feedback|=flags;++capture->callbacks;++capture->feedback_calls;
 }
-int32_t OnReadSave(const char *,void *,uint32_t,uint32_t *out_size) {
-    *out_size=0u;return REVERIE_NATIVE_SAVE_NOT_FOUND;
+int32_t OnReadSave(const char *slot,void *bytes,uint32_t capacity,uint32_t *out_size) {
+    if(std::strcmp(slot,CheckpointSlot(0u))!=0 || !capture->save_present) {
+        *out_size=0u;return REVERIE_NATIVE_SAVE_NOT_FOUND;
+    }
+    *out_size=static_cast<uint32_t>(capture->saved.size());
+    if(!bytes)return REVERIE_NATIVE_SAVE_OK;
+    if(capacity<*out_size)return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+    if(*out_size)std::memcpy(bytes,capture->saved.data(),*out_size);
+    return REVERIE_NATIVE_SAVE_OK;
 }
 int32_t OnWriteSave(const char *slot,const void *bytes,uint32_t size) {
     Check(slot && std::strcmp(slot,CheckpointSlot(0u))==0,"write stays in selected checkpoint slot");
-    Check(size==Campaign::kSerializedSize || size==0u,"bounded save or explicit reset");
+    Check(size==Campaign::kCheckpointSize || size==0u,"bounded checked save or explicit reset");
     if(size) {
         Campaign snapshot;
-        Check(snapshot.DeserializeShop(static_cast<const uint8_t *>(bytes),size),
+        Check(snapshot.DeserializeCheckpoint(static_cast<const uint8_t *>(bytes),size),
               "write callback receives an actual valid campaign checkpoint");
     }
     ++capture->save_calls;
+    if(capture->save_result==REVERIE_NATIVE_SAVE_OK || capture->apply_then_error) {
+        capture->saved.clear();capture->save_present=true;
+        if(size)capture->saved.assign(static_cast<const uint8_t *>(bytes),
+                                      static_cast<const uint8_t *>(bytes)+size);
+    }
     return capture->save_result;
 }
 void OnSound(uint32_t cue) {
@@ -98,8 +112,9 @@ struct Fixture {
         host.struct_size=sizeof(host);host.abi_version=REVERIE_NATIVE_MODULE_ABI_VERSION;
         host.log=OnLog;host.request_feedback=OnFeedback;
         host.request_sound=OnSound;host.request_spatial_sound=OnSpatial;
+        host.read_save=OnReadSave;host.write_save=OnWriteSave;
         state.host=&host;capture=&sounds;
-        LoadState(&state); // exercise the existing no-save optional host path
+        LoadState(&state); // Valid save service, with an initially missing slot.
     }
     Record Step(ReverieNativeInputV1 in) {
         capture=&sounds;Update(&state,&in);auto record=sounds.Drain();
@@ -246,22 +261,57 @@ void PersistenceFeedback() {
           purchase.sounds.feedback_calls==1u,"failed purchase save has one error and no misleading success");
     r=purchase.Press(Menu(menu::ShopAction(9)));
     Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE &&
-          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN) && purchase.state.armory_page,
-          "save failure suppresses a page confirmation queued before the write");
+          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN) && !purchase.state.armory_page &&
+          purchase.state.save_dirty,
+          "pending purchase retry cannot open a page or emit its success cue");
+    const auto purchased_credits=purchase.state.campaign.credits();
+    const auto purchased_level=purchase.state.campaign.level(Upgrade::FireRate);
+    purchase.Saving(REVERIE_NATIVE_SAVE_OK);purchase.state.save_retry=.01f;
+    auto retry_purchase=Menu(menu::ShopCard(0));retry_purchase.delta_seconds=.05f;
+    retry_purchase.secondary_down=1u;
+    r=purchase.Press(retry_purchase);
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_ACTIVATION &&
+          !r.Has(REVERIE_NATIVE_SOUND_SHOP_PURCHASE) && !r.Has(REVERIE_NATIVE_SOUND_WAVE_START) &&
+          !purchase.state.save_dirty && purchase.state.campaign.phase()==Phase::Shop &&
+          purchase.state.campaign.credits()==purchased_credits &&
+          purchase.state.campaign.level(Upgrade::FireRate)==purchased_level,
+          "automatic retry plus both fresh buttons acknowledges only the existing purchase save");
+    r=purchase.Press(Menu(menu::ShopAction(9)));
+    Check(r.Count(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN)==1u &&
+          purchase.state.armory_page && r.feedback==0u,
+          "a fresh post-retry page action receives one contextual sound");
+
+    Fixture simultaneous;simultaneous.RichShop();simultaneous.Saving(REVERIE_NATIVE_SAVE_ERROR);
+    auto both=Menu(menu::ShopCard(0));both.secondary_down=1u;
+    r=simultaneous.Press(both);
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE &&
+          !r.Has(REVERIE_NATIVE_SOUND_SHOP_PURCHASE) && !r.Has(REVERIE_NATIVE_SOUND_WAVE_START) &&
+          simultaneous.state.save_dirty && simultaneous.state.campaign.phase()==Phase::Shop &&
+          simultaneous.sounds.save_calls==1u,
+          "a purchase failing in this frame cannot trigger a simultaneous secondary launch or sound");
 
     Fixture debrief;debrief.Shop();debrief.state.round_summary=true;
     debrief.Saving(REVERIE_NATIVE_SAVE_ERROR);
     r=debrief.Press(Menu(menu::DebriefAction(0)));
     Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE &&
           !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_BACK) &&
-          !debrief.state.round_summary && debrief.sounds.feedback_calls==1u,
-          "failed debrief save is audible without changing existing session flow");
-    debrief.state.round_summary=true;
+          debrief.state.round_summary && debrief.sounds.feedback_calls==1u,
+          "failed debrief save remains on the summary with one error cue");
     r=debrief.Press(Menu(menu::DebriefAction(1)));
     Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE &&
-          r.Has(REVERIE_NATIVE_SOUND_WAVE_START) &&
+          !r.Has(REVERIE_NATIVE_SOUND_WAVE_START) && debrief.state.round_summary &&
+          debrief.state.campaign.phase()==Phase::Shop,
+          "failed retry cannot start combat or claim a wave-start sound");
+    debrief.Saving(REVERIE_NATIVE_SAVE_OK);
+    r=debrief.Press(Menu(menu::DebriefAction(1)));
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_ACTIVATION &&
+          !r.Has(REVERIE_NATIVE_SOUND_WAVE_START) && debrief.state.round_summary &&
+          !debrief.state.save_dirty && debrief.state.campaign.phase()==Phase::Shop,
+          "successful retry acknowledges only the save and retains the summary");
+    r=debrief.Press(Menu(menu::DebriefAction(1)));
+    Check(r.Count(REVERIE_NATIVE_SOUND_WAVE_START)==1u && r.feedback==0u &&
           debrief.state.campaign.phase()==Phase::Combat,
-          "save error preserves the actual combat-start event");
+          "a fresh post-recovery action starts exactly one wave with its actual cue");
 
     Fixture reset;reset.Shop();reset.Saving(REVERIE_NATIVE_SAVE_ERROR);
     reset.Press(Menu(menu::kResetCard));
@@ -270,6 +320,20 @@ void PersistenceFeedback() {
           !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART) &&
           reset.state.campaign.phase()==Phase::Shop && reset.sounds.save_calls==1u,
           "failed checkpoint clear does not claim a confirmed restart");
+    reset.sounds.apply_then_error=true;
+    r=reset.Press(Menu(menu::kResetCard));
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE &&
+          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART) && reset.state.reset_pending &&
+          reset.state.save_dirty && reset.sounds.saved.empty() &&
+          reset.state.campaign.phase()==Phase::Shop,
+          "visible reset bytes without acknowledgement retain intent and never play false restart success");
+    reset.Saving(REVERIE_NATIVE_SAVE_OK);
+    r=reset.Press(Menu(menu::kResetCard));
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_ACTIVATION &&
+          !r.Has(REVERIE_NATIVE_SOUND_WAVE_START) && !reset.state.save_dirty &&
+          !reset.state.reset_pending && reset.sounds.saved.empty() &&
+          reset.state.campaign.phase()==Phase::Briefing,
+          "acknowledged reset retry clears state once and cannot launch a new campaign");
 
     Fixture success;success.state.slot_picker=false;success.Saving(REVERIE_NATIVE_SAVE_OK);
     r=success.Press(Menu(menu::DifficultyCard(2)));
@@ -277,11 +341,16 @@ void PersistenceFeedback() {
           r.feedback==0u && success.sounds.save_calls==1u && success.state.slot_exists[0],
           "successful supported persistence keeps its contextual confirmation");
     Fixture optional;optional.state.slot_picker=false;
-    optional.host.write_save=OnWriteSave; // incomplete optional service remains unavailable
+    optional.host.read_save=nullptr; // Incomplete service is deliberately unavailable.
     r=optional.Press(Menu(menu::DifficultyCard(0)));
-    Check(r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_DIFFICULTY_SELECT) &&
-          r.feedback==0u && optional.sounds.save_calls==0u,
-          "missing optional save service never rejects an accepted control");
+    Check(!r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_DIFFICULTY_SELECT) &&
+          r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE && optional.sounds.save_calls==0u &&
+          optional.state.save_dirty && PrepareExit(&optional.state)==0,
+          "missing save service preserves pending progress and cannot claim durable success");
+    r=optional.Press(Menu(menu::ShopAction(8)));
+    Check(!r.Has(REVERIE_NATIVE_SOUND_WAVE_START) &&
+          optional.state.campaign.phase()==Phase::Shop,
+          "incomplete save service cannot launch a new wave");
 
     // Failed confirmations may be queued earlier than the error. Check both
     // orders against the real host packet and retain real shots and outcomes.
@@ -471,15 +540,50 @@ void OutcomesAndLifecycle() {
     Check(r.Count(REVERIE_NATIVE_SOUND_WAVE_CLEAR)==1u && wave.state.round_summary,
           "one real combat-to-shop cue");
     Check(!wave.Step(Ray()).Has(REVERIE_NATIVE_SOUND_WAVE_CLEAR),"wave-clear does not repeat");
+    Fixture failed_wave;failed_wave.Combat();failed_wave.Saving(REVERIE_NATIVE_SAVE_ERROR);
+    r=FinishWave(failed_wave);
+    Check(r.Count(REVERIE_NATIVE_SOUND_WAVE_CLEAR)==1u && failed_wave.state.round_summary &&
+          failed_wave.state.save_dirty && failed_wave.state.save_failed &&
+          PrepareExit(&failed_wave.state)==0,
+          "earned wave outcome remains audible while failed checkpoint keeps progress and exit pending");
+    r=failed_wave.Press(Menu(menu::DebriefAction(1)));
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE &&
+          !r.Has(REVERIE_NATIVE_SOUND_WAVE_START) && failed_wave.state.round_summary &&
+          failed_wave.state.campaign.phase()==Phase::Shop,
+          "failed earned-result retry cannot claim or start the next wave");
     Fixture victory;victory.Shop();victory.Word(4u,3u);victory.Word(5u,2u);
     victory.Word(6u,1u);victory.Word(7u,victory.state.campaign.waves_this_period());
     Check(victory.state.campaign.BeginWave(),"fixture final wave");
+    victory.Saving(REVERIE_NATIVE_SAVE_ERROR);
     r=FinishWave(victory);
     Check(victory.state.campaign.phase()==Phase::Victory &&
           r.Count(REVERIE_NATIVE_SOUND_CAMPAIGN_VICTORY)==1u,"actual campaign victory cue");
+    Check(victory.state.save_dirty && PrepareExit(&victory.state)==0,
+          "earned victory is retained when its automatic checkpoint fails");
+    r=victory.Press(Ray());
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_FAILURE && !victory.state.reset_armed &&
+          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN) &&
+          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART),
+          "a pending victory save consumes restart input without misleading confirmation");
+    victory.Saving(REVERIE_NATIVE_SAVE_OK);r=victory.Press(Ray());
+    Campaign saved_victory;
+    Check(r.feedback==REVERIE_NATIVE_FEEDBACK_ACTIVATION && !victory.state.reset_armed &&
+          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART) && !victory.state.save_dirty &&
+          saved_victory.DeserializeCheckpoint(victory.sounds.saved.data(),victory.sounds.saved.size()) &&
+          saved_victory.phase()==Phase::Victory,
+          "retry acknowledges an actual checked terminal record before accepting reset input");
+    r=victory.Press(Ray());
+    Check(r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN) &&
+          !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART) &&
+          victory.state.reset_armed && victory.state.campaign.phase()==Phase::Victory,
+          "terminal first press audibly arms confirmation without restarting");
+    auto held_restart=Ray();held_restart.primary_down=1u;
+    Check(!victory.Step(held_restart).Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART),
+          "held terminal confirmation cannot restart");
     r=victory.Press(Ray());
     Check(r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_RESTART) &&
-          victory.state.campaign.phase()==Phase::Briefing,"result restart sound");
+          victory.state.campaign.phase()==Phase::Briefing && victory.sounds.saved.empty(),
+          "confirmed terminal reset has its actual restart sound");
 
     Fixture defeat;defeat.Shop();defeat.Word(9u,1u);
     Check(defeat.state.campaign.BeginWave(),"fixture fragile battery");

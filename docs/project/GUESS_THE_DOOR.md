@@ -1,5 +1,36 @@
 # Guess the Door — native ReverieVR memory game
 
+## Save and readability repair (2026-11-08 source)
+
+The native module now writes `maze-v1.bin`, a bounded 36-byte schema-1
+record containing seed, room, falls and the Easter-caption seen flag,
+with a checksum and strict field validation. A confirmed lever commits
+its deterministic outcome: recreation resumes in the next safe room,
+room one with the fall counted, or victory. Animation timers and held
+input are transient. New Seed consumes one primary edge and leaves the
+new maze Ready; it does not pull a lever with the same press.
+
+Failed writes keep the latest checkpoint dirty for bounded two-second
+retry and lifecycle flush. The optional host `prepare_exit` callback
+refuses ordinary destruction while progress or read recovery remains
+unresolved. Read failure never means a fresh maze. An invalid readable
+record can be replaced only after a second confirmation and an
+acknowledged copy to an unused or byte-identical `maze-recovery-1.bin`
+through `maze-recovery-3.bin`. Other backup bytes are never overwritten.
+If all backup slots are occupied or the original cannot be read, the
+recovery screen keeps the original and offers Retry Read. A visible
+backup from an earlier failed write is written again for a durability
+acknowledgement before replacing the main record.
+
+Titles, timed clues, seed and instructions now use the actual centred
+Lato API correctly and fit the fixed 80-degree per-eye reference view.
+Rocker selection works with an active pointer, and a change of inspected
+door restarts the inspection delay. Pause/resume requires button release.
+Actual module input/lifecycle fault tests and real Mesa GLES stereo
+captures cover these changes; this is source acceptance, with physical
+headset readability, audio and comfort still open. Details and commands
+are in `docs/project/NATIVE_RECENT_GAMES_REPAIR_2026-11-08.md`.
+
 **Status (2026-11-04):** Development-only source stage. Android builds,
 S9/headset runtime, requested spoken line and Mechanist sprite import
 remain pending, not accepted.
@@ -15,8 +46,8 @@ other door's corresponding feature is made different. No arbitrary
 SUN/MOON/KEY labels, invisible answers, or false matches. Staring at a
 door opens an inspection popup describing its observable materials and
 hardware without revealing success. Pull the matching door's lever
-(pointer ray + primary); rocker left/right + primary works without a
-usable pointer. Slow animations:
+(pointer ray + primary); rocker left/right + primary also works while a
+pointer is present. Slow animations:
 lever 0.7s, opening 1.5s, forward traversal 1.6s, pit fall 1.8s.
 Incorrect choices fall into a pit and restart at room one **with the
 same seed** so players can memorize the route. After twelve safe
@@ -55,7 +86,9 @@ sample is included.
 ## Acceptance gates
 1. Run `scripts/verify-guess-the-door.sh`; pure C++ regression checks
    deterministic feature clues and unique matches, double-pull lock, progression, pit,
-   seed restart, victory, and Easter trigger.
+   seed restart, victory, Easter trigger and checked save normalization.
+   Run `scripts/verify-recent-game-persistence.sh` for actual-module
+   save faults, recovery, API lifecycle, New Seed and input-release tests.
 2. Build the Android NDK & APK. Confirm registered library and
    Development-only gallery launch; verify legacy games unchanged.
 3. Test slow transitions, gaze tooltip, lever targeting, audio

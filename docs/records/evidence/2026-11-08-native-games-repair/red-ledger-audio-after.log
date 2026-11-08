@@ -1,0 +1,21 @@
+[0.001s][warning][perf,memops] Cannot use file /tmp/hsperfdata_agent/52 because it is locked by another process (errno = 11)
+SOURCE: red_ledger_click.wav duration_ms=360
+SOURCE: red_ledger_metal.wav duration_ms=395
+SOURCE: red_ledger_coins.wav duration_ms=500
+SOURCE: red_ledger_book.wav duration_ms=511
+SOURCE: red_ledger_door.wav duration_ms=685
+SOURCE: red_ledger_drawer.wav duration_ms=906
+Drawer source duration=906 ms; live before pause at 100 ms=1
+PASS: Activity pause and fresh resume
+PASS: Quick Menu and pointer loss
+PASS: Home and new session
+PASS: collapsed same-title restart
+PASS: audio focus suspension
+PASS: unchanged real Breakwater routing
+PASS: bounded recorded stream ownership
+PASS: rejected and throwing playback
+PASS: asynchronous decode during pause
+PASS: bounded retry after platform stop failure
+PASS: idempotent close and stale decode
+PASS: natural sample completion
+Red Ledger real-source lifecycle harness: 12 scenarios, 75 checks passed; named Android platform double, no device claim.

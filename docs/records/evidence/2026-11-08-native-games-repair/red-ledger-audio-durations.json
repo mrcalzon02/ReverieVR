@@ -1,0 +1,50 @@
+[
+  {
+    "path": "app/src/main/res/raw/red_ledger_book.wav",
+    "seconds": 0.5108390022675737,
+    "channels": 2,
+    "sample_rate": 44100,
+    "bytes_per_sample": 2,
+    "sha256": "b129d813ee2520dcb210e07cd17e5c2c13ee1999e37df9e2c46aaa924a157a58"
+  },
+  {
+    "path": "app/src/main/res/raw/red_ledger_click.wav",
+    "seconds": 0.3599092970521542,
+    "channels": 2,
+    "sample_rate": 44100,
+    "bytes_per_sample": 2,
+    "sha256": "f1be494e01e5ecd988ba8ab94ba4e2ac7ecdf7a935ebedc45655fe4093ad758a"
+  },
+  {
+    "path": "app/src/main/res/raw/red_ledger_coins.wav",
+    "seconds": 0.4992290249433107,
+    "channels": 2,
+    "sample_rate": 44100,
+    "bytes_per_sample": 2,
+    "sha256": "a08a547e86e7a83bfbc0908dd5676152b980c9a971b8436a6d9f5c0bf4ec11ce"
+  },
+  {
+    "path": "app/src/main/res/raw/red_ledger_door.wav",
+    "seconds": 0.6849886621315193,
+    "channels": 2,
+    "sample_rate": 44100,
+    "bytes_per_sample": 2,
+    "sha256": "2b8a06fc852e6b91d76de16185ac985dca1a75f0f064f7be8ff6463240d99333"
+  },
+  {
+    "path": "app/src/main/res/raw/red_ledger_drawer.wav",
+    "seconds": 0.905578231292517,
+    "channels": 2,
+    "sample_rate": 44100,
+    "bytes_per_sample": 2,
+    "sha256": "5d5d4094f114eefd0e2011f196734f7d0c6211d7d17ed118daffed2bad817ab5"
+  },
+  {
+    "path": "app/src/main/res/raw/red_ledger_metal.wav",
+    "seconds": 0.3947392290249433,
+    "channels": 2,
+    "sample_rate": 44100,
+    "bytes_per_sample": 2,
+    "sha256": "03aecc65ad8d06b443d98f90e5cdbe572744842546f7f8169fab49949863c829"
+  }
+]

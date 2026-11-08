@@ -1,0 +1,15 @@
+{"command": ["bash", "scripts/verify-gumball-armada.sh"], "layer": "12 strict rule/codec programs", "started_at": "2026-11-08T19:24:14.268373+00:00", "status": "running", "log": "gumball-rules-attempt-1.log", "timeout_seconds": 240}
+Testing Gumball Armada with g++
+Gumball Armada deterministic combat and save tests passed
+arcade objectives + salvage deterministic tests passed
+shipyard structural and save tests passed
+Gumball 3D assembly, voxel edits, migration, enemy meshes and scrolling passed
+Gumball Shipyard actionable flight-readiness gates passed
+cast encounter deterministic schedule passes
+support contract purchase, skill caps and persistence passed
+gumball chart and loadout navigation: passed
+Gumball direct-click menus and shipyard focus passed
+Gumball eight deterministic assault formations passed
+Gumball tracked-controller steering, speed and safety passed
+PASS Gumball full live sortie/ship/checkpoint next-state determinism, all nine guests, paid support, corrupt transactional rejection
+SKIP clang++ (not installed)

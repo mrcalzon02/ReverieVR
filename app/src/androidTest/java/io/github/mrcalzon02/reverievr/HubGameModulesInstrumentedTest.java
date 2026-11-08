@@ -140,8 +140,23 @@ public final class HubGameModulesInstrumentedTest {
                     game.id,runtime.getActiveModuleId());
                 runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
                 runtime.drainSoundCues();
+                runtime.setShellPaused(true);
+                assertTrue("Menu must pause "+game.id,runtime.isPaused());
                 runtime.pauseForLifecycle();
+                runtime.setShellPaused(false);
+                assertTrue("Menu close must respect Activity pause "+game.id,
+                    runtime.isPaused());
                 runtime.resumeForLifecycle();
+                assertFalse("All pause reasons released "+game.id,runtime.isPaused());
+                runtime.setShellPaused(true);
+                runtime.resumeForLifecycle();
+                assertTrue("Lifecycle resume must respect menu "+game.id,runtime.isPaused());
+                for(int frame=0;frame<30;frame++)
+                    assertEquals("Paused update must return no gameplay feedback "+game.id,
+                        0,runtime.update(NativeModuleRuntime.POINTER_NONE,null,null));
+                runtime.setShellPaused(false);
+                assertTrue("Initial session must checkpoint before ordinary exit "+game.id,
+                    runtime.prepareForExit());
                 runtime.stop();
                 assertFalse("Game remained active after stop: "+game.id,
                     runtime.isRunning());

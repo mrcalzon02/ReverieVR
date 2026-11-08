@@ -102,6 +102,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onEmulatorSourceDownloadRequested(String moduleId);
         String getEmulatorSourceStatus(String moduleId);
         void onNativeModuleStopRequested();
+        void onNativeGuestInputFocusChanged(boolean focused);
         String[] getNativeMusicTrackNames();
         String getNativeMusicStatus();
         int getNativeMusicSelectedIndex();
@@ -568,6 +569,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         new BoundedViewRelativeLocomotion();
     private final TouchpadLocomotionGate nativeLocomotionGate =
         new TouchpadLocomotionGate();
+    private final AtomicBoolean locomotionRearmRequested = new AtomicBoolean();
     private final float[] nativeLocomotionBounds =
         new float[2];
     private String nativeLocomotionModuleId = "";
@@ -670,6 +672,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
     private boolean quickMenuSettingsVisible;
+    private boolean nativeExitBlocked;
+    private boolean nativeDiscardArmed;
     private boolean keyboardQuickMenuFocusActive;
     private volatile float orientationMenuYawRadians;
     private boolean shellHeadingInitialized;
@@ -1155,6 +1159,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     void toggleOrientationMenu() {
+        if (orientationMenuVisible) {
+            resumeFromOrientationMenu();
+            return;
+        }
         boolean opening =
             !orientationMenuVisible;
         orientationMenuVisible = opening;
@@ -1170,6 +1178,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             // before the shell starts consuming Select and navigation.
             if (mode == MODE_DOS) {
                 host.onDosGuestInputFocusLost();
+            } else if (mode == MODE_NATIVE) {
+                host.onNativeGuestInputFocusChanged(false);
+                if (nativeModuleRuntime != null)
+                    nativeModuleRuntime.setShellPaused(true);
             }
             /*
              * The current headset pose belongs to the renderer thread.
@@ -2126,13 +2138,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         nativeSurfaceReady =
                             nativeModuleRuntime.onSurfaceCreated();
                     }
-                    if (nativeSurfaceReady) {
-                        nativeModuleRuntime.update(
-                            NativeModuleRuntime.POINTER_NONE,
-                            null,
-                            null
-                        );
-                    } else {
+                    // Keep the paused scene drawable after context recovery,
+                    // without advancing simulation or delivering game input.
+                    if (!nativeSurfaceReady
+                        || !nativeModuleRuntime.prepareFrame()) {
                         noteNativeModuleFailure(
                             nativeModuleRuntime.getActiveModuleId());
                         host.onNativeModuleStopRequested();
@@ -2197,15 +2206,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             selectRequested.set(false);
 
             if (backRequested.getAndSet(false)) {
-                if (nativeSurfaceReady
-                    && nativeModuleRuntime != null) {
-                    nativeModuleRuntime.releaseSurface();
-                }
-                nativeSurfaceReady = false;
-                host.onNativeModuleStopRequested();
-                mode = MODE_HOME;
-                hoveredButton = -1;
-                textureDirty = true;
+                returnToHomeFromQuickMenu();
                 return;
             }
 
@@ -2323,7 +2324,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
+    void requestLocomotionRearm() {
+        // Input/lifecycle callbacks may run away from the renderer thread.
+        locomotionRearmRequested.set(true);
+    }
+
     private void updateNativeLocomotion(long frameNanos) {
+        if (locomotionRearmRequested.getAndSet(false)) {
+            nativeLocomotionGate.reset();
+            nativeLocomotionLastFrameNanos = 0L;
+        }
         final boolean homeTravel = mode == MODE_HOME || mode == MODE_DOS_LIBRARY;
         final boolean activeNative = mode == MODE_NATIVE
             && nativeModuleRuntime != null
@@ -5583,6 +5593,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void handleOrientationMenuSelection(
         int button
     ) {
+        if (button != 4) nativeDiscardArmed = false;
         if (quickMenuSettingsVisible) {
             handleQuickSettingsSelection(button);
             return;
@@ -5618,7 +5629,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 4:
-                if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
+                if (mode == MODE_NATIVE && nativeExitBlocked) {
+                    if (nativeDiscardArmed) {
+                        returnToHomeFromQuickMenu(true);
+                    } else {
+                        nativeDiscardArmed = true;
+                        textureDirty = true;
+                    }
+                } else if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
                     || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING
             || mode == MODE_DOS_SCREEN_ADJUST) {
@@ -5642,8 +5660,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 6:
-                returnToHomeFromQuickMenu();
-                host.onExitToPhoneRequested();
+                if (returnToHomeFromQuickMenu())
+                    host.onExitToPhoneRequested();
                 break;
 
             case 7:
@@ -5765,7 +5783,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
-    private void returnToHomeFromQuickMenu() {
+    private boolean returnToHomeFromQuickMenu() {
+        return returnToHomeFromQuickMenu(false);
+    }
+
+    private boolean returnToHomeFromQuickMenu(boolean discardUnsaved) {
         if (mode == MODE_VIDEO) {
             host.onVideoStopRequested();
             videoSeekRequestedMillis.set(0);
@@ -5780,6 +5802,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
             host.onDosStopRequested();
             dosExitRequested.set(false);
         } else if (mode == MODE_NATIVE) {
+            if (!orientationMenuVisible) toggleOrientationMenu();
+            if (!discardUnsaved && nativeModuleRuntime != null
+                && !nativeModuleRuntime.prepareForExit()) {
+                nativeExitBlocked = true;
+                nativeDiscardArmed = false;
+                quickMenuSettingsVisible = false;
+                selectRequested.set(false);
+                backRequested.set(false);
+                hoveredButton = -1;
+                textureDirty = true;
+                host.onUiActionRejected();
+                return false;
+            }
             if (nativeSurfaceReady
                 && nativeModuleRuntime != null) {
                 nativeModuleRuntime.releaseSurface();
@@ -5793,11 +5828,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
         selectRequested.set(false);
         mode = MODE_HOME;
         closeOrientationMenu();
+        return true;
     }
 
     private void closeOrientationMenu() {
         orientationMenuVisible = false;
         quickMenuSettingsVisible = false;
+        nativeExitBlocked = false;
+        nativeDiscardArmed = false;
+        if (mode == MODE_NATIVE) {
+            host.onNativeGuestInputFocusChanged(true);
+            if (nativeModuleRuntime != null)
+                nativeModuleRuntime.setShellPaused(false);
+        }
         keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
         selectRequested.set(false);
@@ -6982,13 +7025,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
             20.0f * uiScale
         );
         canvas.drawText(
-            "Forward, brightness and recovery stay shell-owned.",
+            nativeExitBlocked
+                ? "Save not confirmed. The game is still open."
+                : "Forward, brightness and recovery stay shell-owned.",
             250,
             216,
             paint
         );
         canvas.drawText(
-            "Use headset forward for desk or keyboard play.",
+            nativeExitBlocked
+                ? "Retry Home, continue, or exit with possible progress loss."
+                : "Use headset forward for desk or keyboard play.",
             250,
             242,
             paint
@@ -7009,11 +7056,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerLabel,
                 "BRIGHT -",
                 "BRIGHT +",
-                (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
+                nativeExitBlocked
+                    ? (nativeDiscardArmed ? "CONFIRM EXIT" : "EXIT ANYWAY")
+                    : (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
                     || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING
             || mode == MODE_DOS_SCREEN_ADJUST) ? "DOS OPTIONS" : "BACK",
-                "HOME",
+                nativeExitBlocked ? "RETRY HOME" : "HOME",
                 "EXIT PHONE",
                 "SETTINGS",
                 "CLOSE MENU"

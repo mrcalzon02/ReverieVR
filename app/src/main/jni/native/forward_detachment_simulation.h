@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+namespace reverie { namespace recon { class Checkpoint; } }
 namespace reverie { namespace forward {
 enum class Route : uint8_t { MainRoad = 0, RidgeBypass = 1 };
 enum class Phase : uint8_t { Briefing = 0, Travelling, Contact, Resolved, Returned, Debriefed };
@@ -23,16 +24,22 @@ struct Debrief {
 };
 class Simulation {
 public:
+    static int32_t RoundTripFuel(Route route);
+    bool CanBeginPatrol(Route route) const;
     bool BeginPatrol(Route route);
     bool ReachContact();
     bool InspectContact(ContactEvidence *out) const;
     bool ResolveContact(Decision decision);
     bool ReturnToBase();
     bool FileDebrief(Debrief *out);
+    bool NextPatrol();
+    bool RefitAtBase();
+    bool LastDebrief(Debrief *out) const;
     Phase phase() const { return phase_; }
     int32_t vehicle_condition() const { return vehicle_condition_; }
     int32_t fuel_remaining() const { return fuel_remaining_; }
 private:
+    friend class reverie::recon::Checkpoint;
     Phase phase_ = Phase::Briefing;
     Route route_ = Route::MainRoad;
     Decision decision_ = Decision::Avoid;

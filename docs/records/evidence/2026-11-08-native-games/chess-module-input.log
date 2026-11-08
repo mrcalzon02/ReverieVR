@@ -1,0 +1,10 @@
+PASS white queen cannot jump initial pawn via real pointer input
+PASS real pointer e2-e4 commits one legal move and starts tween
+PASS rotated black queen cannot jump d7 pawn via real pointer input
+PASS rotated black pointer maps d7-d5 to exact legal squares
+PASS New Game opens and Cancel returns with state retained
+PASS New Game Black button selects human Black
+PASS left reference opens and Close returns to game
+PASS angled AI control cycles difficulty without opening reference
+8 production module input assertions passed; artificial seeded positions used only for Black orientation tests.
+EXIT_CODE=0

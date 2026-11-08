@@ -1,0 +1,218 @@
+[
+  {
+    "kind": 0,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=0",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-0"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-0"
+    ],
+    "run_exit": 1,
+    "output": "classic-pong progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 1,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=1",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-1"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-1"
+    ],
+    "run_exit": 1,
+    "output": "classic-snake progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 2,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=2",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-2"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-2"
+    ],
+    "run_exit": 1,
+    "output": "classic-chutes-ladders progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 3,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=3",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-3"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-3"
+    ],
+    "run_exit": 1,
+    "output": "classic-checkers progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 4,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=4",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-4"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-4"
+    ],
+    "run_exit": 1,
+    "output": "classic-go progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 5,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=5",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-5"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-5"
+    ],
+    "run_exit": 1,
+    "output": "classic-chess progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 6,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=6",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-6"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-6"
+    ],
+    "run_exit": 1,
+    "output": "classic-breakout progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  },
+  {
+    "kind": 7,
+    "build_command": [
+      "g++",
+      "-std=c++17",
+      "-O1",
+      "-pthread",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wl,--gc-sections",
+      "-DCLASSIC_GAME_KIND=7",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/include",
+      "-I",
+      "/workspace/scratch/d76b27d6a834/ReverieVR/app/src/main/jni/native",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/classic_lifecycle_probe.cpp",
+      "-o",
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-7"
+    ],
+    "build_exit": 0,
+    "build_output": "",
+    "run_command": [
+      "/workspace/scratch/d76b27d6a834/audit-work/classics/lifecycle-7"
+    ],
+    "run_exit": 1,
+    "output": "classic-reversi progressed=1 pause_resume_preserved=1 recreate_restored=0 reset_to_initial=1 read_save_calls=0 write_save_calls=0 result=FAIL_SAVE_RESTORE\n"
+  }
+]

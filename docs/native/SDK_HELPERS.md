@@ -1,3 +1,13 @@
+## Ordinary-exit callback support — 2026-11-08
+
+`ReverieNativeApiSupportsPrepareExitV1` first validates the mandatory
+ABI-v1 prefix/version, then the complete
+`REVERIE_NATIVE_MODULE_API_V1_PREPARE_EXIT_MIN_SIZE`, then the callback.
+An old or truncated table and a null callback all report unsupported.
+This append-only check does not imply that older modules preserve saves;
+it only preserves their previous host lifecycle. See `API_V1.md` for the
+bounded retry/refusal contract and forced-teardown limit.
+
 ## Native wardrobe outfit geometry — 2026-10-26
 
 **Implemented in source; device acceptance pending.** The new

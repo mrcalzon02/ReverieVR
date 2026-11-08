@@ -1,0 +1,80 @@
+COMMAND ['g++', '-std=c++17', '-O1', '-Wall', '-Wextra', '-Wpedantic', '-Iapp/src/main/jni/native', '-I/workspace/scratch/d76b27d6a834/audit-work/featured', '/workspace/scratch/d76b27d6a834/audit-work/featured/omega_module_probe.cpp', '-lEGL', '-lGLESv2', '-lz', '-o', '/workspace/scratch/d76b27d6a834/audit-work/featured/omega_module_probe']
+In file included from /workspace/scratch/d76b27d6a834/audit-work/featured/omega_module_probe.cpp:1:
+app/src/main/jni/native/omega_front_module.cpp:1353:1: warning: missing initializer for member ‘ReverieNativeModuleApiV1::prepare_frame’ [-Wmissing-field-initializers]
+ 1353 | };
+      | ^
+In file included from app/src/main/jni/native/omega_front_texture_renderer.h:7,
+                 from app/src/main/jni/native/omega_front_module.cpp:4:
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+COMMAND ['/workspace/scratch/d76b27d6a834/audit-work/featured/omega_module_probe', '/workspace/scratch/d76b27d6a834/audit-work/featured']
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+MODULE_LOG 1 omega-front Tactical PNG textures loaded: 121/121
+CAPTURE omega-title eye=0 hash=14941394279926931614 visible_pixels=24478
+CAPTURE omega-title eye=1 hash=2371881194611875292 visible_pixels=24519
+WRITE_OK frontier.v1 bytes=2048 attempt=1
+CAPTURE omega-continent eye=0 hash=17362430894034213414 visible_pixels=96201
+CAPTURE omega-continent eye=1 hash=10073964501983804060 visible_pixels=96069
+WRITE_OK frontier.v1 bytes=2048 attempt=2
+CAPTURE omega-region eye=0 hash=6765639995868915243 visible_pixels=75082
+CAPTURE omega-region eye=1 hash=13935740384658006256 visible_pixels=75116
+WRITE_OK frontier.v1 bytes=2048 attempt=3
+WRITE_OK frontier.v1 bytes=2048 attempt=4
+WRITE_OK frontier.v1 bytes=2048 attempt=5
+FAULT_INJECTED write_save frontier.v1 bytes=2048 attempt=6
+MODULE_LOG 3 omega-front Hearthwell checkpoint write failed; playing in memory
+CAPTURE omega-save-failure eye=0 hash=11931122905166316831 visible_pixels=158684
+CAPTURE omega-save-failure eye=1 hash=18185529602813330467 visible_pixels=158839
+WRITE_OK frontier.v1 bytes=2048 attempt=7
+CAPTURE omega-tactical eye=0 hash=2344392689777782592 visible_pixels=158308
+CAPTURE omega-tactical eye=1 hash=13761559250415179430 visible_pixels=158450
+MODULE_LOG 1 omega-front Tactical PNG textures loaded: 121/121
+CAPTURE omega-tactical-recreated eye=0 hash=2344392689777782592 visible_pixels=158308
+CAPTURE omega-tactical-recreated eye=1 hash=13761559250415179430 visible_pixels=158450
+MODULE_LOG 1 omega-front Hearthwell tactical development mission
+OMEGA_FAILURE_RECOVERY pause_retry=1 save_failed_after_retry=0 restored_checksum=2463315748711018088 ticks=1
+MISSING_ASSETS 0
+PASS actual Omega module menu/travel/deploy/order/turn/save-failure/pause/recreate/render audit

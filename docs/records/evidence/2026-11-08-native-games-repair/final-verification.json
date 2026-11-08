@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "source_fingerprint": "0b093c03f3b39e3c0453ee6540099ede920b30030ad8f7b8b4369df86a1627cc",
+  "total_groups": 21,
+  "passed_groups": 21,
+  "components": [
+    {
+      "path": "final-integrated/results/checkpoint.json",
+      "sha256": "f11e0df8562a0c5166fcf6306dd449d8e0df0c7c7e4ac2723c5fb2ef7eb38ab2",
+      "summary": {
+        "audio-assets": "passed",
+        "audio-backend": "passed",
+        "breakwater-audio": "passed",
+        "classic-input-prefix": "passed",
+        "classic-rules": "passed",
+        "classic-saves": "passed",
+        "existing-breakwater-workshop-rules": "passed",
+        "featured-module-repair": "passed",
+        "game-identity": "passed",
+        "guess-rules": "passed",
+        "gumball-rules": "passed",
+        "host-focus-and-storage": "passed",
+        "merged-java-parse": "passed",
+        "native-abi": "passed",
+        "native-doc-sync": "passed",
+        "native-launch": "passed",
+        "omega-module-repair": "passed",
+        "recent-persistence": "passed",
+        "recon-persistence": "passed",
+        "red-ledger-rules": "passed"
+      }
+    },
+    {
+      "path": "final-audio/results/checkpoint.json",
+      "sha256": "b271f43f746070997d8555294e400b1bf585fe32cd6f61e4ad8bd1c5d9dd79cb",
+      "summary": {
+        "red-ledger-audio-lifecycle": "passed"
+      }
+    }
+  ],
+  "source_edits_during_final_runs": false,
+  "platform": "Linux GCC/Mesa/JVM with explicitly named Android/audio/JNI doubles; no current Android APK or physical headset run"
+}

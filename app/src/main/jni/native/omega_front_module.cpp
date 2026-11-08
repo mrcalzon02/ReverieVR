@@ -848,8 +848,8 @@ void Draw(State *s){
             }
         }
     }
-    Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
-    Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
+    Rect(s,0,1.13f,2.05f,.46f,-1.92f,.07f,.13f,.19f);
+    Text(s,"OMEGA FRONT  HEARTHWELL",1.25f,.013f,.91f,.93f,.78f);
     Text(s,"TURN BASED  QUEUE ORDERS  THEN END TURN  /  MODES TAB",
          .983f,.008f,.71f,.84f,.85f);
     DrawMenuTab(s);
@@ -923,7 +923,9 @@ constexpr char kSaveSlot[]="frontier.v1";
 bool SaveState(State *s){
     if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return false;
     game::CampaignSave::Bytes bytes{};
-    if(!game::CampaignSave::Encode(s->session,&bytes))return false;
+    if(!game::CampaignSave::Encode(s->session,&bytes)){
+        s->save_failed=true;return false;
+    }
     const bool ok=s->host->write_save(kSaveSlot,bytes.data(),
         static_cast<uint32_t>(bytes.size()))==REVERIE_NATIVE_SAVE_OK;
     if(!ok && !s->save_failed)
@@ -955,6 +957,7 @@ void LoadState(State *s){
         s->load_failed=true;
     }else{
         s->has_campaign=true;
+        s->load_failed=false;
         s->saved_tick=s->session.tactical.battle.ticks();
         s->saved_orders=s->session.orders+s->session.tactical.issued;
         s->saved_view=s->session.view;
@@ -1016,6 +1019,15 @@ void Pause(void *p){
         SaveState(s);
         if(previous!=s->save_failed)Draw(s);
     }
+}
+int32_t PrepareExit(void *p){
+    State *s=static_cast<State *>(p);
+    if(!s)return 1;
+    if(s->load_failed){LoadState(s);Draw(s);}
+    if(s->load_failed)return 0;
+    if(!s->has_campaign)return 1;
+    const bool saved=SaveState(s);Draw(s);
+    return saved?1:0;
 }
 // UI and deliberate tactical turn commands only here, never per-eye or per-frame simulation.
 void Update(void *p,const ReverieNativeInputV1 *in){
@@ -1349,7 +1361,7 @@ const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
      kId,"Omega Front: Hearthwell Defense",2u,0u},
-    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr
+    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr,nullptr,PrepareExit
 };
 }
 extern "C" __attribute__((visibility("default")))

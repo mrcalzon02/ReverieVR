@@ -1,0 +1,333 @@
+{
+  "cases": {
+    "desktop-player": {
+      "attempts": [
+        {
+          "command": [
+            "bash",
+            "tools/desktop/player/test.sh"
+          ],
+          "duration_seconds": 0.165,
+          "exit_code": 2,
+          "finished_at": "2026-11-08T17:00:19.689364+00:00",
+          "layer": "Java desktop rules/state",
+          "log": "desktop-player-attempt-1.log",
+          "log_sha256": "6f713ee5f0ab3e0485848236298d5a2cc2c39ae0b767d802262129c78ddb68ab",
+          "started_at": "2026-11-08T17:00:19.523317+00:00",
+          "status": "failed",
+          "timeout_seconds": 180
+        },
+        {
+          "command": [
+            "bash",
+            "tools/desktop/player/test.sh"
+          ],
+          "duration_seconds": 0.164,
+          "exit_code": 2,
+          "finished_at": "2026-11-08T17:02:08.423513+00:00",
+          "layer": "Java desktop rules/state",
+          "log": "desktop-player-attempt-2.log",
+          "log_sha256": "37bd36cbbbb135e2f95859c5ae9e8bc1b4f18234d42a5f76b8bb7b4a941b1ebb",
+          "started_at": "2026-11-08T17:02:08.257728+00:00",
+          "status": "failed",
+          "timeout_seconds": 180
+        },
+        {
+          "command": [
+            "bash",
+            "tools/desktop/player/test.sh"
+          ],
+          "duration_seconds": 1.983,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:02:48.513928+00:00",
+          "layer": "Java desktop rules/state",
+          "log": "desktop-player-attempt-3.log",
+          "log_sha256": "334743eb75c05681922bc3f99c63880090b31620172b9ec0a2d25ca604fa9df8",
+          "started_at": "2026-11-08T17:02:46.529437+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "font-contract": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/verify-native-vector-font.py"
+          ],
+          "duration_seconds": 0.032,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:19.131205+00:00",
+          "layer": "source contract",
+          "log": "font-contract-attempt-1.log",
+          "log_sha256": "23401ee4ca63f08b49a5dacfa8ad466080bef5d65aff8e63be0456cdebb17cb9",
+          "started_at": "2026-11-08T17:00:19.097876+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "functional-coverage-map": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/ci/verify-integrated-game-functional-coverage.py"
+          ],
+          "duration_seconds": 0.032,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:18.670412+00:00",
+          "layer": "source contract",
+          "log": "functional-coverage-map-attempt-1.log",
+          "log_sha256": "178266c43d8a255b9574f16a0b1be7d169c9f625d78af71d7473ebd3aa5323bc",
+          "started_at": "2026-11-08T17:00:18.637028+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "game-identity": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/modules/verify-game-identity-matrix.py"
+          ],
+          "duration_seconds": 0.032,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:18.633884+00:00",
+          "layer": "source contract",
+          "log": "game-identity-attempt-1.log",
+          "log_sha256": "9d929f77f2d8459f5b7876727c309ee39bd4de18413710c77a77df2cf73474c6",
+          "started_at": "2026-11-08T17:00:18.600592+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "launch-handoff": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/verify-native-launch-handoff.py"
+          ],
+          "duration_seconds": 0.032,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:19.095242+00:00",
+          "layer": "source contract",
+          "log": "launch-handoff-attempt-1.log",
+          "log_sha256": "91d3e5d30347c696e4775424d8d290a07bc58a9a5e240c69caa57abec9742f34",
+          "started_at": "2026-11-08T17:00:19.060483+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "module-package-tests": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "scripts/modules",
+            "-p",
+            "test_*.py",
+            "-v"
+          ],
+          "duration_seconds": 0.315,
+          "exit_code": 1,
+          "finished_at": "2026-11-08T17:00:19.520517+00:00",
+          "layer": "host Python integration",
+          "log": "module-package-tests-attempt-1.log",
+          "log_sha256": "f6822083c89dec2f05a26c762c4886133f15a8853518f09315be99f7bb5a3109",
+          "started_at": "2026-11-08T17:00:19.203134+00:00",
+          "status": "failed",
+          "timeout_seconds": 240
+        },
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "scripts/modules",
+            "-p",
+            "test_*.py",
+            "-v"
+          ],
+          "duration_seconds": 0.265,
+          "exit_code": 1,
+          "finished_at": "2026-11-08T17:02:08.255216+00:00",
+          "layer": "host Python integration",
+          "log": "module-package-tests-attempt-2.log",
+          "log_sha256": "b5288da330cfa5c049ea7d7502569daf18b99cb5f2d299e427b47b469f4d9524",
+          "started_at": "2026-11-08T17:02:07.988812+00:00",
+          "status": "failed",
+          "timeout_seconds": 240
+        }
+      ]
+    },
+    "native-abi": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/verify-native-abi-contract.py"
+          ],
+          "duration_seconds": 0.315,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:19.057972+00:00",
+          "layer": "native executable",
+          "log": "native-abi-attempt-1.log",
+          "log_sha256": "f18c73a102a3644782413053d3ff9c33cacbb799a63de11d0ca0f45c17fbb9dd",
+          "started_at": "2026-11-08T17:00:18.741432+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "native-doc-sync": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/verify-native-doc-sync.py"
+          ],
+          "duration_seconds": 0.064,
+          "exit_code": 1,
+          "finished_at": "2026-11-08T17:00:18.737975+00:00",
+          "layer": "source contract",
+          "log": "native-doc-sync-attempt-1.log",
+          "log_sha256": "64e011a7af5b66720624435ebae386136ec2219023ba70da8238c56284d30d90",
+          "started_at": "2026-11-08T17:00:18.672628+00:00",
+          "status": "failed",
+          "timeout_seconds": 180
+        },
+        {
+          "command": [
+            "python3",
+            "scripts/verify-native-doc-sync.py"
+          ],
+          "duration_seconds": 0.064,
+          "exit_code": 1,
+          "finished_at": "2026-11-08T17:02:07.986289+00:00",
+          "layer": "source contract",
+          "log": "native-doc-sync-attempt-2.log",
+          "log_sha256": "86e60056f9471ca97d023681c57fde2736c0f76de62ba0ac4e08c985f8fcd4ee",
+          "started_at": "2026-11-08T17:02:07.920713+00:00",
+          "status": "failed",
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    "retrieved-android-captures": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/ci/verify-installed-native-game-captures.py",
+            "/workspace/scratch/d76b27d6a834/audit-work/remote/hub"
+          ],
+          "duration_seconds": 0.032,
+          "exit_code": 1,
+          "finished_at": "2026-11-08T17:00:19.842637+00:00",
+          "layer": "existing Android artifact verification",
+          "log": "retrieved-android-captures-attempt-1.log",
+          "log_sha256": "38f0b9a6f65c84f9ca257ea9e1f5e70ee44d894ba7da99f51798a8cc1bc6b20c",
+          "started_at": "2026-11-08T17:00:19.809649+00:00",
+          "status": "failed",
+          "timeout_seconds": 60
+        },
+        {
+          "command": [
+            "python3",
+            "scripts/ci/verify-installed-native-game-captures.py",
+            "/workspace/scratch/d76b27d6a834/audit-work/remote/hub"
+          ],
+          "duration_seconds": 0.033,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:02:08.461469+00:00",
+          "layer": "existing Android artifact verification",
+          "log": "retrieved-android-captures-attempt-2.log",
+          "log_sha256": "f9d65eff35bfbaa152bfa663eb6ea2bac1d62584ca8aaecbf18c33479b1cd20d",
+          "started_at": "2026-11-08T17:02:08.426984+00:00",
+          "status": "passed",
+          "timeout_seconds": 60
+        }
+      ]
+    },
+    "s9-sampler-tests": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "scripts/perf",
+            "-p",
+            "test_*.py",
+            "-v"
+          ],
+          "duration_seconds": 0.114,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:19.807001+00:00",
+          "layer": "diagnostic-parser tests only",
+          "log": "s9-sampler-tests-attempt-1.log",
+          "log_sha256": "9ba102cffc11eb0288c6275333d23d7d3f5a7984c10016e2edb95a1ed0044141",
+          "started_at": "2026-11-08T17:00:19.691798+00:00",
+          "status": "passed",
+          "timeout_seconds": 60
+        }
+      ]
+    },
+    "shared-assets": {
+      "attempts": [
+        {
+          "command": [
+            "python3",
+            "scripts/verify-shared-native-assets.py"
+          ],
+          "duration_seconds": 0.064,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T17:00:19.199161+00:00",
+          "layer": "source contract",
+          "log": "shared-assets-attempt-1.log",
+          "log_sha256": "61f4c9635fc367b96d53cc1259fdbe87e87bd1a3625a3560fcbbde7d8a43223d",
+          "started_at": "2026-11-08T17:00:19.133472+00:00",
+          "status": "passed",
+          "timeout_seconds": 180
+        }
+      ]
+    }
+  },
+  "last_resumed_at": "2026-11-08T17:02:46.526277+00:00",
+  "manifest_sha256": "140076f4e0a5a6e0e8ad9d2671c0a298db5877d58221280e9a7c07d193250ec9",
+  "schema": 1,
+  "source": {
+    "head_at_start": "8a5196aa97a73cdae1393e27529bd51914fc1b0f",
+    "tracked_source_sha256": "c2e7920c18c18e7b490ae58c4035b7c7cd0e47ed44e1f9dbdb12c68a67ca9417"
+  },
+  "started_at": "2026-11-08T17:00:18.597974+00:00",
+  "summary": {
+    "desktop-player": "passed",
+    "font-contract": "passed",
+    "functional-coverage-map": "passed",
+    "game-identity": "passed",
+    "launch-handoff": "passed",
+    "module-package-tests": "failed",
+    "native-abi": "passed",
+    "native-doc-sync": "failed",
+    "retrieved-android-captures": "passed",
+    "s9-sampler-tests": "passed",
+    "shared-assets": "passed"
+  },
+  "updated_at": "2026-11-08T17:02:48.516732+00:00"
+}

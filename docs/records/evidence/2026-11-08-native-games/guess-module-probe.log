@@ -1,0 +1,4 @@
+before destroy: room=3 seed=11490688924817370190 reads=0 writes=0
+after recreate: room=0 seed=10317996423174806744 reads=0 writes=0 progress_lost=1
+actual Update reached victory: clears=12
+new-seed click: phase=1 (Ready=0 Pulling=1) side=0 unintended_auto_pull=1

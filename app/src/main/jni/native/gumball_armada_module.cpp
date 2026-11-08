@@ -1,4 +1,5 @@
 #include "gumball_armada_simulation.h"
+#include "gumball_campaign_save.h"
 #include "gumball_shipyard_menu.h"
 #include "gumball_ship_3d.h"
 #include "gumball_space_3d.h"
@@ -71,7 +72,9 @@ struct Module {
     reverie::gumball::MenuPointerFocus pointerFocus{};
     char yardFeedback[84]="SELECT PART ON RIGHT / CLICK SHIP TO EDIT";
     Part brush=Part::Frame;
-    bool primary=false,campaignSaveError=false,shipSaveError=false,shipLoadWarning=false,upload=true;
+    bool primary=false,campaignSaveError=false,shipSaveError=false,upload=true;
+    bool saveDirty=false,shipDirty=false,loadBlocked=false,resumeFlight=false,resumeReady=false;
+    float saveRetrySeconds=1.f;
     float navTime=0;
     GLuint program=0,vbo=0;GLint pos=-1,col=-1,mvp=-1;
     GLuint routeProgram=0,routeVbo=0,routeTextures[kArtworkCount]{};
@@ -623,105 +626,127 @@ void Result(Module* m){
 }
 void Rebuild(Module* m){
     m->mesh.clear();m->font.Clear();
-    if(m->inYard)ShipyardView(m);
-    else if(m->inSupport)SupportView(m);
-    else if(m->inLoadout)LoadoutView(m);
-    else if(m->sim.phase()==Phase::Chart)Chart(m);
-    else if(m->sim.phase()==Phase::Flight)Flight(m);
-    else Result(m);
-    if(m->campaignSaveError)Text(m,"WARNING: CAMPAIGN SAVE FAILED",0,-1.68f,.029f,1.f,.35f,.28f);
-    else if(m->shipSaveError)Text(m,"WARNING: SHIPYARD SAVE FAILED",0,-1.68f,.029f,1.f,.35f,.28f);
-    else if(m->shipLoadWarning)Text(m,"SHIPYARD RESTORED TO DEFAULT",0,-1.68f,.029f,1.f,.57f,.28f);
+    if(m->loadBlocked){
+        Background(m);
+        Text(m,"GUMBALL ARMADA",0,1.44f,.055f,.94f,.91f,.74f);
+        TextFit(m,"CHECKPOINT UNAVAILABLE",0,.55f,4.50f,.045f,1.f,.55f,.40f);
+        TextFit(m,"YOUR SAVE HAS NOT BEEN CHANGED",0,.18f,4.50f,.032f,.87f,.94f,.93f);
+        Text(m,"CLICK TO RETRY",0,-.37f,.041f,.83f,.98f,.90f);
+        Text(m,"MENU TO EXIT",0,-.76f,.031f,.76f,.91f,.94f);
+    }else{
+        if(m->inYard)ShipyardView(m);
+        else if(m->inSupport)SupportView(m);
+        else if(m->inLoadout)LoadoutView(m);
+        else if(m->sim.phase()==Phase::Chart)Chart(m);
+        else if(m->sim.phase()==Phase::Flight)Flight(m);
+        else Result(m);
+        if(m->resumeFlight){
+            Rect(m,0,.14f,4.15f,.72f,-2.83f,.035f,.055f,.08f);
+            Text(m,"SAVED SORTIE / CLICK TO RESUME",0,.18f,.034f,.91f,.98f,.84f);
+        }
+        // Reserved strip above every screen's title. Error state must never
+        // cover the affordability hint or the route/control instructions.
+        if(m->campaignSaveError||m->shipSaveError){
+            Rect(m,0,1.82f,4.75f,.23f,-2.88f,.12f,.025f,.02f);
+            TextFit(m,m->shipSaveError?"SHIP EDITS UNSAVED - RETRYING":
+                "SAVE FAILED - CHANGES RETAINED / RETRYING",
+                0,1.82f,4.55f,.027f,1.f,.55f,.40f);
+        }
+    }
     m->upload=true;
 }
-void Save(Module* m){
-    if(!ReverieNativeHostSupportsSaveV1(m->host)){
-        m->campaignSaveError=true;return;
-    }
-    const Snapshot s=m->sim.snapshot();
-    const int code=m->host->write_save("campaign.v1",&s,static_cast<uint32_t>(sizeof(s)));
-    if(code!=REVERIE_NATIVE_SAVE_OK){
-        if(!m->campaignSaveError)ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save failed");
-        m->campaignSaveError=true;
-    }else m->campaignSaveError=false;
+bool Save(Module* m){
+    if(!m||m->loadBlocked)return false;
+    m->saveDirty=true;m->saveRetrySeconds=1.f;
+    reverie::gumball::CampaignSave::Bytes bytes{};
+    const bool ok=ReverieNativeHostSupportsSaveV1(m->host)
+        &&reverie::gumball::CampaignSave::Encode(m->sim,m->ship,&bytes)
+        &&m->host->write_save("campaign.v1",bytes.data(),
+            static_cast<uint32_t>(bytes.size()))==REVERIE_NATIVE_SAVE_OK;
+    if(!ok&&!m->campaignSaveError)
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,
+            "Full Gumball checkpoint failed; changes retained for retry");
+    m->campaignSaveError=!ok;m->shipSaveError=!ok&&m->shipDirty;
+    if(ok){m->saveDirty=false;m->shipDirty=false;}
+    return ok;
 }
 void SaveShipyard(Module* m){
-    if(!ReverieNativeHostSupportsSaveV1(m->host)){
-        m->shipSaveError=true;return;
+    // Campaign and construction now commit together. The historical yard
+    // slots are retained unchanged as import sources, never a second partial
+    // transaction that could disagree with a saved flight's physical ship.
+    m->shipDirty=true;Save(m);
+}
+bool BlockLoad(Module* m,const char* reason){
+    m->loadBlocked=true;
+    ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_WARN,kId,reason);
+    return false;
+}
+bool LoadCheckpoint(Module* m){
+    if(!ReverieNativeHostSupportsSaveV1(m->host))
+        return BlockLoad(m,"Gumball persistent host unavailable; no save replaced");
+    using reverie::gumball::CampaignSave;
+    CampaignSave::Bytes bytes{};uint32_t count=0;
+    const int result=m->host->read_save("campaign.v1",bytes.data(),
+                                      static_cast<uint32_t>(bytes.size()),&count);
+    Simulation next;ShipAssembly ship;bool imported=false,complete=false;
+    if(result==REVERIE_NATIVE_SAVE_OK){
+        if(count==CampaignSave::kBytes){
+            if(!CampaignSave::Decode(&next,&ship,bytes.data(),count))
+                return BlockLoad(m,"Invalid full Gumball checkpoint; original retained");
+            complete=true;
+        }else{
+            bool valid=false;
+            if(count==sizeof(Snapshot)){
+                Snapshot old{};std::memcpy(&old,bytes.data(),sizeof(old));valid=next.restore(old);
+            }else if(count==sizeof(SnapshotV2)){
+                SnapshotV2 old{};std::memcpy(&old,bytes.data(),sizeof(old));valid=next.restore(old);
+            }else if(count==sizeof(SnapshotV1)){
+                SnapshotV1 old{};std::memcpy(&old,bytes.data(),sizeof(old));valid=next.restore(old);
+            }
+            if(!valid)return BlockLoad(m,"Invalid legacy campaign; original retained");
+            imported=true;
+        }
+    }else if(result!=REVERIE_NATIVE_SAVE_NOT_FOUND||m->loadBlocked){
+        return BlockLoad(m,"Campaign read failed; retry before playing or saving");
     }
-    const Ship3DSave state=m->ship.snapshot();
-    const int result=m->host->write_save("shipyard.v2",&state,
-                                       static_cast<uint32_t>(sizeof(state)));
-    if(result!=REVERIE_NATIVE_SAVE_OK){
-        m->shipSaveError=true;
-        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,"Shipyard save failed");
-    }else {m->shipSaveError=false;m->shipLoadWarning=false;}
+    if(!complete){
+        Ship3DSave volume{};uint32_t size=0;
+        const int code=m->host->read_save("shipyard.v2",&volume,sizeof(volume),&size);
+        if(code==REVERIE_NATIVE_SAVE_OK){
+            if(size!=sizeof(volume)||!ship.restore(volume))
+                return BlockLoad(m,"Invalid 3D construction save; original retained");
+            imported=true;
+        }else if(code==REVERIE_NATIVE_SAVE_NOT_FOUND){
+            ShipyardSave flat{};size=0;
+            const int old=m->host->read_save("shipyard.v1",&flat,sizeof(flat),&size);
+            if(old==REVERIE_NATIVE_SAVE_OK){
+                Shipyard legacy;
+                if(size!=sizeof(flat)||!legacy.restore(flat))
+                    return BlockLoad(m,"Invalid legacy construction; original retained");
+                ship.import_legacy(legacy);imported=true;
+            }else if(old!=REVERIE_NATIVE_SAVE_NOT_FOUND)
+                return BlockLoad(m,"Legacy construction read failed; original retained");
+        }else return BlockLoad(m,"Construction read failed; original retained");
+        next.configure_ship_profile(ship.profile(),ship.ready());
+    }
+    m->sim=next;m->ship=ship;m->loadBlocked=false;
+    m->campaignSaveError=false;m->shipSaveError=false;m->shipDirty=false;
+    m->saveDirty=imported;m->saveRetrySeconds=1.f;
+    m->resumeFlight=next.phase()==Phase::Flight;m->resumeReady=false;
+    m->inYard=m->inLoadout=m->inSupport=false;
+    return true;
 }
 void* Create(const ReverieNativeHostV1* host){
     if(!ReverieNativeHostSupportsLogV1(host))return nullptr;
     Module* m=new(std::nothrow)Module();if(!m)return nullptr;
     m->host=host;m->mesh.reserve(20000);
-    if(ReverieNativeHostSupportsSaveV1(host)){
-        Snapshot current{};uint32_t count=0;
-        const int result=host->read_save("campaign.v1",&current,sizeof(current),&count);
-        if(result==REVERIE_NATIVE_SAVE_OK){
-            bool valid=false;
-            if(count==sizeof(current))valid=m->sim.restore(current);
-            else if(count==sizeof(SnapshotV2)){
-                SnapshotV2 legacy{};
-                std::memcpy(&legacy,&current,sizeof(legacy));
-                valid=m->sim.restore(legacy);
-                if(valid)Save(m);
-            }else if(count==sizeof(SnapshotV1)){
-                SnapshotV1 legacy{};
-                std::memcpy(&legacy,&current,sizeof(legacy));
-                valid=m->sim.restore(legacy);
-                if(valid)Save(m); // one checked, atomically replaced save
-            }
-            if(!valid)ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
-                                        "Invalid campaign save ignored");
-        }else if(result!=REVERIE_NATIVE_SAVE_NOT_FOUND)
-            ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save read failed");
-        // V2 is authoritative. Do not roll back invalid V2 to V1.
-        Ship3DSave volume{};uint32_t shipBytes=0;
-        const int read3=host->read_save("shipyard.v2",&volume,
-                                      sizeof(volume),&shipBytes);
-        if(read3==REVERIE_NATIVE_SAVE_OK){
-            if(shipBytes!=sizeof(volume)||!m->ship.restore(volume)){
-                m->shipLoadWarning=true;
-                ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
-                                   "Invalid 3D ship save; default assembly restored");
-            }
-        }else if(read3==REVERIE_NATIVE_SAVE_NOT_FOUND){
-            // Checked migration into Z=2. Retain old slot as rollback backup.
-            ShipyardSave flat{};uint32_t oldBytes=0;
-            const int read1=host->read_save("shipyard.v1",&flat,
-                                          sizeof(flat),&oldBytes);
-            if(read1==REVERIE_NATIVE_SAVE_OK){
-                Shipyard legacy;
-                if(oldBytes==sizeof(flat)&&legacy.restore(flat)){
-                    m->ship.import_legacy(legacy);
-                    SaveShipyard(m);
-                }else{
-                    m->shipLoadWarning=true;
-                    ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
-                                       "Invalid legacy ship save; default restored");
-                }
-            }else if(read1!=REVERIE_NATIVE_SAVE_NOT_FOUND){
-                m->shipLoadWarning=true;
-                ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,
-                                   "Legacy shipyard save read failed");
-            }
-        }else{
-            m->shipLoadWarning=true;
-            ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,
-                               "3D shipyard save read failed");
-        }
-    }
-    m->sim.configure_ship_profile(m->ship.profile(),m->ship.ready());
-    Rebuild(m);return m;
+    LoadCheckpoint(m);Rebuild(m);return m;
 }
-void Destroy(void* p){delete static_cast<Module*>(p);}
+void Destroy(void* p){
+    auto* m=static_cast<Module*>(p);if(!m)return;
+    if(m->saveDirty&&!m->loadBlocked)Save(m);
+    delete m;
+}
 // Runtime integration uses the host's game-scoped APK asset reader. The build
 // task already converts approved atlas cells to RGB565; native code never
 // decodes the full source PNG or accepts another module's asset path.
@@ -863,12 +888,41 @@ void GlEnd(void* p){
     m->routeVbo=0;m->routeProgram=0;
     m->vbo=0;m->program=0;m->upload=true;
 }
-void Resume(void*){}void Pause(void*){}
+void Resume(void* p){
+    auto* m=static_cast<Module*>(p);if(!m)return;
+    if(m->loadBlocked)LoadCheckpoint(m);
+    else if(m->saveDirty)Save(m);
+    Rebuild(m);
+}
+void Pause(void* p){
+    auto* m=static_cast<Module*>(p);if(!m)return;
+    if(m->saveDirty&&!m->loadBlocked)Save(m);
+    m->primary=false;m->secondary=false;
+    Rebuild(m);
+}
+int32_t PrepareExit(void* p){
+    auto* m=static_cast<Module*>(p);if(!m)return 1;
+    if(m->loadBlocked)return 0;
+    return !m->saveDirty||Save(m)?1:0;
+}
 void Update(void* p,const ReverieNativeInputV1* in){
     auto* m=static_cast<Module*>(p);
     if(!m||!ReverieNativeInputHasBaseV1(in))return;
     const float dt=std::max(0.f,std::min(.05f,std::isfinite(in->delta_seconds)?in->delta_seconds:0.f));
     const bool pressed=in->primary_down!=0;
+    if(m->loadBlocked){
+        if(pressed&&!m->primary){LoadCheckpoint(m);Rebuild(m);}
+        m->primary=pressed;return;
+    }
+    if(m->resumeFlight){
+        if(!pressed)m->resumeReady=true;
+        if(pressed&&!m->primary&&m->resumeReady){m->resumeFlight=false;Rebuild(m);}
+        m->primary=pressed;return; // A restored flight waits for deliberate continuation.
+    }
+    if(m->saveDirty){
+        m->saveRetrySeconds-=dt;
+        if(m->saveRetrySeconds<=0.f){Save(m);Rebuild(m);}
+    }
     const Phase phase=m->sim.phase();
     // Aiming at a drawn control must focus that exact control, and primary
     // click acts on it. Pad navigation is preferred while the pad is moving.
@@ -967,6 +1021,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
         }else{
             m->sim.update(dt,in->move_x,in->move_y,pressed);
         }
+        if(dt>0.f)m->saveDirty=true; // Bounded one-second in-flight checkpoints; Pause flushes exactly.
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         if(hp>m->sim.hp()||shieldBefore>m->sim.shield())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
         if(m->sim.shots_fired()>fired)
@@ -1283,7 +1338,7 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1),REVERIE_NATIVE_MODULE_ABI_VERSION,kId,kName,2u,0u},
-    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr
+    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr,nullptr,PrepareExit
 };
 }
 extern "C" __attribute__((visibility("default")))

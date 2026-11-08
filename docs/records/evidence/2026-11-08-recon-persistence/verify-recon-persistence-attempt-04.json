@@ -1,0 +1,10 @@
+{
+  "command": [
+    "bash",
+    "scripts/verify-recon-persistence.sh",
+    "--gles",
+    "/workspace/scratch/d76b27d6a834/repair-work/featured/recon-captures"
+  ],
+  "exit": 0,
+  "seconds": 5.629
+}

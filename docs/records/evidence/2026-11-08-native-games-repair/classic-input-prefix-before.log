@@ -1,0 +1,49 @@
+=================================================================
+==11==ERROR: AddressSanitizer: unknown-crash on address 0x503000000040 at pc 0x56266b99f13f bp 0x7ffe18180290 sp 0x7ffe18180288
+READ of size 80 at 0x503000000040 thread T0
+    #0 0x56266b99f13e in Update /workspace/scratch/d76b27d6a834/repair-work/classics/repo/app/src/main/jni/native/classic_games_module.cpp:1487
+    #1 0x56266b9a4d22 in main /workspace/scratch/d76b27d6a834/repair-work/classics/input_prefix_probe.cpp:16
+    #2 0x7fbbe12f5ca7  (/lib/x86_64-linux-gnu/libc.so.6+0x29ca7) (BuildId: 5e5b51f4c39af9ac589408c1dc432ba390a273cc)
+    #3 0x7fbbe12f5d64 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x29d64) (BuildId: 5e5b51f4c39af9ac589408c1dc432ba390a273cc)
+    #4 0x56266b9127c0 in _start (/workspace/scratch/d76b27d6a834/repair-work/classics/input-prefix-before+0xe97c0) (BuildId: 671eb4292b0520dd9dcd6855c40a88f05bfee09c)
+
+0x503000000058 is located 0 bytes after 24-byte region [0x503000000040,0x503000000058)
+allocated by thread T0 here:
+    #0 0x7fbbe1f7f8d8 in operator new[](unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:98
+    #1 0x56266b9a5042 in std::__detail::_MakeUniq<unsigned char []>::__array std::make_unique<unsigned char []>(unsigned long) /usr/include/c++/14/bits/unique_ptr.h:1092
+    #2 0x56266b9a5042 in main /workspace/scratch/d76b27d6a834/repair-work/classics/input_prefix_probe.cpp:13
+    #3 0x7fbbe12f5ca7  (/lib/x86_64-linux-gnu/libc.so.6+0x29ca7) (BuildId: 5e5b51f4c39af9ac589408c1dc432ba390a273cc)
+
+SUMMARY: AddressSanitizer: unknown-crash /workspace/scratch/d76b27d6a834/repair-work/classics/repo/app/src/main/jni/native/classic_games_module.cpp:1487 in Update
+Shadow bytes around the buggy address:
+  0x502ffffffd80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x502ffffffe00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x502ffffffe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x502fffffff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x502fffffff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x503000000000: fa fa fd fd fd fa fa fa[00]00 00 fa fa fa fa fa
+  0x503000000080: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x503000000100: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x503000000180: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x503000000200: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x503000000280: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==11==ABORTING

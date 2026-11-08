@@ -1,0 +1,217 @@
+COMMAND ['g++', '-std=c++17', '-O1', '-Wall', '-Wextra', '-Wpedantic', '-Iapp/src/main/jni/native', '-I/workspace/scratch/d76b27d6a834/audit-work/featured', '/workspace/scratch/d76b27d6a834/audit-work/featured/gumball_module_probe.cpp', '-lEGL', '-lGLESv2', '-lz', '-o', '/workspace/scratch/d76b27d6a834/audit-work/featured/gumball_module_probe']
+In file included from /workspace/scratch/d76b27d6a834/audit-work/featured/gumball_module_probe.cpp:1:
+app/src/main/jni/native/gumball_armada_module.cpp: In function ‘void* {anonymous}::Create(const ReverieNativeHostV1*)’:
+app/src/main/jni/native/gumball_armada_module.cpp:672:28: warning: ‘void* memcpy(void*, const void*, size_t)’ copying an object of non-trivial type ‘struct reverie::gumball::SnapshotV2’ from an array of ‘struct reverie::gumball::Snapshot’ [-Wclass-memaccess]
+  672 |                 std::memcpy(&legacy,&current,sizeof(legacy));
+      |                 ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from app/src/main/jni/native/gumball_armada_module.cpp:1:
+app/src/main/jni/native/gumball_armada_simulation.h:35:8: note: ‘struct reverie::gumball::SnapshotV2’ declared here
+   35 | struct SnapshotV2 {
+      |        ^~~~~~~~~~
+app/src/main/jni/native/gumball_armada_module.cpp:677:28: warning: ‘void* memcpy(void*, const void*, size_t)’ copying an object of non-trivial type ‘struct reverie::gumball::SnapshotV1’ from an array of ‘struct reverie::gumball::Snapshot’ [-Wclass-memaccess]
+  677 |                 std::memcpy(&legacy,&current,sizeof(legacy));
+      |                 ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/gumball_armada_simulation.h:30:8: note: ‘struct reverie::gumball::SnapshotV1’ declared here
+   30 | struct SnapshotV1 {
+      |        ^~~~~~~~~~
+app/src/main/jni/native/gumball_armada_module.cpp: At global scope:
+app/src/main/jni/native/gumball_armada_module.cpp:1287:1: warning: missing initializer for member ‘ReverieNativeModuleApiV1::prepare_frame’ [-Wmissing-field-initializers]
+ 1287 | };
+      | ^
+In file included from app/src/main/jni/native/reverie_native_lato_text.h:10,
+                 from app/src/main/jni/native/gumball_armada_module.cpp:7:
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at app/src/main/jni/native/gumball_armada_module.cpp:820:62:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at app/src/main/jni/native/gumball_armada_module.cpp:820:62:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at app/src/main/jni/native/gumball_armada_module.cpp:820:62:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at app/src/main/jni/native/gumball_armada_module.cpp:785:53:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at app/src/main/jni/native/gumball_armada_module.cpp:785:53:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In function ‘int32_t {anonymous}::GlStart(void*)’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘int32_t {anonymous}::GlStart(void*)’ at app/src/main/jni/native/gumball_armada_module.cpp:785:53:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+COMMAND ['/workspace/scratch/d76b27d6a834/audit-work/featured/gumball_module_probe', '/workspace/scratch/d76b27d6a834/audit-work/featured']
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+CAPTURE gumball-chart eye=0 hash=12720230483550962377 visible_pixels=49297
+CAPTURE gumball-chart eye=1 hash=17973792025868086817 visible_pixels=49487
+WRITE_OK campaign.v1 bytes=56 attempt=1
+CAPTURE gumball-support-hired eye=0 hash=8250051628802390195 visible_pixels=42545
+CAPTURE gumball-support-hired eye=1 hash=10785483209472819614 visible_pixels=42501
+WRITE_OK campaign.v1 bytes=56 attempt=2
+CAPTURE gumball-flight eye=0 hash=1908545313356348342 visible_pixels=22825
+CAPTURE gumball-flight eye=1 hash=11692979483571891965 visible_pixels=22842
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+CAPTURE gumball-flight-recreated eye=0 hash=1908545313356348342 visible_pixels=22825
+CAPTURE gumball-flight-recreated eye=1 hash=11692979483571891965 visible_pixels=22842
+OBSERVED_GUMBALL_INTERRUPTION elapsed_before=0.55 phase_after=0 elapsed_after=0.00 cash=55 booked=0 deployed=0
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball chart artwork missing or unexpected size
+MODULE_LOG 2 gumball-armada Gumball route-card artwork partially unavailable
+FAULT_INJECTED write_save campaign.v1 bytes=56 attempt=3
+MODULE_LOG 3 gumball-armada Campaign save failed
+CAPTURE gumball-save-failure eye=0 hash=3544884158321914275 visible_pixels=38830
+CAPTURE gumball-save-failure eye=1 hash=15638542554156433503 visible_pixels=38737
+OBSERVED_GUMBALL_WRITE_FAILURE live_upgrade=1 live_cash=30 restored_upgrade=0 restored_cash=100 no_retry_idle_pause=1
+MISSING_ASSETS 10
+MISSING_ASSET native/gumball/allies/lolly_wren.rgb565
+MISSING_ASSET native/gumball/allies/pip_parfait.rgb565
+MISSING_ASSET native/gumball/nodes/chocolate_world.rgb565
+MISSING_ASSET native/gumball/nodes/citrus_world.rgb565
+MISSING_ASSET native/gumball/nodes/crystal_field.rgb565
+MISSING_ASSET native/gumball/nodes/gas_giant.rgb565
+MISSING_ASSET native/gumball/nodes/gummy_world.rgb565
+MISSING_ASSET native/gumball/nodes/ice_candy_world.rgb565
+MISSING_ASSET native/gumball/nodes/outpost_station.rgb565
+MISSING_ASSET native/gumball/nodes/ring_world.rgb565
+PASS actual Gumball module controls/render/failure audit (observed defects remain)

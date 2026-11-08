@@ -130,11 +130,13 @@ final class UiFeedback implements AutoCloseable {
             // Even a stop/start collapsed into one UI turn resets old voices.
             controllerSpringSound.stop();
             combatSound.stop();
+            redLedgerSound.stop();
             stopTone();
             if (breakwaterAudio != null) breakwaterAudio.setSessionActive(false);
             appliedNativeSessionGeneration = sessionGeneration;
         } else if (suspended || !active || !focusAllowed) {
             combatSound.stop();
+            redLedgerSound.stop();
             stopTone();
         }
         if (breakwater && breakwaterAudio == null)
@@ -262,6 +264,7 @@ final class UiFeedback implements AutoCloseable {
         audioGeneration++;
         controllerSpringSound.stop();
         combatSound.stop();
+        redLedgerSound.stop();
         stopTone();
         if (breakwaterAudio != null) breakwaterAudio.pauseForLifecycle();
     }

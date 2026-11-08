@@ -1,0 +1,39 @@
+{
+  "cases": {
+    "red-ledger-audio-lifecycle": {
+      "attempts": [
+        {
+          "boot_id": "d5f3c8ef-5787-4754-89e6-9c4f29225a63",
+          "command": [
+            "env",
+            "PATH=/workspace/scratch/d76b27d6a834/audit-work/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/override:/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin:/opt/codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/fallback",
+            "bash",
+            "scripts/audio/verify-red-ledger-lifecycle.sh"
+          ],
+          "duration_seconds": 1.021,
+          "exit_code": 0,
+          "finished_at": "2026-11-08T19:23:56.552116+00:00",
+          "layer": "real production Java audio lifecycle with named platform doubles",
+          "log": "red-ledger-audio-lifecycle-attempt-1.log",
+          "log_sha256": "6c798e9087f0a27249cee085a61484e09691714f9f3841f14f89be3c2ac75d76",
+          "process_group": 8,
+          "started_at": "2026-11-08T19:23:55.530685+00:00",
+          "status": "passed",
+          "timeout_seconds": 240
+        }
+      ]
+    }
+  },
+  "last_resumed_at": "2026-11-08T19:23:55.528957+00:00",
+  "manifest_sha256": "f3b37d97593113718c6f17be8259b9fbe93155572f6847399186bc6230f8ec47",
+  "schema": 1,
+  "source": {
+    "head_at_start": "3af395812fc062505e6afa05ff3a06063198189d",
+    "tracked_source_sha256": "0b093c03f3b39e3c0453ee6540099ede920b30030ad8f7b8b4369df86a1627cc"
+  },
+  "started_at": "2026-11-08T19:23:55.528872+00:00",
+  "summary": {
+    "red-ledger-audio-lifecycle": "passed"
+  },
+  "updated_at": "2026-11-08T19:23:56.554494+00:00"
+}

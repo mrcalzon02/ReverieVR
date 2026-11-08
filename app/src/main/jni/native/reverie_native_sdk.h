@@ -405,6 +405,14 @@ static inline int ReverieNativeApiSupportsPrepareFrameV1(
         && api->prepare_frame != NULL;
 }
 
+static inline int ReverieNativeApiSupportsPrepareExitV1(
+    const ReverieNativeModuleApiV1 *api
+) {
+    return ReverieNativeApiHasMandatoryV1(api)
+        && api->struct_size >= REVERIE_NATIVE_MODULE_API_V1_PREPARE_EXIT_MIN_SIZE
+        && api->prepare_exit != NULL;
+}
+
 static inline const ReverieNativeModuleCapabilitiesV1 *
 ReverieNativeApiCapabilitiesV1(
     const ReverieNativeModuleApiV1 *api

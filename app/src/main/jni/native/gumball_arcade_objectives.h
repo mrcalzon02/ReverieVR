@@ -88,6 +88,7 @@ public:
     const std::array<SalvagePickup,kCapacity>& items()const{return items_;}
     void clear(){items_={};collected_=0;expired_=0;dropped_=0;}
 private:
+    friend class CampaignSave;
     std::array<SalvagePickup,kCapacity> items_{};
     int collected_=0,expired_=0,dropped_=0;
 };

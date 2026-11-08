@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 
+namespace reverie { namespace recon { class Checkpoint; } }
 namespace reverie { namespace lantern {
 
 enum class Sector : uint8_t { RailApproach = 0, Orchard = 1, RiverCrossing = 2 };
@@ -29,13 +30,18 @@ public:
     bool CompleteRecon();
     const Photograph *photo() const;
     bool SubmitReport(Assessment assessment, ReportResult *result);
+    bool NextSortie();
+    const Photograph *evidence_photo() const;
+    const ReportResult *last_report() const;
     Phase phase() const { return phase_; }
     int32_t credibility() const { return credibility_; }
     int32_t operational_effect() const { return operational_effect_; }
 private:
+    friend class reverie::recon::Checkpoint;
     Phase phase_ = Phase::Briefing;
     Sector selected_ = Sector::RailApproach;
     Photograph photo_{};
+    ReportResult last_report_{};
     int32_t credibility_ = 0;
     int32_t operational_effect_ = 0;
 };

@@ -80,6 +80,7 @@ final class NativeModuleRuntime implements AutoCloseable {
     private final File storageRoot;
     private final RvPackInstaller contentInstaller;
     private final VirtualInputBus inputBus;
+    private final VirtualInputSnapshot inputSnapshot = new VirtualInputSnapshot();
     private final android.content.res.AssetManager packagedAssets;
     private final boolean developmentModulesAllowed;
     private final ReveriePreferences avatarPreferences;
@@ -92,6 +93,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     private boolean sitkaTouchMoveActive;
     private float sitkaTouchMoveX;
     private float sitkaTouchMoveY;
+    private boolean lifecyclePaused;
+    private boolean shellPaused;
 
     NativeModuleRuntime(
         File storageRoot,
@@ -184,8 +187,6 @@ final class NativeModuleRuntime implements AutoCloseable {
             return false;
         }
 
-        stop();
-
         String safeModuleId =
             moduleId == null
                 ? ""
@@ -229,6 +230,18 @@ final class NativeModuleRuntime implements AutoCloseable {
             );
             return false;
         }
+
+        // A new launch must not destroy an existing unsaved session.
+        boolean previousShellPause = shellPaused;
+        if (handle != 0L && !prepareForExit()) {
+            // Failed replacement keeps both the old game and its prior
+            // focus intent; a hidden pause must not strand retained play.
+            setShellPaused(previousShellPause);
+            return false;
+        }
+        stop();
+        shellPaused = false;
+        if (inputBus != null) inputBus.releaseAll();
 
         // Resolve only fully activated content. Running sessions pin their
         // revision and do not see partial installs or mid-frame replacements.
@@ -284,7 +297,8 @@ final class NativeModuleRuntime implements AutoCloseable {
             shellLocomotionLimitZ = 0.0f;
         }
 
-        nativeResume(handle);
+        if (lifecyclePaused) nativePause(handle);
+        else nativeResume(handle);
 
         ReverieLog.milestone(
             "NATIVE_MODULE",
@@ -342,24 +356,50 @@ final class NativeModuleRuntime implements AutoCloseable {
     }
 
     synchronized void resumeForLifecycle() {
-        if (handle == 0L) {
-            return;
-        }
-
-        lastUpdateNanos =
-            System.nanoTime();
-        nativeResume(handle);
+        boolean wasPaused = isPaused();
+        lifecyclePaused = false;
+        applyPauseTransition(wasPaused);
     }
 
     synchronized void pauseForLifecycle() {
-        if (handle != 0L) {
-            nativePause(handle);
-        }
+        boolean wasPaused = isPaused();
+        lifecyclePaused = true;
+        applyPauseTransition(wasPaused);
+    }
+
+    synchronized void setShellPaused(boolean paused) {
+        boolean wasPaused = isPaused();
+        shellPaused = paused;
+        applyPauseTransition(wasPaused);
+    }
+
+    synchronized boolean isPaused() {
+        return lifecyclePaused || shellPaused;
+    }
+
+    private void applyPauseTransition(boolean wasPaused) {
+        boolean paused = isPaused();
+        if (handle == 0L || paused == wasPaused) return;
+        // A menu or Activity interruption must not turn into simulation
+        // catch-up time on the first resumed frame.
+        lastUpdateNanos = System.nanoTime();
+        sitkaTouchMoveActive = false;
+        sitkaTouchMoveX = sitkaTouchMoveY = 0.0f;
+        if (paused && inputBus != null) inputBus.releaseAll();
+        if (paused) nativePause(handle);
+        else nativeResume(handle);
+    }
+
+    synchronized boolean prepareForExit() {
+        if (handle == 0L) return true;
+        setShellPaused(true);
+        return nativePrepareExit(handle);
     }
 
     synchronized void setSitkaWalkTouchpad(float x,float y,boolean enabled) {
         sitkaTouchMoveActive = enabled
             && handle != 0L
+            && !isPaused()
             && "sitka".equals(activeModuleId)
             && Float.isFinite(x) && Float.isFinite(y);
         sitkaTouchMoveX=sitkaTouchMoveActive?
@@ -380,7 +420,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         float[] listenerPosition,
         float[] listenerRight
     ) {
-        if (handle == 0L) {
+        if (handle == 0L || isPaused()) {
             return 0;
         }
 
@@ -396,14 +436,13 @@ final class NativeModuleRuntime implements AutoCloseable {
         boolean secondary = false;
 
         if (inputBus != null) {
-            moveX =
-                inputBus.getJoystickAxisX();
-            moveY =
-                inputBus.getJoystickAxisY();
-            primary =
-                inputBus.isJoystickButtonDown(0);
-            secondary =
-                inputBus.isJoystickButtonDown(1);
+            // Retain a complete press/release between render frames for one
+            // authoritative update, matching the bus's existing tap contract.
+            inputBus.capture(inputSnapshot);
+            moveX = inputSnapshot.joystickAxisX;
+            moveY = inputSnapshot.joystickAxisY;
+            primary = inputSnapshot.joystickButtons[0];
+            secondary = inputSnapshot.joystickButtons[1];
         }
 
         // Sitka owns ground collision and world translation. When a
@@ -537,6 +576,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         shellLocomotionLimitZ = 0.0f;
         sitkaTouchMoveActive=false;
         sitkaTouchMoveX=sitkaTouchMoveY=0.0f;
+        shellPaused = false;
 
         nativePause(active);
         nativeDestroy(active);
@@ -585,6 +625,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     private static native void nativePause(
         long handle
     );
+
+    private static native boolean nativePrepareExit(long handle);
 
     private static native long nativeDrainSoundCues(long handle);
     private static native long nativeDrainSpatialSoundCues(long handle);

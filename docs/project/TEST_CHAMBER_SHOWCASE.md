@@ -1,5 +1,32 @@
 # Procedural Test Chamber — working integrated showcase (2026-10-30)
 
+## Project recovery and readable controls — 2026-11-08 source
+
+The native workshop can now recover from a bad default project. It checks
+the other slots for an existing valid project before choosing an unused
+fallback slot, and reports which unreadable projects were retained.
+Next Project skips unreadable alternatives while keeping their original
+bytes untouched. If every slot is unreadable, the module still launches
+with a read-only preview and an actionable Retry Projects screen. A retry
+can reopen a repaired slot without destroying and recreating the module.
+
+Dirty edits remain in memory on write failure, including an error returned
+after replacement bytes became visible. Project switching and Play Test
+wait for a successful save. Quiescent edits retry after two seconds;
+pause and the optional `prepare_exit` callback flush synchronously, and
+ordinary host exit remains blocked while edits or active recovery remain
+unresolved. Pause/resume requires both action buttons to be released.
+
+The showcase header/footer and every workshop tool use bounded centred
+Lato text. The tool column's rendering and ray hit regions share the same
+visible horizontal and row constants, with separate help/status rows.
+Real Mesa GLES captures include both eyes for showcase, edit and recovery
+screens. Fault tests exercise actual module Create, Update, pause/resume
+and exit callbacks, in addition to the existing scene/motion/light/sound
+core tests. This does not replace physical headset readability, storage,
+audio and performance acceptance. See
+`docs/project/NATIVE_RECENT_GAMES_REPAIR_2026-11-08.md`.
+
 The installed **ReverieVR native Test Chamber** has now been expanded from the original two procedural objects into a practical, low-allocation visual/audio regression environment. The source is the bundled `app/src/main/assets/native/test-chamber/scene.rvscene`, parsed with the strict existing REVSCENE v1 editor contract. The full layout has **30 authored primitive parts**. They deliberately form recognizable composite objects (an arch/door frame, chair, table, crate stack, display plinth, beacon, light samples, orbiting specimen and rotor) in addition to primitive stone/metal/glass/gold material examples, with the avatar/wardrobe mesh still present. No random or unrelated internet artwork substitutes for the test assets.
 
 ## Real native rendering

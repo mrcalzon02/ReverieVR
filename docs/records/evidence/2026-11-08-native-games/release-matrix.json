@@ -1,0 +1,3974 @@
+{
+  "schema_version": 1,
+  "artifact_type": "consolidated_native_game_completion_and_release_readiness_matrix",
+  "generated_utc": "2026-11-08T17:19:18.809802+00:00",
+  "audit_baseline_sha": "12d4018c90e56a3767b8ffc58a2e5394440caec1",
+  "source_note": "Consolidates already executed/source-traced audits. Relevant native implementation was unchanged at documentation checkpoint8a5196aa97a73cdae1393e27529bd51914fc1b0f. This consolidation runs no game tests and makes no production/remote changes.",
+  "inventory": {
+    "registered_titles": 16,
+    "registered_development_only": 7,
+    "registered_ordinary_catalog": 9,
+    "source_only_additional_projects": [
+      "sitka"
+    ],
+    "matrix_entries": 17,
+    "registry_path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java"
+  },
+  "development_apk_publication_policy": {
+    "separate_from_game_completion": true,
+    "existing_policy": "Build/launch/run failures and required updater/multiplayer failures block publication. Visual/style/balance findings remain diagnostics. A publishable development APK is distinct from a conservatively completed game.",
+    "policy_source_anchors": [
+      {
+        "path": "docs/records/2026-11-08-native-games-release-audit.md",
+        "line": 11
+      },
+      {
+        "path": ".github/workflows/reverie-all-integrated-games-ci.yml",
+        "line": 5
+      }
+    ],
+    "matrix_effect": "No new blocking CI, workflow, publisher or publication cadence is created. Functional findings are evaluated under existing user policy, not by changing it. Per-title completion stages are acceptance criteria for a completed-game/stable-utility claim.",
+    "publication_verdict": "not_assigned; root audit owns exact APK/build/artifact evaluation",
+    "single_host_apk_preserved": true,
+    "no_percentage_or_calendar_estimates": true
+  },
+  "evidence_interpretation": {
+    "actual_module_reproduction": "Actual production module callbacks or interaction functions executed; exact probe/log identifies whether real graphics were included.",
+    "source_traced": "Code path/data flow established without executing the specified Android/device interaction. Do not promote to runtime acceptance.",
+    "rendered_capture": "Actual GLES framebuffer or authentic Android artifact inspected; projection-specific findings are not universal headset judgments.",
+    "synthetic_world_integration": "Actual production simulation/module runs on bounded fixture world; does not establish packaged geographic world admission.",
+    "physical_acceptance": "Not established by these workstream audits; retained device requirements support completion claims, not newly invented publication CI.",
+    "negative_result": "A suspected bug was not reproduced in the stated cases; this does not prove absence for every state/device sequence.",
+    "test_exit_interpretation": "Classics save probes and recent Guess/Breakwater probes intentionally fail release expectations and report nonzero exits. Featured probes assert and record defect reproductions, so their zero exits are not product-fix claims."
+  },
+  "shared_host_findings": [
+    {
+      "id": "HOST-QUICK-MENU-01",
+      "title": "Quick Menu continues native Update",
+      "evidence_type": "source_traced_not_android_replayed",
+      "observed": "While Quick Menu is visible, renderer calls native update with POINTER_NONE; runtime still computes delta and reads retained joystick axes/buttons. JNI invokes module update without paused guard. POINTER_NONE suppresses sound afterward, not time or held controls.",
+      "affected_scope": "All registered native paths; actual simulation effect depends on module. Pong/Snake/Breakout movement and board CPU work are explicitly traced.",
+      "source_anchors": [
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 2090
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+          "line": 383
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+          "line": 447
+        },
+        {
+          "path": "app/src/main/jni/native/reverie_native_host.cpp",
+          "line": 1105
+        },
+        {
+          "path": "app/src/main/jni/native/classic_games_module.cpp",
+          "line": 1363
+        },
+        {
+          "path": "app/src/main/jni/native/classic_games_module.cpp",
+          "line": 1638
+        },
+        {
+          "path": "app/src/main/jni/native/classic_games_module.cpp",
+          "line": 1730
+        }
+      ],
+      "completion_impact": "Safe pause semantics are not established; an active arcade run may advance while settings are read.",
+      "repair_exit_criteria": [
+        "Opening intended pause menu produces no simulation or CPU-result advancement over a controlled interval.",
+        "Returning resumes with correct clock policy and deliberate input; per-eye rendering does not advance state."
+      ],
+      "evidence_files": [
+        "evidence/classics/host-menu-followup.md"
+      ],
+      "creates_new_ci_gate": false
+    },
+    {
+      "id": "HOST-HOME-02",
+      "title": "Home tears down and RESUME NATIVE constructs a new instance",
+      "evidence_type": "source_traced_host_route_plus_existing_module_recreation_tests",
+      "observed": "Quick Menu Home releases GL then requests stop; Activity stops runtime; runtime invokes native Pause/Destroy; JNI closes module. RESUME NATIVE starts ordinary playback, which creates a new instance. Label availability checks module identity, not a saved match.",
+      "affected_scope": "All admitted native modules; exact loss/restoration depends on each save implementation. All eight classic loss cases were already reproduced at this exact lifecycle boundary.",
+      "source_anchors": [
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 5760
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+          "line": 2078
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+          "line": 527
+        },
+        {
+          "path": "app/src/main/jni/native/reverie_native_host.cpp",
+          "line": 954
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 7815
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+          "line": 180
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+          "line": 238
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 7758
+        }
+      ],
+      "completion_impact": "Resume label cannot imply durable continuation where module state is not persisted. Android Back outside Quick Menu also takes stop/Home route.",
+      "repair_exit_criteria": [
+        "Home→RESUME restores the declared per-title continuation state, or truthfully offers a fresh session without mislabeling it.",
+        "Each title preserves costly/once-only state across Pause/Destroy/Create and rejects destructive recovery without deliberate action."
+      ],
+      "evidence_files": [
+        "evidence/classics/host-menu-followup.md",
+        "evidence/classics/lifecycle.log",
+        "evidence/featured/red_ledger_module.log",
+        "evidence/featured/gumball_module.log",
+        "evidence/featured/omega_module.log",
+        "evidence/recent/guess_module_probe.log"
+      ],
+      "creates_new_ci_gate": false
+    },
+    {
+      "id": "HOST-RELEASE-03",
+      "title": "Release events while Quick Menu is open can leave joystick state latched",
+      "evidence_type": "source_traced_data_flow_not_device_replayed",
+      "observed": "Native button/axis values persist in VirtualInputBus. Ordinary Menu resets HID keyboard/mouse only. Suppressed binding callbacks discard releases/zero axes while physical router still advances previous-edge state. Closing Menu only changes flags. Update continues reading retained values.",
+      "affected_scope": "Native Daydream SELECT/touchpad bindings on ordinary or recovery menu path; Home teardown separately releases hosted profile.",
+      "source_anchors": [
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/BuiltInBindingProfiles.java",
+          "line": 560
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/BuiltInBindingProfiles.java",
+          "line": 638
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VirtualInputBus.java",
+          "line": 60
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VirtualInputBus.java",
+          "line": 105
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+          "line": 1105
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+          "line": 1178
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 1155
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 1641
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrInputRouter.java",
+          "line": 251
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrInputRouter.java",
+          "line": 306
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrInputRouter.java",
+          "line": 599
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 5790
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java",
+          "line": 1973
+        }
+      ],
+      "completion_impact": "Held Select or pad direction can remain active after its physical release was suppressed; this is not yet an executed device reproduction.",
+      "repair_exit_criteria": [
+        "Hold Select or nonzero pad, open menu, release inside menu, close without new input: guest buttons/axes remain zero during menu and on return.",
+        "Repeat via headset-recovery menu entry and all supported controller sources; re-arm only from a clean neutral state."
+      ],
+      "evidence_files": [
+        "evidence/classics/host-menu-followup.md"
+      ],
+      "creates_new_ci_gate": false
+    }
+  ],
+  "shared_host_protections_observed": {
+    "evidence_type": "source_traced",
+    "items": [
+      "Activity Pause releases bindings, resets HID, calls native Pause and pauses CardboardView; resume resets elapsed-clock baseline.",
+      "Controller disconnect/source changes release input and use a neutral-control resume gate.",
+      "Home ends hosted profile, releasing its input; its loss risk is persistence, distinct from Close-menu latch risk."
+    ],
+    "source_anchors": [
+      {
+        "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+        "line": 314
+      },
+      {
+        "path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+        "line": 344
+      },
+      {
+        "path": "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+        "line": 925
+      },
+      {
+        "path": "app/src/main/java/io/github/mrcalzon02/reverievr/ControllerResumeGate.java",
+        "line": 14
+      },
+      {
+        "path": "app/src/main/java/io/github/mrcalzon02/reverievr/InputBindingManager.java",
+        "line": 75
+      }
+    ],
+    "evidence_files": [
+      "evidence/classics/host-menu-followup.md"
+    ]
+  },
+  "games": [
+    {
+      "id": "between-deliveries-red-ledger",
+      "name": "Between Deliveries: The Red Ledger",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 25
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Red Ledger",
+        "asset_namespace": "red-ledger"
+      },
+      "current_scope": {
+        "summary": "Playable three-room bar economy; full property/district/monthly campaign remains unfinished.",
+        "implemented_features": [
+          "Cup/tap/serve/payment/wash work loop",
+          "Finite branded goods, suppliers and faction favor",
+          "Paid renovation tiers, clientele condition and day-close ledger"
+        ]
+      },
+      "conservative_stage": "playable_opening_economy",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "implemented_but_faulty",
+        "description": "372-byte composite restores current economy/room, but rejected writes are ignored/no pause retry, and base economic bytes lack integrity protection.",
+        "evidence_types": [
+          "actual_module_fault_injection",
+          "actual_codec_mutation",
+          "actual_module_recreation"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/red_ledger_module.cpp",
+            "line": 539
+          },
+          {
+            "path": "app/src/main/jni/native/red_ledger_module.cpp",
+            "line": 822
+          },
+          {
+            "path": "app/src/main/jni/native/red_ledger_simulation.cpp",
+            "line": 215
+          }
+        ],
+        "evidence_files": [
+          "evidence/featured/red_ledger_module.log",
+          "evidence/featured/save_boundary_probe.log"
+        ],
+        "limits": [
+          "Current base-segment mutation is reproduced; no claim about every possible corrupt payload or Android power-loss timing."
+        ]
+      },
+      "key_open_issues": [
+        {
+          "id": "F01",
+          "summary": "Payment action yields live cash2480, but rejected save leaves durable cash2200/pending payment280. Restored availability,80 idle updates and Pause perform no retry; recreation rolls back acknowledged collection. Prior checkpoint is coherent and permits one later collection.",
+          "evidence_type": "actual_module_fault_injection",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 539
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 822
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 2796
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/red_ledger_module_probe.cpp",
+            "evidence/featured/red_ledger_module.log",
+            "evidence/featured/red-ledger-after-save-failure-left.png"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "F02",
+          "summary": "Flipping bit0 of byte12 in valid372-byte composite changes restored cash2480 to2481 and is accepted; standalone160-byte serializer similarly accepts2200→2201.",
+          "evidence_type": "actual_codec_and_module_mutation",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_simulation.cpp",
+              "line": 215
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_simulation.cpp",
+              "line": 330
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 568
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/save_boundary_probe.cpp",
+            "evidence/featured/save_boundary_probe.log",
+            "evidence/featured/red_ledger_module_probe.cpp",
+            "evidence/featured/red_ledger_module.log"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "F07",
+          "summary": "Red ROOM plaque crosses first status line. Gumball save warning crosses affordability hint. Omega END TURN overlaps tactical title.",
+          "evidence_type": "actual_stereo_framebuffer_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_signage.h",
+              "line": 28
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 1797
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 272
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 632
+            },
+            {
+              "path": "app/src/main/jni/native/omega_front_module.cpp",
+              "line": 852
+            },
+            {
+              "path": "app/src/main/jni/native/omega_front_module.cpp",
+              "line": 857
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/red-ledger-bar-left.png",
+            "evidence/featured/gumball-save-failure-left.png",
+            "evidence/featured/omega-tactical-left.png"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "F08",
+          "summary": "This checkout loads24 icons,16 product meshes,4 owned smoking meshes;0/14 curated room props and0/6 patrons. Existing runner omits two pertinent asset tests; one requires external real files.",
+          "evidence_type": "actual_asset_loader_and_test_inventory",
+          "category": "asset_acceptance",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 1307
+            },
+            {
+              "path": "app/src/test/native/red_ledger_owned_patrons_test.cpp",
+              "line": 1
+            },
+            {
+              "path": "app/src/test/native/red_ledger_beckenburg_props_test.cpp",
+              "line": 10
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/red_ledger_module.log",
+            "evidence/featured/red_ledger_existing.log",
+            "evidence/featured/red-ledger-bar-left.png"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "F09",
+          "summary": "Opening three-room economy repeats daily pattern; fixed arrivals, partial upgrades, no complete upper-floor/district/monthly cast/six-ending campaign.",
+          "evidence_type": "source_and_canonical_design",
+          "category": "intended_scope",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_simulation.cpp",
+              "line": 24
+            },
+            {
+              "path": "docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md",
+              "line": 11
+            },
+            {
+              "path": "docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md",
+              "line": 17
+            },
+            {
+              "path": "docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md",
+              "line": 54
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/FEATURED_NATIVE_AUDIT.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Repair current save and room interaction",
+          "work": "Authenticate the entire composite, retain pending writes, show retry/status and separate plaque/status layout.",
+          "observable_exit_criteria": [
+            "Single-bit cash mutation is rejected without changing the last valid save.",
+            "After write rejection then recovery, paid service/stock/room actions persist exactly once across pause/recreation.",
+            "Each seated work target is reachable and its state/error text is readable."
+          ],
+          "acceptance_class": "preservation_and_interaction",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Complete bar economics",
+          "work": "Implement meaningful storage/quality/perishability, affinity-driven patron consequences, accounting, calendar pressure and promised upgrade machinery.",
+          "observable_exit_criteria": [
+            "From-new operating days demonstrate scarcity, genuine supplier choice, condition and arrival effects.",
+            "Every purchased upgrade provides its documented function and survives restart."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Complete property and district",
+          "work": "Add genuine upper-floor/private activities and district commerce; deliver declared room/patron assets.",
+          "observable_exit_criteria": [
+            "Every included location is reachable and useful; transactions obey real inventory/permissions.",
+            "All release asset IDs are installed, decoded and visibly used; no silent required-content fallbacks."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Complete named narrative and endings",
+          "work": "Implement monthly cast transitions, neutrality pressure and six saved faction-dependent Month Five endings; resolve documented continuity ambiguities.",
+          "observable_exit_criteria": [
+            "Each required monthly beat occurs at its proper saved prerequisite.",
+            "Representative legitimate playthroughs reach every defined ending without softlocks or invented neutral ending."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Complete the full intended Between Deliveries campaign with current-save integrity, controls, audio, packaging and reference-device acceptance. Pre1.0 legacy-save migration is not presumed required.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 5
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/featured/FEATURED_NATIVE_AUDIT.md",
+        "evidence/featured/findings.json",
+        "evidence/featured/red_ledger_existing.log",
+        "evidence/featured/red_ledger_module.log",
+        "evidence/featured/red-ledger-bar-left.png",
+        "evidence/featured/save_boundary_probe.log",
+        "evidence/remote/hub/native-menu-between-deliveries-red-ledger.png"
+      ]
+    },
+    {
+      "id": "breakwater-battery",
+      "name": "Breakwater Battery",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 27
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Breakwater Battery",
+        "asset_namespace": "breakwater"
+      },
+      "current_scope": {
+        "summary": "Four-location coastal defense campaign with shops, weapons/upgrades/support and a new incomplete coastal renderer.",
+        "implemented_features": [
+          "Four locations and four difficulties; day/night schedules",
+          "Five selected weapons, SAM/artillery/airstrike/support",
+          "Transport, landing infantry, armor and aircraft",
+          "Real menu/hit geometry and deliberate reset confirmation"
+        ]
+      },
+      "conservative_stage": "integrated_campaign_alpha_with_incomplete_coastal_rebuild",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "implemented_checkpoint_only_but_faulty",
+        "description": "80-byte Shop checkpoint; actual read I/O failure is treated as empty and can be overwritten. Failed writes still activate with no Pause retry. Wave-clear saving is source-traced as deferred until summary action.",
+        "evidence_types": [
+          "actual_module_menu_fault_injection",
+          "source_traced_not_kill_tested",
+          "existing_campaign_codec_tests"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/breakwater_module.cpp",
+            "line": 322
+          },
+          {
+            "path": "app/src/main/jni/native/breakwater_module.cpp",
+            "line": 380
+          },
+          {
+            "path": "app/src/main/jni/native/breakwater_module.cpp",
+            "line": 1788
+          },
+          {
+            "path": "app/src/main/jni/native/breakwater_module.cpp",
+            "line": 1927
+          }
+        ],
+        "evidence_files": [
+          "evidence/recent/breakwater_save_probe.log",
+          "evidence/recent/breakwater_campaign.log"
+        ],
+        "limits": [
+          "Active combat enemies/projectiles/clocks are intentionally absent from current Shop record; explicit wave restart may be valid if durable and communicated."
+        ]
+      },
+      "key_open_issues": [
+        {
+          "id": "BW-01",
+          "summary": "Save read I/O failure is treated as empty; choosing difficulty writes a fresh 80-byte checkpoint over the unreadable slot.",
+          "evidence_type": "reproduced with production Interact",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 322,
+              "reported_line_specification": "322-333"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 380,
+              "reported_line_specification": "380-399"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 420,
+              "reported_line_specification": "420-437"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "BW-02",
+          "summary": "Failed write returns activation feedback; zero data persisted; Pause performs no retry.",
+          "evidence_type": "reproduced with production Interact and Pause",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 335,
+              "reported_line_specification": "335-342"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 411,
+              "reported_line_specification": "411"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 436,
+              "reported_line_specification": "436"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 475,
+              "reported_line_specification": "475-480"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 1788,
+              "reported_line_specification": "1788-1805"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "BW-03",
+          "summary": "Newly cleared wave is shown at summary without saving; checkpoint is delayed until summary action.",
+          "evidence_type": "source-established; not kill-tested",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 1927,
+              "reported_line_specification": "1927-1943"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 402,
+              "reported_line_specification": "402-419"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "BW-04",
+          "summary": "HULL HIT banner overlaps persistent DOUBLE CLICK A SHORE POST / WEAPONS instructions.",
+          "evidence_type": "actual GLES framebuffer inspected",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 1404,
+              "reported_line_specification": "1404-1407"
+            },
+            {
+              "path": "app/src/main/jni/native/breakwater_module.cpp",
+              "line": 1491,
+              "reported_line_specification": "1491-1499"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "BW-05",
+          "summary": "Weapon mounts/pivots/reload/recoil/UVs, invasion model/unloading routes, speed/range tuning remain incomplete; current spawns ~600m versus planned1–3km.",
+          "evidence_type": "current intent record and source",
+          "category": "intended_scope",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "docs/records/2026-11-06-breakwater-coastal-rebuild-foundation.md",
+              "line": 16,
+              "reported_line_specification": "16-19"
+            },
+            {
+              "path": "docs/records/2026-11-06-breakwater-coastal-rebuild-foundation.md",
+              "line": 33,
+              "reported_line_specification": "33"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Harden checkpoint and slot safety",
+          "work": "Separate absent/invalid/I/O-failed reads; retain originals, require explicit replacement, retry failed writes and checkpoint completed waves/victory immediately.",
+          "observable_exit_criteria": [
+            "Unreadable existing slot cannot be overwritten as empty by ordinary selection/difficulty.",
+            "Failed purchase/write retains dirty state and retries with truthful status.",
+            "Leaving at displayed wave result preserves the earned result; mid-wave restart/resume contract is explicit."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Finish intended coastal battlefield rebuild",
+          "work": "Finish mounts/pivots/reload/recoil/UVs, model identity, unloading paths, range/speed/targeting and shore detail for all four theaters.",
+          "observable_exit_criteria": [
+            "Weapon render/pick/collision transforms agree and advertised mount/reload/recoil behavior works.",
+            "Ground/sea/air units and unloading are coherent at approved range; all four locations have intended usable content."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Complete console/armory/shop/station interaction",
+          "work": "Separate alarm/instruction layout; teach reload, locked weapon/AA conditions; verify slots, summaries, reset and support with held/released input.",
+          "observable_exit_criteria": [
+            "All three slots and explicit reset behave consistently without double actions.",
+            "Important damage/aim/next-wave feedback and controls remain readable in actual two-eye views."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Exercise actual campaigns across four theaters/difficulties, shop/purchase/wave-clear/defeat/victory interruptions, target recognition and long coastal-combat sessions.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/recent/report.md",
+        "evidence/recent/findings.json",
+        "evidence/recent/results.json",
+        "evidence/recent/breakwater_campaign.log",
+        "evidence/recent/breakwater-world-gl.log",
+        "evidence/recent/breakwater_stereo_capture.log",
+        "evidence/recent/breakwater_save_probe.log",
+        "evidence/recent/captures/breakwater-console.png",
+        "evidence/remote/hub/native-menu-breakwater-battery.png"
+      ]
+    },
+    {
+      "id": "omega-front",
+      "name": "Omega Front",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 29
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Omega Front",
+        "asset_namespace": "omega-front"
+      },
+      "current_scope": {
+        "summary": "Real16-sector Hearthfall region and six tactical operations; larger documented campaign remains unfinished.",
+        "implemented_features": [
+          "Explicit turn-based battle with queued orders",
+          "Travel/deploy, finite logistics, recruitment/production/convoy and scouting",
+          "17 major-faction relationships, accords/obligations and consequences",
+          "Title/Campaign/Continue/New-confirm/Pause/Orders/Gallery and full strategic/tactical saves"
+        ]
+      },
+      "conservative_stage": "substantial_playable_regional_campaign_foundation",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "implemented_with_positive_failure_recovery",
+        "description": "2048-byte schema9 checked strategic/tactical checkpoint. Actual rejected EndTurn write became visible; recovered-storage Pause retried, then recreation restored checksum2463315748711018088/tick1 behind safe Title.",
+        "evidence_types": [
+          "actual_module_fault_recovery",
+          "actual_module_recreation",
+          "existing_codec_and_integration_tests",
+          "parent_verified_android_saved_state_artifact"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/omega_front_campaign_save.h",
+            "line": 18
+          },
+          {
+            "path": "app/src/main/jni/native/omega_front_campaign_save.h",
+            "line": 80
+          },
+          {
+            "path": "app/src/main/jni/native/omega_front_module.cpp",
+            "line": 923
+          },
+          {
+            "path": "app/src/main/jni/native/omega_front_module.cpp",
+            "line": 1012
+          }
+        ],
+        "evidence_files": [
+          "evidence/featured/omega_module.log",
+          "evidence/featured/omega_existing.log",
+          "evidence/remote/hub/omega-front-ci-checkpoint-before.bin",
+          "evidence/remote/hub/omega-front-ci-checkpoint-after.bin"
+        ],
+        "limits": [
+          "This does not certify every power-loss timing or unavailable storage through process death.",
+          "Parent owns precise Android artifact provenance; physical headset acceptance remains unverified."
+        ]
+      },
+      "key_open_issues": [
+        {
+          "id": "F07",
+          "summary": "Red ROOM plaque crosses first status line. Gumball save warning crosses affordability hint. Omega END TURN overlaps tactical title.",
+          "evidence_type": "actual_stereo_framebuffer_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_signage.h",
+              "line": 28
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 1797
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 272
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 632
+            },
+            {
+              "path": "app/src/main/jni/native/omega_front_module.cpp",
+              "line": 852
+            },
+            {
+              "path": "app/src/main/jni/native/omega_front_module.cpp",
+              "line": 857
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/red-ledger-bar-left.png",
+            "evidence/featured/gumball-save-failure-left.png",
+            "evidence/featured/omega-tactical-left.png"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "F11",
+          "summary": "16 playable sectors/six operations;30×20 overview cells are geography, not600 playable sectors. Full70-arc campaign and broader management UX remain open.",
+          "evidence_type": "source_and_canonical_design",
+          "category": "intended_scope",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/omega_front_frontier.h",
+              "line": 21
+            },
+            {
+              "path": "docs/native/OMEGA_FRONT_MENU_PLAYABILITY_AUDIT.md",
+              "line": 1
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/omega_existing.log",
+            "evidence/featured/omega_module.log",
+            "evidence/featured/FEATURED_NATIVE_AUDIT.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Complete existing region interaction",
+          "work": "Separate tactical title/EndTurn, explain legal actions/costs/goals and finish real six-operation input/aftermath paths.",
+          "observable_exit_criteria": [
+            "New player can start, understand, negotiate/fight, complete and resume all current operations without console intervention.",
+            "EndTurn control is readable and deliberate; denied actions explain applicable reasons."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Complete actual campaign management",
+          "work": "Provide meaningful planning, roster/equipment/tech/logistics/history/objective pages using authoritative state.",
+          "observable_exit_criteria": [
+            "Each displayed action works or explains its unmet prerequisites.",
+            "Planning/launch/abandon and management choices persist and have observable simulation effects."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Produce the documented campaign",
+          "work": "Implement additional authored arcs/theaters region by region; preserve chronology, progression and consequences.",
+          "observable_exit_criteria": [
+            "Each claimed arc is executable and complete; geographic overview cells are not counted as playable sectors.",
+            "Legitimate campaign routes cover advancement, defeat/recovery and repeated settlement without softlocks."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate the full intended Omega campaign, save version/failure behavior, art/audio/credits, controller/stereo and sustained device behavior. A regional prologue requires an explicit separate scope decision.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/featured/FEATURED_NATIVE_AUDIT.md",
+        "evidence/featured/findings.json",
+        "evidence/featured/omega_module.log",
+        "evidence/featured/omega_existing.log",
+        "evidence/featured/omega-tactical-left.png",
+        "evidence/remote/hub/omega-front-ci-checkpoint-before.bin",
+        "evidence/remote/hub/omega-front-ci-checkpoint-after.bin",
+        "evidence/remote/hub/native-menu-omega-front.png"
+      ]
+    },
+    {
+      "id": "gumball-armada",
+      "name": "Gumball Armada: The Search for the Candy King",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 31
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Gumball Armada",
+        "asset_namespace": "gumball-armada"
+      },
+      "current_scope": {
+        "summary": "Functional route/arcade/ship-building foundation; full revisitable sandbox and authored King campaign remain incomplete.",
+        "implemented_features": [
+          "Guarded route arm/wait/launch and real preparation menus",
+          "Controller-steered combat, weapons/upgrades, enemies/formations/objectives/salvage",
+          "Layered ship assembly/readiness/profile and paid support contracts"
+        ]
+      },
+      "conservative_stage": "playable_arcade_and_construction_foundation",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "partial_campaign_save_with_interruption_loss",
+        "description": "56-byte checksummed campaign totals and separate ship construction state; active sortie is absent. Deployed paid escort is lost on recreate; failed purchase save is visible but not retried on idle/Pause.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "actual_module_fault_injection",
+          "codec_source_inspection"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+            "line": 41
+          },
+          {
+            "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+            "line": 569
+          },
+          {
+            "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+            "line": 599
+          },
+          {
+            "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+            "line": 866
+          }
+        ],
+        "evidence_files": [
+          "evidence/featured/gumball_module.log",
+          "evidence/featured/save_boundary_probe.log"
+        ],
+        "limits": [
+          "Exact mid-sortie preservation is not implemented; current save checksum does not imply complete game-state coverage."
+        ]
+      },
+      "key_open_issues": [
+        {
+          "id": "F03",
+          "summary": "Actual Eclair purchase costs45. After guarded launch and0.55s flight, module recreation restores Chart, elapsed0, cash55, no booked/deployed support.",
+          "evidence_type": "actual_module_lifecycle",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+              "line": 41
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+              "line": 222
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+              "line": 569
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+              "line": 599
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 1173
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/gumball_module_probe.cpp",
+            "evidence/featured/gumball_module.log",
+            "evidence/featured/gumball-flight-left.png"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "F04",
+          "summary": "Blaster purchase gives level1/cash30 and visible save error after rejected write. Recovery,80 idle updates and Pause do not retry; recreation restores level0/cash100.",
+          "evidence_type": "actual_module_fault_injection",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 637
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 648
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 866
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/gumball_module_probe.cpp",
+            "evidence/featured/gumball_module.log",
+            "evidence/featured/gumball-save-failure-left.png"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "F07",
+          "summary": "Red ROOM plaque crosses first status line. Gumball save warning crosses affordability hint. Omega END TURN overlaps tactical title.",
+          "evidence_type": "actual_stereo_framebuffer_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/red_ledger_signage.h",
+              "line": 28
+            },
+            {
+              "path": "app/src/main/jni/native/red_ledger_module.cpp",
+              "line": 1797
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 272
+            },
+            {
+              "path": "app/src/main/jni/native/gumball_armada_module.cpp",
+              "line": 632
+            },
+            {
+              "path": "app/src/main/jni/native/omega_front_module.cpp",
+              "line": 852
+            },
+            {
+              "path": "app/src/main/jni/native/omega_front_module.cpp",
+              "line": 857
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/red-ledger-bar-left.png",
+            "evidence/featured/gumball-save-failure-left.png",
+            "evidence/featured/omega-tactical-left.png"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "F10",
+          "summary": "4096 sequential lane addresses are not revisitable persistent graph; four flags do not provide four authored campaigns or King finale/credits.",
+          "evidence_type": "source_and_canonical_design",
+          "category": "intended_scope",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/gumball_armada_simulation.h",
+              "line": 195
+            },
+            {
+              "path": "docs/project/GUMBALL_ARMADA_STAGED_PLAN.md",
+              "line": 20
+            },
+            {
+              "path": "docs/project/GUMBALL_ARMADA_STAGED_PLAN.md",
+              "line": 126
+            },
+            {
+              "path": "docs/project/GUMBALL_ARMADA_STAGED_PLAN.md",
+              "line": 145
+            },
+            {
+              "path": "docs/project/GUMBALL_ARMADA_STAGED_PLAN.md",
+              "line": 181
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/FEATURED_NATIVE_AUDIT.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Make interruption conserve progress and paid resources",
+          "work": "Save active sortie or adopt explicit safe restart transactions; add bounded dirty retry for campaign/shipyard; reserve warning space.",
+          "observable_exit_criteria": [
+            "Hire→launch→interrupt preserves or coherently restarts paid support without double rewards.",
+            "Failed purchase/construction writes remain recoverable and are retried; persistent and error text do not overlap.",
+            "Win/loss/kit consumption/result boundaries survive recreation under the declared contract."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Complete combat, construction and parts economy",
+          "work": "Finish functional components, weapons/defenses/actives and intended buy/sell/steal/earn loop.",
+          "observable_exit_criteria": [
+            "Different legal builds create different playable combat choices.",
+            "Parts transactions and physical readiness rules are understandable and resistant to duplication."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Build the revisitable regional graph",
+          "work": "Replace forward address progression with actual node/edge routes, return travel, vendors, persistent territory and story paths.",
+          "observable_exit_criteria": [
+            "Declared return routes and critical nodes are reachable.",
+            "Visited/cleared/commercial/story state persists without locking the mandatory route."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Finish four authored general campaigns",
+          "work": "Finish Sally as a full chapter, then Cringe/Pucker/Sauer with their distinct mechanics and boss phases.",
+          "observable_exit_criteria": [
+            "Each chapter is playable from legitimate preceding progress and provides its documented unlock/consequence.",
+            "Boss phases respond to real fitted tools and saved story requirements."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        },
+        {
+          "name": "Resolve the King campaign and finish production content",
+          "work": "Implement mystery reveal, finale, credits/postgame; finish approved art, music/announcer/voice and functioning comfort options.",
+          "observable_exit_criteria": [
+            "Full cold-start-to-credits route is possible without optional secrets or rare-drop lockouts.",
+            "Required narrative/audio/art events are present, attributable and recoverable; postgame state saves."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 5
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate complete Gumball campaign with actual steer/fire, build variety, accessibility, interruption, sustained combat/boss load and licensed content.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 6
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/featured/FEATURED_NATIVE_AUDIT.md",
+        "evidence/featured/findings.json",
+        "evidence/featured/gumball_existing.log",
+        "evidence/featured/gumball_module.log",
+        "evidence/featured/gumball-save-failure-left.png",
+        "evidence/featured/save_boundary_probe.log",
+        "evidence/remote/hub/native-menu-gumball-armada.png"
+      ]
+    },
+    {
+      "id": "ministry-lantern-desk",
+      "name": "Ministry of Intelligence: Lantern Desk",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 33
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Ministry of Intelligence",
+        "asset_namespace": "lantern-desk"
+      },
+      "current_scope": {
+        "summary": "Three-sector evidence/assessment board with deterministic16×16 photos and report grading.",
+        "implemented_features": [
+          "Sector assignment and low-quality evidence generation",
+          "Four assessment choices and graded report",
+          "Civilian false-positive candidate"
+        ]
+      },
+      "conservative_stage": "evidence_loop_demonstration",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "No host save reads/writes; next sortie replaces Simulation and discards the just-earned credibility/effect.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/recon_projects_module.cpp",
+            "line": 169
+          },
+          {
+            "path": "app/src/main/jni/native/recon_projects_module.cpp",
+            "line": 192
+          },
+          {
+            "path": "app/src/main/jni/native/recon_projects_module.cpp",
+            "line": 235
+          }
+        ],
+        "evidence_files": [
+          "evidence/featured/lantern_module.log"
+        ],
+        "limits": []
+      },
+      "key_open_issues": [
+        {
+          "id": "F05",
+          "summary": "Correct report gives credibility3/effect2; next sortie resets both0. No read_save or write_save callbacks during tested lifecycle.",
+          "evidence_type": "actual_module_lifecycle",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/recon_projects_module.cpp",
+              "line": 169
+            },
+            {
+              "path": "app/src/main/jni/native/recon_projects_module.cpp",
+              "line": 192
+            },
+            {
+              "path": "app/src/main/jni/native/recon_projects_module.cpp",
+              "line": 235
+            },
+            {
+              "path": "app/src/main/jni/native/lantern_desk_simulation.cpp",
+              "line": 69
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/recon_module_probe.cpp",
+            "evidence/featured/lantern_module.log",
+            "evidence/featured/lantern-photo-left.png"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Persist operational state",
+          "work": "Create checked world/evidence/knowledge/aircraft/report session state and Continue/New/recovery flow.",
+          "observable_exit_criteria": [
+            "Pause/recreate at assignment, evidence and report preserves intended state.",
+            "A filed report applies its consequence once and influences the next task without leaking hidden truth."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Implement the physical intelligence desk",
+          "work": "Add seated maps, photos, dossier, zoom/pan, annotation and report composition.",
+          "observable_exit_criteria": [
+            "A player inspects and cites visible evidence through accessible physical controls.",
+            "Annotations/reference/report work without unimplemented buttons or truth-revealing convenience labels."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish a changing operational area",
+          "work": "Make reconnaissance conditions and underlying causes evolve, with ambiguous cases and operational consequences.",
+          "observable_exit_criteria": [
+            "Positive/negative/false-positive cases arise from real world conditions.",
+            "Different reports produce distinct saved future operations in a bounded authored sequence."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate the focused intelligence workspace and its bounded operational outcome; do not expand acceptance into an unintended tactical RTS or full continental war.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/featured/FEATURED_NATIVE_AUDIT.md",
+        "evidence/featured/findings.json",
+        "evidence/featured/lantern_existing.log",
+        "evidence/featured/lantern_module.log",
+        "evidence/featured/lantern-photo-left.png",
+        "evidence/remote/hub/native-menu-ministry-lantern-desk.png"
+      ]
+    },
+    {
+      "id": "iron-sight-forward-detachment",
+      "name": "Iron Sight: Forward Detachment",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 35
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Forward Detachment",
+        "asset_namespace": "forward-detachment"
+      },
+      "current_scope": {
+        "summary": "Two-route patrol choice board with ambiguous clues, decisions, fuel/damage costs and guarded debrief.",
+        "implemented_features": [
+          "Main road/ridge fuel differences",
+          "Observable contact clues and three decision choices",
+          "Return and once-only debrief"
+        ]
+      },
+      "conservative_stage": "patrol_decision_demonstration",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "No host save callbacks; new patrol resets post-engagement condition75/fuel10 to100/20.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/recon_projects_module.cpp",
+            "line": 186
+          },
+          {
+            "path": "app/src/main/jni/native/recon_projects_module.cpp",
+            "line": 235
+          }
+        ],
+        "evidence_files": [
+          "evidence/featured/forward_module.log"
+        ],
+        "limits": []
+      },
+      "key_open_issues": [
+        {
+          "id": "F06",
+          "summary": "Engage outcome reaches condition75/fuel10; New Patrol resets100/20. No save reads/writes across lifecycle.",
+          "evidence_type": "actual_module_lifecycle",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/recon_projects_module.cpp",
+              "line": 186
+            },
+            {
+              "path": "app/src/main/jni/native/recon_projects_module.cpp",
+              "line": 192
+            },
+            {
+              "path": "app/src/main/jni/native/recon_projects_module.cpp",
+              "line": 235
+            }
+          ],
+          "evidence_files": [
+            "evidence/featured/recon_module_probe.cpp",
+            "evidence/featured/forward_module.log",
+            "evidence/featured/forward-debrief-left.png"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Persist detachment and legitimate recovery",
+          "work": "Save patrol/task/evidence/debrief and make repair/resupply explicit finite operations.",
+          "observable_exit_criteria": [
+            "Damage and spent resources remain until a legitimate replenishment action.",
+            "Debrief/reward applies once across interruption; new task cannot freely reset costs."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Build the compact physical sector",
+          "work": "Implement holding/JON, approach, checkpoint/bridge, industrial pocket and bypass, one scout/APC and a small dismount team.",
+          "observable_exit_criteria": [
+            "Player can prepare, traverse, observe and return through actual spatial controls.",
+            "Vehicle/team state, range/fuel and route alternatives affect a usable patrol."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Integrate the intended encounter vocabulary",
+          "work": "Add negative recon, civilian ambiguity, IED indicators, scouts, damaged infrastructure and liaison with differentiated avoid/report/engage consequences.",
+          "observable_exit_criteria": [
+            "Observable evidence supports identification without exposing hidden truth.",
+            "Information quality and survival matter to result; ROE/resource consequences are legible and persistent."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Close consecutive patrol and operation flow",
+          "work": "Complete briefing→preparation→patrol→decision→return→debrief→repair/resupply→next task and an operation outcome.",
+          "observable_exit_criteria": [
+            "Several consecutive tasks preserve mistakes, intelligence and recovery opportunities.",
+            "Operation success/failure has defined state and no once-only accounting duplication."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate the compact intended detachment game; no full80-person formation or giant combined-arms scope is added.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 5
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/featured/FEATURED_NATIVE_AUDIT.md",
+        "evidence/featured/findings.json",
+        "evidence/featured/forward_existing.log",
+        "evidence/featured/forward_module.log",
+        "evidence/featured/forward-contact-left.png",
+        "evidence/remote/hub/native-menu-iron-sight-forward-detachment.png"
+      ]
+    },
+    {
+      "id": "guess-the-door",
+      "name": "Guess the Door",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 37
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Guess the Door",
+        "asset_namespace": "guess-the-door"
+      },
+      "current_scope": {
+        "summary": "Twelve-room seeded physical-feature clue maze with timed clues, inspection, lever/open/walk/fall transitions and retry.",
+        "implemented_features": [
+          "Exactly one matching door using five two-valued feature families",
+          "2.3-second clue and inspection popup",
+          "Same-seed in-instance retry; legitimate twelve-room victory"
+        ]
+      },
+      "conservative_stage": "playable_bounded_prototype_with_transition_and_persistence_defects",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "Actual room3/remembered seed are lost on Destroy/Create; recreated room0 has new steady-clock seed. Same-seed retry is only in-memory; no save reads/writes.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+            "line": 262
+          },
+          {
+            "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+            "line": 388
+          }
+        ],
+        "evidence_files": [
+          "evidence/recent/guess_module_probe.log"
+        ],
+        "limits": []
+      },
+      "key_open_issues": [
+        {
+          "id": "GD-01",
+          "summary": "Victory new-seed primary edge resets then immediately pulls first left lever when no pointer; Ready was expected.",
+          "evidence_type": "reproduced via actual module Update after real12-room progression",
+          "category": "functional_input",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 307,
+              "reported_line_specification": "307-311"
+            },
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 339,
+              "reported_line_specification": "339-344"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "GD-02",
+          "summary": "Room3 and remembered seed lost; recreated room0 with new seed, zero host save reads/writes.",
+          "evidence_type": "reproduced Create/Pause/Resume/Destroy/Create",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 262,
+              "reported_line_specification": "262-272"
+            },
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 388,
+              "reported_line_specification": "388-392"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "GD-03",
+          "summary": "Essential timed clue is left clipped; title, seed/footer also clipped at instrumentation view. Physical headset effect unverified.",
+          "evidence_type": "authentic Android boot frame inspected",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 185,
+              "reported_line_specification": "185-201"
+            },
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 222,
+              "reported_line_specification": "222-223"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "GD-04",
+          "summary": "Mechanist artwork not imported; requested spoken line remains caption-only; temporary borrowed sound cues.",
+          "evidence_type": "current scope and source",
+          "category": "intended_scope",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "docs/project/GUESS_THE_DOOR.md",
+              "line": 28,
+              "reported_line_specification": "28-53"
+            },
+            {
+              "path": "app/src/main/jni/native/guess_the_door_module.cpp",
+              "line": 224,
+              "reported_line_specification": "224-259"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Consume transition inputs correctly",
+          "work": "Consume victory/new-seed click or add release gate; interrogate all phase boundaries.",
+          "observable_exit_criteria": [
+            "One press after Victory produces Ready with a new maze and no automatic first lever pull.",
+            "Held/released inputs never select a new puzzle as a side effect of previous phase completion."
+          ],
+          "acceptance_class": "functional_correctness",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Preserve maze and progression",
+          "work": "Save root seed, room/falls/progression and declared safe phase; add Continue/New Maze with corruption/failure recovery.",
+          "observable_exit_criteria": [
+            "Recreate retains exact remembered maze/progress and supports intentional new seed.",
+            "Interrupted animation resumes or restarts a documented safe room boundary without lost/duplicated result."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Make essential clues and controls usable",
+          "work": "Fit all timed clue/status/inspection/result strings within actual visible regions and verify pointer/rocker/gaze guidance.",
+          "observable_exit_criteria": [
+            "All ten clue strings and inspection/fall/victory views are readable in both eyes.",
+            "Switching doors and pointer/pad fallback behave consistently with taught controls."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Deliver requested artwork and speech",
+          "work": "Integrate approved Mechanist closed/open pairs while preserving five-feature clue truth; implement required approved spoken line and coherent transition audio.",
+          "observable_exit_criteria": [
+            "Every displayed matching door has the stated physical features.",
+            "Required voice/audio exists, is attributable and plays at the intended event."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Capture a full twelve-room same-APK route including fall/retry/victory/new-seed and process recovery with real controller/headset input.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 5
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/recent/report.md",
+        "evidence/recent/findings.json",
+        "evidence/recent/results.json",
+        "evidence/recent/guess-rules.log",
+        "evidence/recent/guess_module_probe.log",
+        "evidence/remote/hub/native-menu-guess-the-door.png"
+      ]
+    },
+    {
+      "id": "classic-chess",
+      "name": "Chess",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 39
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Chess",
+        "asset_namespace": "classic-chess"
+      },
+      "current_scope": {
+        "summary": "Human/CPU Chess with both player colors, rotated board, full special-move input, draw rules, SAN/reference UI and bounded CPU.",
+        "implemented_features": [
+          "King-safe legal moves; castling; en passant; four promotion choices",
+          "Checkmate/stalemate and conservative dead-position detection",
+          "Threefold/50-move claims and prospective claims; automatic fivefold/75-move draws",
+          "SAN, capture tallies, reference panels, attack overlays, difficulty and presentation-only tween"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "board",
+            "side",
+            "castling",
+            "en passant",
+            "halfmove clock",
+            "repetition map",
+            "SAN",
+            "human color",
+            "difficulty",
+            "capture tallies",
+            "promotion choice",
+            "result"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-chess",
+          "summary": "Forward screenshot crops intentional side wings; headset discovery/readability is unverified, not a proven geometry defect.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_chess_panel_layout.h",
+              "line": 5
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 148
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "CL-CHESS-002",
+          "summary": "Reported illegal move not reproduced:20 canonical perft counts and tested real-module White/rotated-Black pointer paths pass. Exact reported position/input sequence is still unavailable.",
+          "evidence_type": "bounded_negative_result",
+          "category": "targeted_investigation",
+          "completion_impact": "investigate_exact_reported_context; no_invented_rule_defect",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_board_cpu.h",
+              "line": 15
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1620
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/chess-perft.log",
+            "evidence/classics/chess-module-input.log",
+            "evidence/classics/chess-panel-layout.log"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of board, side, castling, en passant, halfmove clock, repetition map, SAN, human color, difficulty, capture tallies, promotion choice, result. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Complete match-management and diagnostic interaction paths",
+          "work": "Retain both-color New/Cancel/Continue, promotion, claims and references; capture position/action/worker serial/tween for reported move anomalies.",
+          "observable_exit_criteria": [
+            "Both colors complete legal special moves, promotion, draw claims, New/Cancel and reference open/close without double actions.",
+            "Exact reported anomaly can be reconstructed from compact position/action/worker/presentation evidence before legal rules are changed.",
+            "Head turn reaches intended 45-degree side panels; long SAN/reference content remains usable."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Complete matches and interruption cases include both colors, a pending promotion, an active CPU computation and draw-history boundaries.",
+            "Independent perft and the corrected real module pointer checks remain passing for relevant changes."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/classics/chess-perft.log",
+        "evidence/classics/chess-module-input.log",
+        "evidence/classics/chess-panel-layout.log",
+        "evidence/remote/hub/native-menu-classic-chess.png"
+      ]
+    },
+    {
+      "id": "classic-go",
+      "name": "Go",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 41
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Go",
+        "asset_namespace": "classic-go"
+      },
+      "current_scope": {
+        "summary": "19×19 human Black/CPU White Go with captures, positional superko, pass, dead-group review and Chinese area scoring.",
+        "implemented_features": [
+          "Suicide rejection and exact superko history",
+          "Two passes enter review; dead-group marking",
+          "7.5 komi; score acceptance; resume with preserved side"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "board",
+            "side",
+            "pass count",
+            "exact superko history",
+            "dead marks/review",
+            "resume side",
+            "scores",
+            "result",
+            "RNG"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-go",
+          "summary": "19×19 spacing is the densest classic interaction surface; physical target accuracy remains unverified.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 145
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1583
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of board, side, pass count, exact superko history, dead marks/review, resume side, scores, result, RNG. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Explain review and dense-board selection",
+          "work": "Show pass/review/mark/accept/resume effects, scoring ownership and komi; establish reliable feedback on the 19×19 target grid.",
+          "observable_exit_criteria": [
+            "Users can mark/unmark a whole dead group, understand score ownership and choose Accept or Resume with correct next side.",
+            "Selected and legal positions can be distinguished on dense boards in both eyes."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Full sessions cover both passing orders, contested dead groups, live ko/superko and resumed scoring.",
+            "History encoding stays exact at its declared bound; no silent truncation changes move legality."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-go.png"
+      ]
+    },
+    {
+      "id": "classic-checkers",
+      "name": "Checkers",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 43
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Checkers",
+        "asset_namespace": "classic-checkers"
+      },
+      "current_scope": {
+        "summary": "8×8 human/CPU Checkers with forced captures, multi-jumps, kinging, wins and supported draw claims.",
+        "implemented_features": [
+          "Mandatory capture and continued jumps",
+          "Three CPU difficulties with bounded search",
+          "Repetition and quiet-move draw claims, including prospective repetition"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "board/kings",
+            "side",
+            "forced continuation",
+            "quiet ply count",
+            "repetition map",
+            "difficulty",
+            "last move",
+            "result",
+            "RNG"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-checkers",
+          "summary": "Piece contrast is clear in boot capture; king distinction and target accuracy still need the headset.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1498
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1576
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of board/kings, side, forced continuation, quiet ply count, repetition map, difficulty, last move, result, RNG. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Provide durable match management and capture explanations",
+          "work": "Add explicit new-match/abandon behavior and explain forced continuations, kings and available draw claims.",
+          "observable_exit_criteria": [
+            "New/abandon never silently replaces a retained match; cancel returns to the same state.",
+            "Forced multi-jump and draw claim affordances match legal state; kings are identifiable."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Complete matches across all difficulties include mid-multi-jump reload, CPU-thinking reload and blocked-player wins.",
+            "King endgames preserve repetition and quiet-ply draw entitlement."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-checkers.png"
+      ]
+    },
+    {
+      "id": "classic-pong",
+      "name": "Pong",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 45
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Pong",
+        "asset_namespace": "classic-pong"
+      },
+      "current_scope": {
+        "summary": "First-to-eleven human/CPU paddle match with serves, rebound dynamics, scores, winner and restart.",
+        "implemented_features": [
+          "Imperfect CPU and swing-dependent bounded rebounds",
+          "Pointer/pad paddle movement",
+          "Point serves and first-to-eleven terminal loop"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "scores",
+            "ball position/velocity",
+            "paddles",
+            "moving/finished",
+            "clock",
+            "RNG"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-pong",
+          "summary": "Initial screen is clear but does not explain match target/control method; latency and ball tracking require device evidence.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 978
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of scores, ball position/velocity, paddles, moving/finished, clock, RNG. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Explain controls and match progression",
+          "work": "Show paddle control method, target score and explicit winner/replay/abandon behavior that respects retained matches.",
+          "observable_exit_criteria": [
+            "First screen tells the player how to move/serve and that eleven wins.",
+            "Both win and loss show a clear result and separate resume/replay/new-match actions."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Both winner paths complete through actual input.",
+            "Interruption at serve, live rally and final point resumes the declared deterministic safe state."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-pong.png"
+      ]
+    },
+    {
+      "id": "classic-snake",
+      "name": "Snake",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 47
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Snake",
+        "asset_namespace": "classic-snake"
+      },
+      "current_scope": {
+        "summary": "12×12 survival Snake with growth, forbidden reversal, wall/self loss, restart and true full-board completion.",
+        "implemented_features": [
+          "Food selected from actual free cells",
+          "Ordered body and grid rules",
+          "Pad/pointer direction interface and restart"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "ordered body",
+            "length",
+            "heading/pending turn",
+            "food",
+            "score",
+            "clock",
+            "moving/finished",
+            "RNG"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-snake",
+          "summary": "Upper/lower direction controls share the playfield footprint; source depth avoids a claim that food is already hidden.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1015
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1740
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "CL-SNAKE-HIT-004",
+          "summary": "Executed unchanged production module: clicking the visible UP or DOWN background center starts Snake but leaves desired and actual heading RIGHT (head77→78). Expected UP head65 and DOWN head89 both fail. Fresh-instance clicks in the coded upper/lower hit regions correctly turn UP/DOWN. Rendered centers at y=±1.02,z=−2.97 intersect the input plane at y≈±0.999394, below the ±1.38 activation thresholds.",
+          "evidence_type": "actual_production_module_pointer_reproduction",
+          "category": "functional_input",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1015
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1740
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/host-menu-followup.md",
+            "evidence/classics/snake-pointer-followup.md",
+            "evidence/classics/snake-pointer-results.json",
+            "evidence/classics/snake-pointer.log"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix",
+          "execution_result": {
+            "build_exit": 0,
+            "regression_probe_exit": 1,
+            "visible_button_expectations_failed": 2,
+            "visible_button_cases": 2,
+            "coded_hit_region_positive_controls_passed": 2,
+            "coded_hit_region_control_cases": 2,
+            "fixture": "Fresh Create(nullptr) per case; no direct game-state mutation; tracked-controller ray and release→press→release primary sequence; actual Update advances one movement tick.",
+            "interpretation": "Probe exit1 records confirmed incorrect visible-button behavior. Positive controls establish working vertical steering in the coded regions.",
+            "limits": "Unused graphics linked out; this is actual production-module input/simulation confirmation, not Android/GLES or physical-controller acceptance."
+          }
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of ordered body, length, heading/pending turn, food, score, clock, moving/finished, RNG. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Align visible controls and safe input transitions",
+          "work": "Fix UP/DOWN visual-to-hit mismatch; test rapid turns, held/released input and occupied cells under directional labels.",
+          "observable_exit_criteria": [
+            "A ray at each visible UP/RIGHT/DOWN/LEFT button center selects that exact permitted direction.",
+            "Quick Menu release and close do not cause stale movement or an unintended turn.",
+            "Loss and board completion have distinguishable cues; controls do not hide necessary occupied-cell information."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Near-full/full board and wall/self collision paths complete with correct result.",
+            "Recreation at a tick boundary preserves body, direction, food and deterministic next step."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-snake.png"
+      ]
+    },
+    {
+      "id": "classic-reversi",
+      "name": "Reversi",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 49
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Reversi",
+        "asset_namespace": "classic-reversi"
+      },
+      "current_scope": {
+        "summary": "8×8 human/CPU Reversi with legal markers, flips, forced passes, disk totals and correct both-blocked end.",
+        "implemented_features": [
+          "Multi-direction captures",
+          "Automatic forced pass",
+          "Win/loss/draw even if empty squares remain; bounded CPU"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "board",
+            "side",
+            "passes",
+            "ply",
+            "result",
+            "RNG"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-reversi",
+          "summary": "Boot legal-square indicators are small bright dots; physical recognition remains unverified.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_board_games.h",
+              "line": 130
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1583
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of board, side, passes, ply, result, RNG. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Make turn exceptions and match management explicit",
+          "work": "Explain automatic pass, terminal score and new-match behavior; verify legal-square marker contrast.",
+          "observable_exit_criteria": [
+            "A consecutive turn caused by forced pass is explicitly explained.",
+            "Final disk totals/result are clear and New requires deliberate action.",
+            "Legal markers are recognized and hit accurately in both eyes."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Full games include forced-pass chains and both-blocked ending with vacant squares.",
+            "Restoration at pass and terminal states does not change turn ownership or disk totals."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-reversi.png"
+      ]
+    },
+    {
+      "id": "classic-breakout",
+      "name": "Breakout",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 51
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Breakout",
+        "asset_namespace": "classic-breakout"
+      },
+      "current_scope": {
+        "summary": "Two-wall, three-life Breakout with row scores, serves, speed/paddle changes and fixed-step ball physics.",
+        "implemented_features": [
+          "14×8 brick mask",
+          "Fixed .01-second simulation tick",
+          "Wall progression, life loss and two-wall win"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "brick mask",
+            "wall",
+            "lives",
+            "score",
+            "paddle/ball/velocity",
+            "fixed tick remainder",
+            "paddle hits",
+            "narrow/top-row flags",
+            "result"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-breakout",
+          "summary": "Bricks merge into thin colored rows at boot-capture scale; this is a readability diagnostic, not a collision defect.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 934
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of brick mask, wall, lives, score, paddle/ball/velocity, fixed tick remainder, paddle hits, narrow/top-row flags, result. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Clarify the court and terminal transitions",
+          "work": "Verify isolated remaining bricks and ball visibility, serve/life/wall cues, winner/loser and replay decisions.",
+          "observable_exit_criteria": [
+            "Sparse brick configurations remain visually identifiable.",
+            "Life loss, next wall and final result each show the correct state without consuming a stale click."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Both walls and exhausted-lives paths finish through actual control.",
+            "Interruption between life loss/serve and wall changes preserves complete brick mask and run state."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-breakout.png"
+      ]
+    },
+    {
+      "id": "classic-chutes-ladders",
+      "name": "Chutes & Ladders",
+      "kind": "native_game",
+      "admission": {
+        "registered": true,
+        "development_only": false,
+        "status": "registered_ordinary_catalog",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 53
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Chutes & Ladders",
+        "asset_namespace": "classic-chutes-ladders"
+      },
+      "current_scope": {
+        "summary": "100-square human/CPU chance game with nine ladders, ten chutes, die rolls, exact finish, overshoot and restart.",
+        "implemented_features": [
+          "Single authoritative chute/ladder table",
+          "Exact landing at100; overshoot forfeits",
+          "Human/CPU turns and deterministic full-match rule tests"
+        ]
+      },
+      "conservative_stage": "implemented_compact_rule_loop_with_preservation_and_acceptance_gaps",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "not_implemented",
+        "description": "In-memory Pause/Resume retains progress; Destroy/Create restores the initial game. Persistent host fixture saw0 reads and0 writes in each variant.",
+        "evidence_types": [
+          "actual_module_lifecycle_reproduction",
+          "source_trace"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1249
+          },
+          {
+            "path": "app/src/main/jni/native/classic_games_module.cpp",
+            "line": 1340
+          }
+        ],
+        "evidence_files": [
+          "evidence/classics/lifecycle.log",
+          "evidence/classics/lifecycle-results.json"
+        ],
+        "limits": [
+          "Graphics functions were linked out of lifecycle probes; no physical process-kill or real-disk claim."
+        ],
+        "details": {
+          "required_fields": [
+            "positions",
+            "last die",
+            "turn",
+            "CPU delay clock",
+            "winner",
+            "RNG"
+          ],
+          "progressed_before_recreation": true,
+          "pause_resume_in_memory_preserved": true,
+          "destroy_create_restored": false,
+          "save_read_calls": 0,
+          "save_write_calls": 0
+        }
+      },
+      "key_open_issues": [
+        {
+          "id": "CL-SAVE-001",
+          "summary": "Actual module loses progressed match on Destroy/Create; zero save reads/writes. Home→RESUME NATIVE uses this boundary.",
+          "evidence_type": "actual_module_lifecycle_reproduction",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1249
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1340
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/lifecycle.log",
+            "evidence/classics/lifecycle-results.json",
+            "evidence/classics/host-menu-followup.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "CL-QA-003-classic-chutes-ladders",
+          "summary": "Number labels and crossing paths are dense in the actual boot image; physical readability remains unverified.",
+          "evidence_type": "authentic_android_capture_and_source_inspection",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1033
+            },
+            {
+              "path": "app/src/main/jni/native/classic_games_module.cpp",
+              "line": 1052
+            }
+          ],
+          "evidence_files": [
+            "evidence/classics/classics-audit.md"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Preserve complete match state",
+          "work": "Versioned validated bounded save of positions, last die, turn, CPU delay clock, winner, RNG. Preserve last good data on write/read failure and rebuild transient workers/GL objects safely.",
+          "observable_exit_criteria": [
+            "Progress through actual input, checkpoint, recreate and compare the complete state plus next deterministic legal transition.",
+            "Home→RESUME restores the defined match; corrupt/failed reads do not silently overwrite recoverable data.",
+            "Rejected writes remain dirty with truthful status and succeed after recovery; no duplicate score, move or reward."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Explain roll and path outcomes legibly",
+          "work": "Make roll→landing→link→final square and exact-finish rule comprehensible; improve dense numerals/endpoints as needed.",
+          "observable_exit_criteria": [
+            "A player can identify the rolled number, landing square, link effect and final square.",
+            "Chutes/ladders endpoints and exact-finish outcomes are readable in both eyes."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Finish full-match and interruption coverage",
+          "work": "Exercise actual hosted gameplay and all special/terminal phases.",
+          "observable_exit_criteria": [
+            "Complete matches cover overshoot, shared square, every transition class, both winners and replay.",
+            "Reload during CPU delay preserves the pending random outcome/turn instead of granting a reroll."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate this compact match on the supported host and physical reference devices; include the shared menu/release repairs.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/classics/classics-audit.md",
+        "evidence/classics/classics-findings.json",
+        "evidence/classics/lifecycle.log",
+        "evidence/classics/lifecycle-results.json",
+        "evidence/classics/existing-native-tests.log",
+        "evidence/classics/host-menu-followup.md",
+        "evidence/remote/hub/native-menu-classic-chutes-ladders.png"
+      ]
+    },
+    {
+      "id": "procedural-test-chamber",
+      "name": "Test Chamber",
+      "kind": "native_development_utility",
+      "admission": {
+        "registered": true,
+        "development_only": true,
+        "status": "registered_development_only",
+        "source_anchors": [
+          {
+            "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+            "line": 55
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "registry_name": "Test Chamber Companion (Test)",
+        "asset_namespace": "test-chamber"
+      },
+      "current_scope": {
+        "summary": "Native material/light/audio showcase and bounded three-project primitive VR workshop.",
+        "implemented_features": [
+          "30 authored REVSCENE parts plus avatar/wardrobe",
+          "Up to48 editable pieces and16 undo steps; three slots/64KiB bound",
+          "Move/rotate/scale/add/delete/save/play",
+          "Persisted motion/light/sound authoring bundles and validated format upgrades"
+        ]
+      },
+      "conservative_stage": "integrated_development_utility_alpha",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "implemented_with_startup_recovery_gap",
+        "description": "Three bounded workshop slots and scene/motion/light/sound bundles. Failed saves retain dirty edits while the module lives and block project-slot/edit-mode switches. Pause and Destroy attempt a save and log failure, but Destroy still deletes state after a rejected write, so unsaved edits can be lost on Home/exit. Startup always loads slot 0; its corruption/I/O failure prevents entry to valid other slots.",
+        "evidence_types": [
+          "focused_production_data_model_tests",
+          "source_traced_module_recovery_gap"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/reverie_vr_workshop.h",
+            "line": 95
+          },
+          {
+            "path": "app/src/main/jni/native/reverie_vr_workshop.h",
+            "line": 99
+          },
+          {
+            "path": "app/src/main/jni/native/reverie_vr_workshop.h",
+            "line": 135
+          },
+          {
+            "path": "app/src/main/jni/native/test_chamber_module.cpp",
+            "line": 748
+          }
+        ],
+        "evidence_files": [
+          "evidence/recent/reverie_vr_workshop.log",
+          "evidence/recent/reverie_scene_document.log",
+          "evidence/recent/reverie_vr_project_motion.log",
+          "evidence/recent/reverie_vr_project_lighting.log",
+          "evidence/recent/reverie_vr_project_sound.log"
+        ],
+        "limits": [
+          "Slot0 startup lockout is source-established, not actual-module fault-injected.",
+          "Header/model tests do not prove every rendered editor interaction."
+        ]
+      },
+      "key_open_issues": [
+        {
+          "id": "TC-01",
+          "summary": "Open always loads slot0 and module Create fails on its corruption/I/O failure; inaccessible selector prevents reaching valid other slots.",
+          "evidence_type": "source-established; not actual-module failure-injected",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/reverie_vr_workshop.h",
+              "line": 95,
+              "reported_line_specification": "95-97"
+            },
+            {
+              "path": "app/src/main/jni/native/test_chamber_module.cpp",
+              "line": 748,
+              "reported_line_specification": "748-751"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "TC-02",
+          "summary": "Left title and PRIMARY/SECONDARY instruction labels clipped at instrumentation default view; physical headset unverified.",
+          "evidence_type": "authentic Android boot frame inspected",
+          "category": "readability_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/test_chamber_module.cpp",
+              "line": 121,
+              "reported_line_specification": "121-128"
+            },
+            {
+              "path": "app/src/main/jni/native/test_chamber_module.cpp",
+              "line": 146,
+              "reported_line_specification": "146-208"
+            },
+            {
+              "path": "app/src/main/jni/native/test_chamber_module.cpp",
+              "line": 913,
+              "reported_line_specification": "913-923"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "diagnostic_only; no_new_blocking_ci"
+        },
+        {
+          "id": "TC-EXIT-003",
+          "summary": "Pause and Destroy only attempt a save. Destroy deletes the module even after a rejected final write; dirty in-memory edits are not retained across Home/exit. Provide truthful pre-exit status and a safe recovery/abandon path.",
+          "evidence_type": "source_established_not_runtime_reproduced",
+          "category": "preservation",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/test_chamber_module.cpp",
+              "line": 792
+            },
+            {
+              "path": "app/src/main/jni/native/test_chamber_module.cpp",
+              "line": 835
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/test-chamber-exit-review.md"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "State the stable utility scope",
+          "work": "Describe native showcase and bounded primitive editor consistently; distinguish unimported companion GLB/WAV material.",
+          "observable_exit_criteria": [
+            "User-facing claims match integrated30-part scene, three project slots,48-piece/16-undo editor and actual modes.",
+            "No implied general-purpose asset importer or campaign ending is required."
+          ],
+          "acceptance_class": "scope_definition",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Provide non-destructive startup recovery",
+          "work": "Allow alternate slot selection/backup/explicit reset when first project cannot load; retain fail-before-switch and visible save state. Ensure ordinary exit exposes an unresolved write and supports a deliberate safe recovery/abandon choice; never imply in-memory edits survive destruction.",
+          "observable_exit_criteria": [
+            "A corrupt/unreadable slot0 does not prevent access to valid slots1/2.",
+            "Original invalid bytes remain available until explicit replacement; failed exit writes show truthful recovery status.",
+            "Rejected final writes cannot silently claim that destroyed in-memory edits are retained; the last durable project remains recoverable and ordinary exit presents the supported recovery choice."
+          ],
+          "acceptance_class": "preservation",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Complete actual editor interaction coverage",
+          "work": "Exercise move/rotate/scale/add/delete/undo, projects, save/play and motion/light/audio pages through the module UI.",
+          "observable_exit_criteria": [
+            "Every documented editor action produces the intended persisted scene/bundle change.",
+            "Switching/exit fails safely while dirty data cannot be saved; successful recovery restores exact authored work."
+          ],
+          "acceptance_class": "functional_completion",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Finish per-eye interaction clarity",
+          "work": "Fit labels/selection/page controls and verify distinct audio/material/light modes.",
+          "observable_exit_criteria": [
+            "Showcase/editor/selection/motion/light/audio/empty/error/dirty states are readable and reachable in both eyes.",
+            "Each audition mode has observable output and reliable feedback without repeated side effects per eye."
+          ],
+          "acceptance_class": "interaction_and_readability",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Validate stable utility creation/edit/save/recovery and launch/exit/context flow in the same APK; no campaign-style completion requirement is added.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 5
+        }
+      ],
+      "shared_host_finding_ids": [
+        "HOST-QUICK-MENU-01",
+        "HOST-HOME-02",
+        "HOST-RELEASE-03"
+      ],
+      "shared_host_applicability": "current integrated path",
+      "evidence_files": [
+        "evidence/recent/report.md",
+        "evidence/recent/findings.json",
+        "evidence/recent/results.json",
+        "evidence/recent/reverie_vr_workshop.log",
+        "evidence/recent/reverie_scene_document.log",
+        "evidence/recent/reverie_scene_asset_scope.log",
+        "evidence/recent/reverie_vr_project_motion.log",
+        "evidence/recent/reverie_vr_project_lighting.log",
+        "evidence/recent/reverie_vr_project_sound.log",
+        "evidence/remote/hub/native-menu-procedural-test-chamber.png"
+      ]
+    },
+    {
+      "id": "sitka",
+      "name": "Sitka",
+      "kind": "source_native_game_project",
+      "admission": {
+        "registered": false,
+        "development_only": null,
+        "status": "source_project_not_admitted",
+        "source_anchors": [
+          {
+            "path": "docs/project/SITKA.md",
+            "line": 3
+          },
+          {
+            "path": "app/src/main/jni/native/sitka_terrain_module.cpp",
+            "line": 1095
+          }
+        ],
+        "interpretation": "Admission metadata is not completed-game acceptance.",
+        "absent_routes": [
+          "Java native registry",
+          "Android.mk module entry",
+          "packaged approved Sitka world asset tree"
+        ]
+      },
+      "current_scope": {
+        "summary": "Substantial source terrain/walking/fishing/economy/boat systems with synthetic module tests; no admitted packaged native world.",
+        "implemented_features": [
+          "Tier0 recovery supplies/infinite basic bait; retained fish/shellfish sale",
+          "Pending finds/token registration;48 gear levels and four functional training tracks",
+          "Hull/fitting economy and source navigation/boat systems",
+          "Tested dirty-save retry and read-only two-eye rendering with synthetic fixtures"
+        ]
+      },
+      "conservative_stage": "source_systems_integration_stage_not_launchable_native_title",
+      "readiness_verdict": {
+        "status": "not_conservatively_complete",
+        "finished_game_or_stable_utility_claim_supported": false,
+        "development_apk_publication_verdict": "not_assigned_by_this_matrix"
+      },
+      "save_verdict": {
+        "status": "positive_journal_preservation_in_synthetic_integration",
+        "description": "Clean-start SITKA-FISH-5 journal distinguishes absent/invalid/I/O reads, retains dirty changes and visible failure, retries on Pause and reopens without granting starter stock again. Exact position/active cast/boat/world pots are not established.",
+        "evidence_types": [
+          "existing_source_system_tests",
+          "actual_module_update_fault_injection_with_synthetic_world",
+          "actual_module_gles_synthetic_fixtures"
+        ],
+        "source_anchors": [
+          {
+            "path": "app/src/main/jni/native/sitka_fishing_session.h",
+            "line": 31
+          },
+          {
+            "path": "app/src/main/jni/native/sitka_fishing_session.h",
+            "line": 105
+          },
+          {
+            "path": "app/src/main/jni/native/sitka_terrain_module.cpp",
+            "line": 593
+          },
+          {
+            "path": "app/src/test/native/sitka_starter_loop_test.cpp",
+            "line": 75
+          }
+        ],
+        "evidence_files": [
+          "evidence/recent/sitka_starter_loop-defaultflags.log",
+          "evidence/recent/sitka_starter_loop_egl-defaultflags.log",
+          "evidence/recent/sitka_terrain_egl-defaultflags.log"
+        ],
+        "limits": [
+          "Synthetic tests bypass packaged Create; no launchable real harbor is established.",
+          "Owner confirmed no old saves and selected clean-start format; old prototype migration is not added as a requirement.",
+          "Future admitted world/boat/pot and safe-return state require explicit persistence semantics."
+        ]
+      },
+      "key_open_issues": [
+        {
+          "id": "SI-01",
+          "summary": "Native Create needs approved real world inputs that are not assembled/admitted in the APK.",
+          "evidence_type": "registry/build/source inspection",
+          "category": "capability_admission",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "docs/project/SITKA.md",
+              "line": 3,
+              "reported_line_specification": "3-5"
+            },
+            {
+              "path": "app/src/main/jni/native/sitka_terrain_module.cpp",
+              "line": 136,
+              "reported_line_specification": "136-153"
+            },
+            {
+              "path": "app/src/main/jni/native/sitka_terrain_module.cpp",
+              "line": 320,
+              "reported_line_specification": "320-341"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "SI-02",
+          "summary": "Physical fishing presentation, real-world offices/avatar/characters, refined boat model adoption and actual-world helm/docking, pot crabbing/Deckwork integration remain incomplete.",
+          "evidence_type": "latest audit record and code",
+          "category": "intended_scope",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "docs/records/2026-11-07-sitka-starter-harbor-loop.md",
+              "line": 31,
+              "reported_line_specification": "31-46"
+            },
+            {
+              "path": "app/src/main/jni/native/sitka_crab_work_cycle.h",
+              "line": 4,
+              "reported_line_specification": "4"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        },
+        {
+          "id": "SI-04",
+          "summary": "-O1 -Werror promotes shared shader diagnostic snprintf truncation to error. No Android build failure inferred.",
+          "evidence_type": "additional optimized GCC experiment failed; officialflags passed",
+          "category": "build_diagnostic",
+          "completion_impact": "resolve_before_conservative_completion_claim",
+          "source_anchors": [
+            {
+              "path": "app/src/main/jni/native/reverie_native_gl_utils.h",
+              "line": 27,
+              "reported_line_specification": "27-29"
+            }
+          ],
+          "evidence_files": [
+            "evidence/recent/report.md",
+            "evidence/recent/findings.json",
+            "evidence/recent/results.json"
+          ],
+          "development_apk_publication_effect": "apply_existing_user_functional_publication_policy; no_new_gate_created_by_matrix"
+        }
+      ],
+      "ordered_completion_stages": [
+        {
+          "name": "Admit one real connected world slice",
+          "work": "Assemble approved bounded terrain/water/fishing/harbor/desk assets and register build/host/gallery together.",
+          "observable_exit_criteria": [
+            "Packaged native Create succeeds on real approved world files; entry/menu/exit/recovery work.",
+            "No inert playable icon is exposed before the actual route is usable."
+          ],
+          "acceptance_class": "capability_admission",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 1
+        },
+        {
+          "name": "Finish the shore journey in that world",
+          "work": "Connect arrival/walk/cast/land/retain/sale/register/unlock/purchase; implement physical fishing presentation and coherent sound.",
+          "observable_exit_criteria": [
+            "Player completes the whole shore economy journey through actual spatial controls.",
+            "Reopen retains journal/wallet/gear; interrupted transactions conserve money and stock."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 2
+        },
+        {
+          "name": "Integrate intended boat and crabbing systems",
+          "work": "Adopt refined hull assets/collision/mounts/helm, embark/dock, sounder/bathymetry, pots/bait/catch/Deckwork in one world/journal/wallet.",
+          "observable_exit_criteria": [
+            "Owned hull/fitting effects and actual-world embark/helm/dock work.",
+            "Pots and catch/sale cannot be harvested twice or lost across interruption."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 3
+        },
+        {
+          "name": "Complete world/content recovery and QoL",
+          "work": "Deliver walkable offices, visible character/avatar representation, progression teaching/navigation and safe return across world/save changes.",
+          "observable_exit_criteria": [
+            "Reachable prerequisites and identity records support retained progression without forced lockouts.",
+            "Infinite basic Tier0 recovery remains available; state returns safely when world/save data cannot be used."
+          ],
+          "acceptance_class": "intended_content",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 4
+        },
+        {
+          "name": "Establish hosted and physical acceptance",
+          "work": "Run final admitted world, shore/boat/crabbing routes, resource/lifecycle/corrupt-save cases and physical controller/stereo/performance acceptance. A shore-only product needs explicit scope agreement.",
+          "observable_exit_criteria": [
+            "Same candidate APK completes the stated game or utility flow, including entry, menu, return, result and deliberate new-session paths.",
+            "Supported handset/headset/controller captures demonstrate reachable controls and readable state in both eyes; actual input, audio, sustained frame timing and thermal observations are retained.",
+            "Clean install and update preserve the defined current save contract, with source SHA, signer/version and artifact identity recorded."
+          ],
+          "acceptance_class": "acceptance_evidence",
+          "applies_to": "conservative_completion_or_stable_utility_claim",
+          "creates_new_development_apk_ci_gate": false,
+          "sequence": 5
+        }
+      ],
+      "shared_host_finding_ids": [],
+      "shared_host_applicability": "must be verified when module is admitted; not claimed exercised today",
+      "evidence_files": [
+        "evidence/recent/report.md",
+        "evidence/recent/findings.json",
+        "evidence/recent/results.json",
+        "evidence/recent/sitka-cpu.log",
+        "evidence/recent/sitka_starter_loop-defaultflags.log",
+        "evidence/recent/sitka_starter_loop_egl-defaultflags.log",
+        "evidence/recent/sitka_terrain_egl-defaultflags.log"
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "name": "The Mechanist",
+      "reason": "External concept/asset-source repository, not a registered native module in this baseline; used as Guess the Door artwork source. No invented native entry or completion rating.",
+      "source_anchors": [
+        {
+          "path": "docs/project/GUESS_THE_DOOR.md",
+          "line": 34
+        },
+        {
+          "path": "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+          "line": 24
+        }
+      ]
+    },
+    {
+      "name": "DOS DOOM",
+      "reason": "DOS-hosted guest content, not a Reverie native game module. Shared host/control questions may remain relevant, but it is excluded from this native title matrix.",
+      "source_anchors": [
+        {
+          "path": "docs/records/2026-11-08-native-games-release-audit.md",
+          "line": 22
+        }
+      ]
+    }
+  ],
+  "input_reports": [
+    {
+      "path": "evidence/featured/FEATURED_NATIVE_AUDIT.md",
+      "sha256": "41ff0f5bd9dffa3acc6d9a9cc92dbc97ea74a5e76cb7579e277ed994148113f2"
+    },
+    {
+      "path": "evidence/featured/findings.json",
+      "sha256": "b4c629db72cf15c20bf487b83bd9a9994728d341b841011f310574f86de991cc"
+    },
+    {
+      "path": "evidence/classics/classics-audit.md",
+      "sha256": "89f62678a27597ebe9f5aead2635a8e938de42cbcd94493dec1439e01348b382"
+    },
+    {
+      "path": "evidence/classics/classics-findings.json",
+      "sha256": "a5a8767b73e9c18dd830cd75284695707905ef91c80443e39e19a0ebd6971ed8"
+    },
+    {
+      "path": "evidence/classics/host-menu-followup.md",
+      "sha256": "b35fe643ec631fdb24f34e6f8fe6a29eb23d3d0f4b30e44e1d62fca65fabef1d"
+    },
+    {
+      "path": "evidence/recent/report.md",
+      "sha256": "3ca6730306cd884420103562492041a66b56c73f36fda56677fa243b13faf21b"
+    },
+    {
+      "path": "evidence/recent/findings.json",
+      "sha256": "551a849756b5cdffe8926a65ce7ebc34e12eb17d69b707c2c3dd085973f19738"
+    },
+    {
+      "path": "evidence/recent/results.json",
+      "sha256": "033be1e928619af1b024bbc7e99595aba65470d72997cd65acd72046deb18eff"
+    }
+  ],
+  "retained_constraints": [
+    "No production source changes in consolidation.",
+    "No additional game tests or remote writes.",
+    "No fabricated completion percentages or delivery times.",
+    "Existing full intended scopes remain visible; a smaller product requires explicit scope decision.",
+    "Sitka clean-start save policy is retained; nonexistent prototype migration is not required.",
+    "Test Chamber is assessed as a stable development utility, not a campaign game."
+  ],
+  "path_conventions": {
+    "source_anchors": "Paths relative to the baseline GitHub repository root; production source is not mirrored in the evidence archive.",
+    "evidence_files": "Paths relative to the evidence ZIP root.",
+    "baseline_source_url": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/"
+  }
+}

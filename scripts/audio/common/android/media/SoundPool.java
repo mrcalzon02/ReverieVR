@@ -1,6 +1,7 @@
 package android.media;
 
 import android.content.res.AssetFileDescriptor;
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -22,11 +23,13 @@ public final class SoundPool {
     public static final Set<Integer> rejectBuildLimits = new HashSet<>();
     public static final Set<String> rejectLoadFiles = new HashSet<>();
     public static int buildAttempts;
+    private static final Map<Integer, Sample> rawSamples = new HashMap<>();
     public final int maxStreams;
     public final AudioAttributes attributes;
     public final List<Sample> loads = new ArrayList<>();
     public final List<Playback> plays = new ArrayList<>();
     public final List<Integer> stops = new ArrayList<>();
+    public final Set<Integer> throwStops = new HashSet<>();
     public final List<Integer> unloads = new ArrayList<>();
     public final Map<Integer, Playback> live = new LinkedHashMap<>();
     public boolean released, rejectPlayback, throwPlayback;
@@ -42,8 +45,10 @@ public final class SoundPool {
         public final long duration;
         public boolean completed, ready;
         Sample(int id, AssetFileDescriptor file) {
-            this.id = id; this.file = file.path;
-            duration = (file.getLength() - 44L) * 1000L / 44_100L;
+            this(id, file.path, (file.getLength() - 44L) * 1000L / 44_100L);
+        }
+        Sample(int id, String file, long duration) {
+            this.id = id; this.file = file; this.duration = duration;
         }
     }
     public static final class Playback {
@@ -86,6 +91,20 @@ public final class SoundPool {
         loads.add(sample); samples.put(sample.id, sample);
         return sample.id;
     }
+    /** The Red Ledger harness reads actual checked-in WAV headers before
+     * registering resource IDs. This is metadata, not a decoder/device claim. */
+    public static void registerRawSample(int resourceId, String file, long durationMs) {
+        rawSamples.put(resourceId, new Sample(0, file, durationMs));
+    }
+    public int load(Context ignoredContext, int resourceId, int ignoredPriority) {
+        requireOpen();
+        Sample raw = rawSamples.get(resourceId);
+        if (raw == null) throw new IllegalArgumentException("unregistered raw resource");
+        if (rejectLoadFiles.contains(raw.file)) return 0;
+        Sample sample = new Sample(nextSound++, raw.file, raw.duration);
+        loads.add(sample); samples.put(sample.id, sample);
+        return sample.id;
+    }
     public boolean unload(int soundId) {
         unloads.add(soundId);
         return samples.remove(soundId) != null;
@@ -114,7 +133,11 @@ public final class SoundPool {
         peakConcurrent = Math.max(peakConcurrent, live.size());
         return playback.stream;
     }
-    public void stop(int stream) { requireOpen(); stops.add(stream); live.remove(stream); }
+    public void stop(int stream) {
+        requireOpen(); stops.add(stream);
+        if (throwStops.contains(stream)) throw new IllegalStateException("stop unavailable");
+        live.remove(stream);
+    }
     public void setVolume(int stream, float left, float right) {
         requireOpen(); checkGain(left); checkGain(right);
         Playback playback = live.get(stream);
@@ -170,5 +193,6 @@ public final class SoundPool {
     }
     public static void reset() {
         instances.clear(); rejectBuildLimits.clear(); rejectLoadFiles.clear(); buildAttempts = 0;
+        rawSamples.clear();
     }
 }

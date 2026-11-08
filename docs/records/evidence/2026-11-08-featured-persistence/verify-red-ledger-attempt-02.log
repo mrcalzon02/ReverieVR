@@ -1,0 +1,14 @@
+COMMAND ['bash', 'scripts/verify-red-ledger.sh']
+Red Ledger trade and v4 renovations: paid upgrades, revenue and save OK
+Red Ledger: all six suppliers, 24 original SKUs and v3 save integrity OK
+Red Ledger wholesale: 24 atomic wallet/inventory capacity rejections OK
+Red Ledger: 24 direct stock cards, unique SKUs, hit bounds and wallet quotes OK
+Sixteen original merchant meshes and textures validated
+Red Ledger signage: 72 plaques, no fake glyph geometry
+Red Ledger mug: 180 vertices per reusable 12-sided mesh
+three rooms: 11 cubes/room -> 1 room draw/eye; 47520 bytes; deterministic
+red ledger manual service smoke passed
+cash=2260 debt=19700 reputation=9 pressure=2
+PASS Red Ledger actual patron preference, venue condition, upgrades, durable checked state
+PASS Red Ledger whole-envelope bit corruption, transactional rejection and supported composite import
+SKIP clang++ (unavailable)

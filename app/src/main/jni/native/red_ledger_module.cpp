@@ -3,6 +3,7 @@
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
 #include "red_ledger_simulation.h"
+#include "red_ledger_save.h"
 #include "procedural_material_atlas.h"
 #include "red_ledger_static_geometry.h"
 #include "red_ledger_signage.h"
@@ -168,6 +169,10 @@ struct ModuleState {
     clientele::State clientele;
     int hovered_offer = -1;
     bool ledger_visible = false;
+    bool save_dirty = false;
+    bool save_failed = false;
+    bool load_blocked = false;
+    float save_retry_seconds = 0.0f;
 
     GLuint program = 0;
     GLuint cube_vbo = 0;
@@ -537,83 +542,66 @@ WorkTarget FindWorkTarget(
 }
 
 bool SaveState(ModuleState *state) {
-    if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
-        return false;
-    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize+
-                  property::Renovations::kSerializedSize+
-                  clientele::State::kSerializedSize]={};
-    size_t first=0u;
-    if (!state->simulation.Serialize(bytes,Simulation::kSerializedSize,&first)
-        || first!=Simulation::kSerializedSize
-        || !state->market.Serialize(bytes+first,trade::Trade::kSerializedSize)
-        || !state->renovations.serialize(
-            bytes+first+trade::Trade::kSerializedSize,
-            property::Renovations::kSerializedSize)
-        || !state->clientele.serialize(
-            bytes+first+trade::Trade::kSerializedSize+
-            property::Renovations::kSerializedSize,
-            clientele::State::kSerializedSize)) {
-        Log(state,REVERIE_NATIVE_LOG_ERROR,"Red Ledger composite save encoding failed.");
-        return false;
-    }
-    const int32_t result=state->host->write_save(
-        kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)));
-    if (result!=REVERIE_NATIVE_SAVE_OK) {
-        Log(state,REVERIE_NATIVE_LOG_WARN,"Host rejected Red Ledger save write.");
-        return false;
-    }
-    return true;
+    if(!state || state->load_blocked)return false;
+    state->save_dirty=true;
+    state->save_retry_seconds=1.0f;
+    using reverie::redledger::save::Checkpoint;
+    const reverie::redledger::save::State snapshot{
+        state->simulation,state->market,state->renovations,state->clientele};
+    Checkpoint::Bytes bytes{};
+    const bool ok=ReverieNativeHostSupportsSaveV1(state->host)
+        &&Checkpoint::Encode(snapshot,&bytes)
+        &&state->host->write_save(kSaveSlot,bytes.data(),
+            static_cast<uint32_t>(bytes.size()))==REVERIE_NATIVE_SAVE_OK;
+    if(!ok&&!state->save_failed)
+        Log(state,REVERIE_NATIVE_LOG_WARN,
+            "Red Ledger save failed; changes retained for retry.");
+    if(state->save_failed!=!ok)state->status_dirty=true;
+    state->save_failed=!ok;
+    if(ok){state->save_dirty=false;state->save_retry_seconds=0.f;}
+    return ok;
 }
 
-void LoadState(ModuleState *state) {
-    if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
-        return;
-    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize+
-                  property::Renovations::kSerializedSize+
-                  clientele::State::kSerializedSize]={};
-    uint32_t size=0u;
-    const int32_t result=state->host->read_save(
-        kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)),&size);
-    if (result==REVERIE_NATIVE_SAVE_NOT_FOUND) return;
-    constexpr size_t kLegacySize=Simulation::kSerializedSize+
-        trade::Trade::kSerializedSize+property::Renovations::kSerializedSize;
-    if (result!=REVERIE_NATIVE_SAVE_OK ||
-        (size!=kLegacySize && size!=sizeof(bytes))) {
-        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger incompatible save size.");
-        return;
+bool LoadState(ModuleState *state) {
+    if(!state)return false;
+    if(!ReverieNativeHostSupportsSaveV1(state->host)){
+        state->load_blocked=true;state->status_dirty=true;
+        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger save service unavailable; gameplay held for recovery.");
+        return false;
     }
-    // Keep active state atomic: corrupted or incompatible development saves
-    // are rejected, not migrated, and do not alter a running game.
-    Simulation base=state->simulation;
-    trade::Trade market=state->market;
-    property::Renovations renovations=state->renovations;
-    clientele::State clienteleState;
-    if (!base.Deserialize(bytes,Simulation::kSerializedSize,true)
-        || !market.Deserialize(bytes+Simulation::kSerializedSize,
-            trade::Trade::kSerializedSize)
-        || !renovations.deserialize(
-            bytes+Simulation::kSerializedSize+trade::Trade::kSerializedSize,
-            property::Renovations::kSerializedSize)
-        || (size==sizeof(bytes) && !clienteleState.deserialize(
-            bytes+kLegacySize,clientele::State::kSerializedSize))) {
+    using reverie::redledger::save::Checkpoint;
+    Checkpoint::Bytes bytes{};
+    uint32_t size=0;
+    const int32_t result=state->host->read_save(kSaveSlot,bytes.data(),
+        static_cast<uint32_t>(bytes.size()),&size);
+    if(result==REVERIE_NATIVE_SAVE_NOT_FOUND&&!state->load_blocked)return true;
+    reverie::redledger::save::State restored;
+    const auto format=result==REVERIE_NATIVE_SAVE_OK?
+        Checkpoint::Decode(&restored,bytes.data(),size):Checkpoint::Format::Invalid;
+    if(format==Checkpoint::Format::Invalid){
+        state->load_blocked=true;state->status_dirty=true;
         Log(state,REVERIE_NATIVE_LOG_WARN,
-            "Red Ledger rejected corrupt v4 game state; fresh state preserved.");
-        return;
+            "Red Ledger save unavailable or corrupt; original retained, click to retry.");
+        return false;
     }
-    state->simulation=base;
-    state->market=market;
-    state->renovations=renovations;
-    state->clientele=clienteleState;
-    Log(state,REVERIE_NATIVE_LOG_INFO,
-        size==kLegacySize?"Red Ledger v4 save migrated to clientele baseline.":
-        "Red Ledger clientele condition, stock and renovations restored.");
+    state->simulation=restored.simulation;state->market=restored.market;
+    state->renovations=restored.renovations;state->clientele=restored.clientele;
+    state->load_blocked=false;state->save_failed=false;state->status_dirty=true;
+    // Preserve checked current/previous supported composite saves. Once read
+    // successfully, upgrade their envelope without discarding a pending write.
+    state->save_dirty=format==Checkpoint::Format::Legacy;
+    state->save_retry_seconds=state->save_dirty?1.0f:0.f;
+    Log(state,REVERIE_NATIVE_LOG_INFO,state->save_dirty?
+        "Red Ledger legacy composite validated; checked upgrade pending.":
+        "Red Ledger checked economy, stock, renovations and clientele restored.");
+    return true;
 }
 
 bool ActivateWorkTarget(
     ModuleState *state,
     WorkTarget target
 ) {
-    if (state == nullptr
+    if (state == nullptr || state->load_blocked
         || !IsTargetAvailable(
             state,
             target
@@ -819,7 +807,8 @@ bool ActivateWorkTarget(
     }
     ReverieNativeRequestSoundV1(state->host,sound);
     state->status_dirty=true;
-    SaveState(state);
+    if(!SaveState(state))
+        ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
     return true;
 }
 
@@ -1723,7 +1712,12 @@ void RefreshStatusBoard(ModuleState *state) {
     const Simulation &sim=state->simulation;
     const trade::Trade &market=state->market;
     const auto room=market.room();
-    if(room==trade::Room::Bar) {
+    if(state->load_blocked){
+        std::snprintf(rows[0],sizeof(rows[0]),"SAVED GAME UNAVAILABLE");
+        std::snprintf(rows[1],sizeof(rows[1]),"YOUR SAVE HAS NOT BEEN CHANGED");
+        std::snprintf(rows[3],sizeof(rows[3]),"CLICK TO RETRY");
+        std::snprintf(rows[4],sizeof(rows[4]),"MENU TO EXIT");
+    } else if(room==trade::Room::Bar) {
         const auto *patron=sim.current_patron();
         if(patron) {
             const int kind=trade::FactionFor(patron->kind);
@@ -1838,6 +1832,9 @@ void RefreshStatusBoard(ModuleState *state) {
             state->uiFont.Fit(rows[i],0.f,
                 0.83f-static_cast<float>(i)*.22f,3.55f,.031f,
                 .98f,.94f,.82f,-2.785f);
+    if(state->save_failed)
+        state->uiFont.Fit("SAVE FAILED - CHANGES RETAINED / RETRYING",0.f,
+            -.55f,3.55f,.025f,1.f,.40f,.30f,-2.77f);
     state->status_dirty=false;
 }
 
@@ -2725,6 +2722,8 @@ void Destroy(
         return;
     }
 
+    if(state->save_dirty&&!state->load_blocked)SaveState(state);
+
     if (state->program != 0
         || state->cube_vbo != 0
         || state->mug_vbo != 0
@@ -2781,28 +2780,27 @@ void ReleaseGlContext(
     );
 }
 
-void Resume(
-    void *instance
-) {
-    Log(
-        static_cast<ModuleState *>(
-            instance
-        ),
-        REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger module resumed."
-    );
+void Resume(void *instance) {
+    auto *state=static_cast<ModuleState *>(instance);
+    if(!state)return;
+    if(state->load_blocked)LoadState(state);
+    else if(state->save_dirty)SaveState(state);
+    Log(state,REVERIE_NATIVE_LOG_INFO,"Red Ledger module resumed.");
 }
 
-void Pause(
-    void *instance
-) {
-    Log(
-        static_cast<ModuleState *>(
-            instance
-        ),
-        REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger module paused."
-    );
+void Pause(void *instance) {
+    auto *state=static_cast<ModuleState *>(instance);
+    if(!state)return;
+    if(state->save_dirty&&!state->load_blocked)SaveState(state);
+    state->primary_was_down=false;
+    Log(state,REVERIE_NATIVE_LOG_INFO,"Red Ledger module paused.");
+}
+
+int32_t PrepareExit(void *instance) {
+    auto *state=static_cast<ModuleState *>(instance);
+    if(!state)return 1;
+    if(state->load_blocked)return 0;
+    return !state->save_dirty||SaveState(state)?1:0;
 }
 
 void Update(
@@ -2827,6 +2825,16 @@ void Update(
     ReverieNativeSanitizePointerV1(&effective_input);
 
     const float dt = effective_input.delta_seconds;
+    if(state->load_blocked){
+        const bool primary=effective_input.primary_down!=0u;
+        if(primary&&!state->primary_was_down)LoadState(state);
+        state->primary_was_down=primary;
+        return; // Never overwrite unreadable data with fresh gameplay.
+    }
+    if(state->save_dirty){
+        state->save_retry_seconds-=dt;
+        if(state->save_retry_seconds<=0.f)SaveState(state);
+    }
     state->elapsed_seconds += dt;
     // Calculate lighting once per simulation update, not separately for
     // the two eyes. Both stereo views receive identical illumination.
@@ -3051,7 +3059,9 @@ const ReverieNativeModuleApiV1 kApi = {
     Pause,
     Update,
     RenderEye,
-    &kCapabilities
+    &kCapabilities,
+    nullptr,
+    PrepareExit
 };
 
 }  // namespace

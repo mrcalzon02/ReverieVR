@@ -1,0 +1,143 @@
+In file included from /workspace/scratch/d76b27d6a834/audit-work/featured/red_ledger_module_probe.cpp:1:
+app/src/main/jni/native/red_ledger_module.cpp: In function ‘bool {anonymous}::IsTargetAvailable(const ModuleState*, WorkTarget)’:
+app/src/main/jni/native/red_ledger_module.cpp:322:43: warning: suggest parentheses around ‘&&’ within ‘||’ [-Wparentheses]
+  322 |             return room==trade::Room::Bar && (
+      |                    ~~~~~~~~~~~~~~~~~~~~~~~^~~~
+  323 |                 drink_state
+      |                 ~~~~~~~~~~~                
+  324 |                     == DrinkState::None
+      |                     ~~~~~~~~~~~~~~~~~~~    
+  325 |                 && no_payment
+      |                 ~~~~~~~~~~~~~              
+  326 |                 && patron_waiting
+      |                 ~~~~~~~~~~~~~~~~~          
+  327 |                 && simulation.clean_cups() > 0
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  328 |             )
+      |             ~                              
+app/src/main/jni/native/red_ledger_module.cpp: At global scope:
+app/src/main/jni/native/red_ledger_module.cpp:3055:1: warning: missing initializer for member ‘ReverieNativeModuleApiV1::prepare_frame’ [-Wmissing-field-initializers]
+ 3055 | };
+      | ^
+In file included from app/src/main/jni/native/red_ledger_module.cpp:3:
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 243 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:125:45,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 14 and 269 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 239 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:94:61,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 18 and 273 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app/src/main/jni/native/reverie_native_gl_utils.h: In member function ‘bool reverie::nativetext::LatoLayer::Create()’:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:37: warning: ‘%s’ directive output may be truncated writing up to 255 bytes into a region of size 241 [-Wformat-truncation=]
+   27 |     snprintf(output, capacity, "%s: %s",
+      |                                     ^~
+In function ‘void ReverieNativeGlDiagnosticWriteV1(char*, size_t, const char*, const char*)’,
+    inlined from ‘GLuint ReverieNativeCompileShaderDiagnosticV1(GLenum, const char*, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:57:45,
+    inlined from ‘GLuint ReverieNativeBuildProgramDiagnosticV1(const char*, const char*, const ReverieNativeGlAttributeBindingV1*, size_t, char*, size_t)’ at app/src/main/jni/native/reverie_native_gl_utils.h:91:59,
+    inlined from ‘bool reverie::nativetext::LatoLayer::Create()’ at app/src/main/jni/native/reverie_native_lato_text.h:66:54:
+app/src/main/jni/native/reverie_native_gl_utils.h:27:13: note: ‘snprintf’ output between 16 and 271 bytes into a destination of size 256
+   27 |     snprintf(output, capacity, "%s: %s",
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   28 |         phase != NULL ? phase : "GLES2",
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   29 |         detail != NULL && detail[0] != '\0' ? detail : "no driver detail");
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REAL_DRIVER OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1 | llvmpipe (LLVM 19.1.7, 256 bits)
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+MODULE_LOG 1 ReverieRedLedger Original Unreal shop icons loaded: 24/24
+MODULE_LOG 1 ReverieRedLedger Original Unreal product models loaded: 16/16
+MODULE_LOG 2 ReverieRedLedger Beckenburg curated meshes loaded: 0/14
+MODULE_LOG 1 ReverieRedLedger Owner-authored smoking meshes loaded: 4/4
+MODULE_LOG 2 ReverieRedLedger Real owner patron meshes loaded: 0/6
+MODULE_LOG 1 ReverieRedLedger Red Ledger real Lato font and static room geometry created.
+CAPTURE red-ledger-bar eye=0 hash=4102415697522031289 visible_pixels=127638
+CAPTURE red-ledger-bar eye=1 hash=9815449786761362763 visible_pixels=129395
+MODULE_LOG 0 ReverieRedLedger cup stack
+WRITE_OK state-v4.bin bytes=372 attempt=1
+MODULE_LOG 0 ReverieRedLedger tap
+WRITE_OK state-v4.bin bytes=372 attempt=2
+MODULE_LOG 0 ReverieRedLedger patron
+WRITE_OK state-v4.bin bytes=372 attempt=3
+MODULE_LOG 0 ReverieRedLedger payment
+FAULT_INJECTED write_save state-v4.bin bytes=372 attempt=4
+MODULE_LOG 2 ReverieRedLedger Host rejected Red Ledger save write.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module paused.
+OBSERVED_RED_LEDGER_FAILED_WRITE attempts=4 successful=3 cash_live=2480 expected_saved=2200 pause_retry=0
+CAPTURE red-ledger-after-save-failure eye=0 hash=1444907359004791517 visible_pixels=152695
+CAPTURE red-ledger-after-save-failure eye=1 hash=479605470444940776 visible_pixels=151156
+MODULE_LOG 1 ReverieRedLedger Red Ledger GL resources released.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MODULE_LOG 1 ReverieRedLedger Red Ledger clientele condition, stock and renovations restored.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+OBSERVED_RED_LEDGER_RECREATE cash=2200 pending_payment=280
+MODULE_LOG 1 ReverieRedLedger Original Unreal shop icons loaded: 24/24
+MODULE_LOG 1 ReverieRedLedger Original Unreal product models loaded: 16/16
+MODULE_LOG 2 ReverieRedLedger Beckenburg curated meshes loaded: 0/14
+MODULE_LOG 1 ReverieRedLedger Owner-authored smoking meshes loaded: 4/4
+MODULE_LOG 2 ReverieRedLedger Real owner patron meshes loaded: 0/6
+MODULE_LOG 1 ReverieRedLedger Red Ledger real Lato font and static room geometry created.
+MODULE_LOG 0 ReverieRedLedger payment
+WRITE_OK state-v4.bin bytes=372 attempt=5
+MODULE_LOG 0 ReverieRedLedger enter stockroom
+WRITE_OK state-v4.bin bytes=372 attempt=6
+CAPTURE red-ledger-stockroom eye=0 hash=13398426561784264188 visible_pixels=97715
+CAPTURE red-ledger-stockroom eye=1 hash=15816179842893356631 visible_pixels=95234
+MODULE_LOG 1 ReverieRedLedger Red Ledger GL resources released.
+MODULE_LOG 1 ReverieRedLedger Original Unreal shop icons loaded: 24/24
+MODULE_LOG 1 ReverieRedLedger Original Unreal product models loaded: 16/16
+MODULE_LOG 2 ReverieRedLedger Beckenburg curated meshes loaded: 0/14
+MODULE_LOG 1 ReverieRedLedger Owner-authored smoking meshes loaded: 4/4
+MODULE_LOG 2 ReverieRedLedger Real owner patron meshes loaded: 0/6
+MODULE_LOG 1 ReverieRedLedger Red Ledger real Lato font and static room geometry created.
+CAPTURE red-ledger-stockroom-recreated eye=0 hash=13398426561784264188 visible_pixels=97715
+CAPTURE red-ledger-stockroom-recreated eye=1 hash=15816179842893356631 visible_pixels=95234
+MODULE_LOG 1 ReverieRedLedger Red Ledger GL resources released.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MODULE_LOG 1 ReverieRedLedger Red Ledger clientele condition, stock and renovations restored.
+MODULE_LOG 1 ReverieRedLedger Red Ledger module created with manual cup/service/payment loop.
+OBSERVED_RED_LEDGER_COMPOSITE_BIT_FLIP accepted=1 original_cash=2480 restored_cash=2481 composite_bytes=372
+MODULE_LOG 1 ReverieRedLedger Red Ledger module destroyed.
+MISSING_ASSETS 20
+MISSING_ASSET native/red-ledger/beckenburg/barrel.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/chair.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/coffee_table.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/crate.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/door.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/floor.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/lamp_off.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/lamp_on.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/mattress.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/patron_directorate_courier.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/patron_mechanic.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/patron_militia_veteran.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/patron_night_clerk.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/patron_rail_worker.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/patron_salihorsk_hauler.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/shelf.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/switch.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/table.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/wall.rlprop
+MISSING_ASSET native/red-ledger/beckenburg/window.rlprop
+PASS audit reproductions and actual Red Ledger GLES lifecycle (defects observed, not fixed)

@@ -1,0 +1,43 @@
+{
+  "audit_date": "2026-11-08",
+  "refreshed_at_utc": "2026-11-08 17:30:38 UTC",
+  "production_baseline": "12d4018c90e56a3767b8ffc58a2e5394440caec1",
+  "remote_main_final_readback": "12d4018c90e56a3767b8ffc58a2e5394440caec1",
+  "android_run": {
+    "id": 42417911507,
+    "url": "https://github.com/mrcalzon02/ReverieVR/actions/runs/42417911507",
+    "source_sha": "c10ddd72cfd5150646c855f25e44955490d233c7",
+    "conclusion": "success",
+    "instrumentation_tests": 13,
+    "registered_module_captures": 16,
+    "environment": "Android 10 instrumentation; not a physical S9/Daydream",
+    "artifact_id": 13592806030,
+    "artifact_name": "reverie-hub-game-acquisition-42417911507",
+    "artifact_bytes": 158042858,
+    "artifact_sha256": "e2bd401f420c0728ce0ddae487805b1cdb3e92311c806ad3f2e8ed732ad67506"
+  },
+  "baseline_phone_workflow": {
+    "id": 42449220006,
+    "url": "https://github.com/mrcalzon02/ReverieVR/actions/runs/42449220006",
+    "conclusion": "success",
+    "gate": "success",
+    "build_and_release": "skipped",
+    "fresh_apk_built": false
+  },
+  "latest_non_draft_release": {
+    "tag": "phone-test-1961-1",
+    "url": "https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-1961-1",
+    "prerelease": true,
+    "published_at": "2026-11-07T06:51:11Z",
+    "source_sha": "1c5736ceb66e92edc88c19f4a17814024e972d6f",
+    "headset_asset": {
+      "name": "ReverieVR-phone-test-1961-1c5736c.apk",
+      "size": 157375347,
+      "digest": "sha256:6c80950ab6082942d120a49872000f0865f51b6dd396f375cca7f83117439054"
+    }
+  },
+  "no_production_source_changes": true,
+  "no_workflows_triggered_by_audit": true,
+  "no_apk_published_by_audit": true,
+  "shared_repository_publication": "Blocked by automatic approval review; local audit-only changes await explicit permission."
+}

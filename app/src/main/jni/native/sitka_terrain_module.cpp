@@ -1094,7 +1094,7 @@ const ReverieNativeModuleApiV1 kApi = {
     {sizeof(ReverieNativeModuleDescriptorV1), REVERIE_NATIVE_MODULE_ABI_VERSION,
      "sitka", "Sitka [TERRAIN PROOF]", 2u, 0u},
     Create, Destroy, OnGlCreated, ReleaseGl, Resume, Pause, Update, RenderEye,
-    nullptr, PrepareFrame
+    nullptr, PrepareFrame, nullptr
 };
 } // namespace
 extern "C" __attribute__((visibility("default")))

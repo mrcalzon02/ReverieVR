@@ -1,6 +1,7 @@
 #include "lantern_desk_simulation.h"
 
 #include <cstddef>
+#include <limits>
 
 namespace reverie { namespace lantern {
 namespace {
@@ -67,7 +68,8 @@ const Photograph *Simulation::photo() const {
     return phase_ == Phase::PhotoReady ? &photo_ : nullptr;
 }
 bool Simulation::SubmitReport(Assessment assessment, ReportResult *result) {
-    if (phase_ != Phase::PhotoReady || result == nullptr) return false;
+    if (phase_ != Phase::PhotoReady || result == nullptr
+        || static_cast<unsigned>(assessment)>static_cast<unsigned>(Assessment::BridgeDamage)) return false;
     int32_t trust = -3;
     int32_t effect = -2;
     if (selected_ == Sector::RailApproach) {
@@ -80,10 +82,29 @@ bool Simulation::SubmitReport(Assessment assessment, ReportResult *result) {
         if (assessment == Assessment::BridgeDamage) { trust = 3; effect = 2; }
         else if (assessment == Assessment::PossibleContact) { trust = 1; effect = 0; }
     }
-    credibility_ += trust;
-    operational_effect_ += effect;
-    *result = {trust, effect};
+    const auto accumulate=[](int32_t total,int32_t delta){
+        const int64_t next=static_cast<int64_t>(total)+delta;
+        if(next>std::numeric_limits<int32_t>::max())return std::numeric_limits<int32_t>::max();
+        if(next<std::numeric_limits<int32_t>::min())return std::numeric_limits<int32_t>::min();
+        return static_cast<int32_t>(next);
+    };
+    credibility_ = accumulate(credibility_,trust);
+    operational_effect_ = accumulate(operational_effect_,effect);
+    last_report_ = {trust, effect};
+    *result = last_report_;
     phase_ = Phase::Filed;
     return true;
+}
+bool Simulation::NextSortie() {
+    if(phase_!=Phase::Filed)return false;
+    phase_=Phase::Briefing;selected_=Sector::RailApproach;
+    photo_=Photograph{};last_report_=ReportResult{};
+    return true;
+}
+const Photograph *Simulation::evidence_photo() const {
+    return phase_==Phase::PhotoReady||phase_==Phase::Filed?&photo_:nullptr;
+}
+const ReportResult *Simulation::last_report() const {
+    return phase_==Phase::Filed?&last_report_:nullptr;
 }
 }}  // namespace reverie::lantern

@@ -1,0 +1,5 @@
+{"command": ["env", "CPATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/include", "LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "LD_LIBRARY_PATH=/workspace/scratch/d76b27d6a834/audit-work/deps/sysroot/usr/lib/x86_64-linux-gnu", "EGL_PLATFORM=surfaceless", "LIBGL_ALWAYS_SOFTWARE=1", "bash", "scripts/verify-classic-input-prefix.sh"], "layer": "actual module ASan/UBSan short allocation", "started_at": "2026-11-08T19:24:38.819687+00:00", "status": "running", "log": "classic-input-prefix-attempt-1.log", "timeout_seconds": 240}
+accepted input prefix=24 bytes
+accepted input prefix=52 bytes
+accepted input prefix=80 bytes
+input prefix compatibility PASS
