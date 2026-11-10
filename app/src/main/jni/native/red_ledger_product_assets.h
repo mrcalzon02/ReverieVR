@@ -44,7 +44,9 @@ constexpr Entry kCatalog[]={
     {12,"404hard","native/red-ledger/models/404hard.fbx",
         "native/red-ledger/textures/404hard_texture_0.png"},
     {trade::kDrinks+3,"404snacks","native/red-ledger/models/404snacks.fbx",
-        "native/red-ledger/textures/404snacks_texture_0.png"}
+        "native/red-ledger/textures/404snacks_texture_0.png"},
+    {trade::kDrinks+4,"505Snacks","native/red-ledger/models/505Snacks.fbx",
+        "native/red-ledger/textures/505Snacks_texture_0.png"}
 };
 constexpr int kCount=sizeof(kCatalog)/sizeof(kCatalog[0]);
 
@@ -80,7 +82,7 @@ constexpr int IndexForOffer(int offer) {
         if(kCatalog[i].offer==offer)return i;
     return -1;
 }
-static_assert(kCount==16,"Four complete original supplier product sets");
+static_assert(kCount==17,"Sixteen previous sets plus genuine Mozoli snack asset");
 static_assert(IndexForOffer(0)==-1,"House lager is not a branded product");
 static_assert(IndexForOffer(19)==3,"First snack shares the real shop SKU");
 static_assert(IndexForOffer(4)==4 && IndexForOffer(5)==5 &&
@@ -92,6 +94,8 @@ static_assert(IndexForOffer(7)==8 && IndexForOffer(8)==9 &&
 static_assert(IndexForOffer(10)==12 && IndexForOffer(11)==13 &&
               IndexForOffer(12)==14 && IndexForOffer(22)==15,
               "Map Salihorsk goods and snack to their genuine export files");
+static_assert(IndexForOffer(trade::kDrinks+4)==16,
+              "Mozoli sausage snack maps to the real source product");
 static_assert(IndexForOffer(13)==-1,
               "No model substitution for suppliers without imported art");
 }}}

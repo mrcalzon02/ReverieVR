@@ -47,3 +47,24 @@ Six selected **unchanged** Unreal Editor-exported PCM 16-bit stereo WAV files ar
 ## First genuine 3D product source (2026-10-16)
 
 The first full original FBX/1024px PNG pair, `101draft.fbx` and `101draft_texture_0.png`, has been directly admitted as APK assets, matching the source SHA-256 from the actual Unreal Editor `export_manifest.json`. This is Blue Harbor Draft (supplier 101) and includes a 10,338-triangle visible mesh with UVs. Native code now attempts a real textured 3D preview when that original item is selected in the stockroom, while excluding Unreal UCX collision geometry. It is **not** a substitute artist sketch or package thumbnail. The other 23 full FBX+texture pairs remain original exports on Drive, not yet mobile-rendered. The preview is authored and pending native APK/Galaxy S9 test; the core room initializes independently if optional mesh decoding/upload fails.
+
+## Additional single-product import — 2026-11-10 (505Snacks)
+
+The owner-authorized Unreal Editor exports for *Street Sausage Tin*, original
+supplier 505 / Mozoli Brew's, source shop slot 20, were independently recovered
+without changing Drive: `505Snacks.fbx` (467,536 bytes; 4,882 visible triangles;
+SHA-256 `2c041be102366c3c3853c0c69506bf8f841d53d1cb395babc1cb67f7e397dd94`)
+and `505Snacks_texture_0.png` (1,546,174 bytes, 1024×1024 RGBA;
+SHA-256 `e1b1d3e760a9763a0b8b06933fd82181c5dab47fe56bfc43f4ab860251d884d2`).
+Both digests match the existing owner's `export_manifest.json`; their exact
+Unreal source objects agree with the canonical shop catalog. Only the visible
+mesh, not the original UCX collision hull, is admitted to the game's existing
+bounded FBX/PNG GLES2 asset pipeline. The product catalog now admits 17 of 24
+canonical model/texture pairs. Its saved-trade offer is the already-existing
+snack index 4 (offer 23); no new currency, sales, or save format is introduced.
+
+This is licensed solely under `LicenseRef-Owner-Original-Assets`, not
+public-domain material or an open-content sublicense. Host parsing, APK build,
+selected-product GLES2 render, headset controls, and sustained S9 performance
+are **separate acceptance gates**; source admission alone is not proof of
+in-headset gameplay.

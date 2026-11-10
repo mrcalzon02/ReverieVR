@@ -90,17 +90,25 @@ jobs:
         run: |
           set -euo pipefail
           for cc in g++ clang++; do
-            for game_test in red_ledger_simulation red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout red_ledger_clientele red_ledger_signage; do
+            for game_test in red_ledger_simulation red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout red_ledger_clientele red_ledger_signage red_ledger_original_assets; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
               extra=()
               if [[ "$game_test" == red_ledger_simulation || "$game_test" == red_ledger_faction_integration || "$game_test" == red_ledger_wholesale ]]; then
                 extra=(app/src/main/jni/native/red_ledger_simulation.cpp)
               fi
+              link=()
+              if [[ "$game_test" == red_ledger_original_assets ]]; then
+                link=(-lz)
+              fi
               "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
                 -Iapp/src/main/jni/native \
                 "app/src/test/native/${game_test}_test.cpp" "${extra[@]}" \
-                -o "${RUNNER_TEMP}/${cc}-${game_test}"
-              "${RUNNER_TEMP}/${cc}-${game_test}"
+                -o "${RUNNER_TEMP}/${cc}-${game_test}" "${link[@]}"
+              if [[ "$game_test" == red_ledger_original_assets ]]; then
+                "${RUNNER_TEMP}/${cc}-${game_test}" "$GITHUB_WORKSPACE"
+              else
+                "${RUNNER_TEMP}/${cc}-${game_test}"
+              fi
             done
           done
           echo 'PASS: Red Ledger functional patrons, trade and stock'

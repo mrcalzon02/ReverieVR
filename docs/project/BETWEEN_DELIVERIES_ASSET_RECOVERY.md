@@ -86,3 +86,24 @@ The repository now contains a targeted, original-source-preserving Unreal Editor
 **Current verification boundary:** Drive folder read and six binary sample checks complete; folder upload finality, entire collection checksum/rights, full-resolution pixel decoding (four sample packages report their sizes), UE editor export, usable portable assets in GitHub, Android/NDK build and headset render remain **unverified**. No asset models, textures or audio from this upload have been committed to the public repository in this recovery pass.
 
 **2026-10-16 scope distinction:** Five-tier investments and purchased in-world furniture/finishing have begun in the **native source**; the visual changes use existing generated geometry, not privately uploaded Unreal models. The 24 authentic product-to-mesh/icon metadata associations are preserved and still await actual rights-cleared, portable exports. See the latest renovation section in [full scope](BETWEEN_DELIVERIES_FULL_SCOPE.md).
+
+
+## 2026-11-10 — One source-matched 505Snacks product import
+
+Selected precisely the original *Street Sausage Tin* (supplier 505, shop slot
+20), using owner-confirmed rights and existing private export-manifest SHA-256
+records. The original 467,536-byte FBX 7.3 visible mesh contains 2,443 points,
+4,882 triangles and 14,646 UV polygon indexes; the companion 1,546,174-byte
+1024×1024 RGBA PNG supplies its authored material. Collision-only
+`UCX_505Snacks` geometry is excluded by the existing native reader.
+
+Package only this one mesh/texture pair in the existing Red Ledger assets,
+referencing real SKU offer 23 through the existing inventory-dependent shelf
+and selected-product podium renderer. This raises the locally declared
+model catalog from 16 to 17 of 24 canonical products, **not** to full
+24-product completion. The original source bytes and per-object hashes are
+recorded in the asset registry and licensing record; source Drive remains
+read-only. Existing native asset tests parse real shipped FBX, decompress
+full-size PNG and derive the bounded GPU texture. An Android/GLES2 selected-
+product render and Galaxy S9 headset acceptance still require independent
+runtime evidence and must not be inferred from source or static inspection.

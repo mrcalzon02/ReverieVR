@@ -1357,6 +1357,29 @@
       ],
       "project": "breakwater-battery",
       "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/red-ledger/models/505Snacks.fbx": {
+      "component": "between-deliveries-original-product-mesh",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "distribution": "native Red Ledger Android APK; no open-content sublicense",
+      "sha256": "2c041be102366c3c3853c0c69506bf8f841d53d1cb395babc1cb67f7e397dd94",
+      "source_master": "BetweenDeliveries_UnrealExports/products/505/505Snacks/mesh/505Snacks.fbx (owner Drive export)",
+      "notes": "Original Street Sausage Tin FBX 7.3, 4882 visible triangles with UVs; UCX collision geometry excluded"
+    },
+    "assets/native/red-ledger/textures/505Snacks_texture_0.png": {
+      "component": "between-deliveries-original-product-mesh",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "distribution": "native Red Ledger Android APK; no open-content sublicense",
+      "sha256": "e1b1d3e760a9763a0b8b06933fd82181c5dab47fe56bfc43f4ab860251d884d2",
+      "source_master": "BetweenDeliveries_UnrealExports/products/505/505Snacks/texture/505Snacks_texture_0.png (owner Drive export)",
+      "dimensions": "1024x1024 RGBA",
+      "notes": "Full original 1024px RGBA PNG retained; in-game GPU texture derived at 512px"
     }
   },
   "native_libraries": {
