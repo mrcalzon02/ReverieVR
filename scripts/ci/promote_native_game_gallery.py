@@ -22,15 +22,18 @@ COLUMNS = 4
 def produce(capture_dir: Path):
     matrix = json.loads((ROOT / "modules/game-identity-matrix.json").read_text())
     registered = [item["id"] for item in matrix["games"]]
-    if len(registered) != 15 or len(set(registered)) != 15:
-        raise ValueError("Expected exactly 15 unique integrated ReverieVR games")
+    if not registered or len(set(registered)) != len(registered):
+        raise ValueError("Game identity matrix is empty or contains duplicate game IDs")
     if not set(FEATURED).issubset(registered):
         raise ValueError("Featured menu IDs do not match the native game catalog")
     ordered = FEATURED + [item for item in registered if item not in FEATURED]
     with (capture_dir / "native-menu-capture.csv").open(newline="") as src:
         rows = list(csv.DictReader(src))
-    if len(rows) != 15 or {r["module_id"] for r in rows} != set(registered):
-        raise ValueError("Capture CSV lacks exactly one record for every game")
+    captured_ids = [row["module_id"] for row in rows]
+    if (len(rows) != len(registered)
+            or len(set(captured_ids)) != len(captured_ids)
+            or set(captured_ids) != set(registered)):
+        raise ValueError("Capture CSV lacks exactly one record per registered game")
 
     captures = {}
     for row in rows:

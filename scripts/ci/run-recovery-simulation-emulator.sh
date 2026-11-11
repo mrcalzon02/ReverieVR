@@ -70,13 +70,16 @@ for STATE in focused armed locked flight; do
 done
 adb exec-out run-as "$PKG" cat files/native-menu-capture.csv > "$OUT/native-menu-capture.csv"
 python3 - "$OUT/native-menu-capture.csv" <<'PY'
-import csv,sys
+import csv,json,sys
 from pathlib import Path
+registered=[game["id"] for game in json.loads(Path("modules/game-identity-matrix.json").read_text())["games"]]
+assert registered and len(set(registered))==len(registered), "Invalid registered native game IDs"
 rows=list(csv.DictReader(Path(sys.argv[1]).open()))
-assert len(rows)==15, f"Expected 15 packaged native menu captures, found {len(rows)}"
+row_ids=[row['module_id'] for row in rows]
+assert len(rows)==len(registered), f"Expected {len(registered)} packaged native menu captures, found {len(rows)}"
+assert len(set(row_ids))==len(rows) and set(row_ids)==set(registered), "Missing, duplicate or unregistered native game capture"
 assert all(r['status']=='CAPTURED' and int(r['png_bytes'])>300 for r in rows), "Missing real native GLES2 menu evidence"
-assert len(set(r['module_id'] for r in rows))==len(rows), "Duplicate game capture"
-print("PASS 15 installed native game menu framebuffer captures",flush=True)
+print(f"PASS {len(rows)} installed native game menu framebuffer captures",flush=True)
 PY
 for ID in $(python3 -c 'import csv; from pathlib import Path; print(" ".join(x["module_id"] for x in csv.DictReader(Path("validation/recovery-simulation/native-menu-capture.csv").open())))'); do
   [[ "$ID" =~ ^[a-z0-9-]+$ ]] || { echo "Unsafe native menu game id: $ID" >&2; exit 1; }
@@ -104,7 +107,10 @@ assert trace.count('\n')>=15
 assert (p/'private-data-before.txt').read_bytes()==(p/'private-data-after.txt').read_bytes()
 import csv,re
 menus=list(csv.DictReader((p/'native-menu-capture.csv').open()))
-assert len(menus)==15
+registered=[game["id"] for game in json.loads(Path("modules/game-identity-matrix.json").read_text())["games"]]
+assert registered and len(set(registered))==len(registered), "Invalid registered native game IDs"
+menu_ids=[row['module_id'] for row in menus]
+assert len(menus)==len(registered) and len(set(menu_ids))==len(menus) and set(menu_ids)==set(registered), "Native game capture manifest does not match registry"
 native_captures={}
 for row in menus:
     name=row['module_id']
@@ -132,6 +138,6 @@ result={'lab':'ReverieVR Android Recovery Simulation',
         'captures':{name:{'size_bytes':(p/name).stat().st_size,
             'sha256':hashlib.sha256((p/name).read_bytes()).hexdigest()} for name in images}}
 (p/'capture-manifest.json').write_text(json.dumps(result,indent=2)+'\n')
-print('PASS: Android emulator upgrade, saved state, 5000-frame gaze simulation, 15 real native menus, module rollback and GLES2 capture')
+print(f'PASS: Android emulator upgrade, saved state, 5000-frame gaze simulation, {len(menus)} real native menus, module rollback and GLES2 capture')
 PY
 sha256sum "$OUT"/*.png "$OUT"/*.apk > "$OUT/SHA256SUMS.txt"

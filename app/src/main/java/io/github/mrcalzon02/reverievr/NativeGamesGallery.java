@@ -352,7 +352,7 @@ final class NativeGamesGallery {
         "breakwater-battery","between-deliveries-red-ledger",
         "gumball-armada","iron-sight-forward-detachment",
         "ministry-lantern-desk","omega-front","procedural-test-chamber",
-        "classic-chess","classic-go","classic-checkers","classic-pong",
+        "guess-the-door","classic-chess","classic-go","classic-checkers","classic-pong",
         "classic-snake","classic-reversi","classic-breakout",
         "classic-chutes-ladders"
     };
@@ -418,7 +418,7 @@ final class NativeGamesGallery {
             int sx=cell[0],sy=cell[1],cw=ATLAS_CELL_WIDTH,ch=ATLAS_CELL_HEIGHT;
             boolean captured=atlas.getWidth()>=4*ATLAS_CELL_WIDTH
                 && atlas.getHeight()>=4*ATLAS_CELL_HEIGHT;
-            // Compatibility until the first all-15 verified capture run:
+            // Compatibility with the original featured-only reference artwork:
             // reference art only ever covered the seven featured titles.
             boolean oldReference=!captured
                 && atlas.getWidth()==4*84 && atlas.getHeight()==2*115
