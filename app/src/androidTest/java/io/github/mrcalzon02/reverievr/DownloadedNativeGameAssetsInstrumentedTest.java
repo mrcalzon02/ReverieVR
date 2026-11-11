@@ -666,6 +666,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                     game.start("between-deliveries-red-ledger"));
                 assertTrue("Red Ledger GLES2 initialization failed: "+game.getLastError(),
                     game.onSurfaceCreated());
+                try{
                 // Door to stockroom: physical AABB (2.53,-.20,-2.93).
                 assertTrue("Could not enter genuine stockroom",
                     (redLedgerSelect(game,controls,2.53f,-.20f)
@@ -697,6 +698,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                             +Math.abs(Color.blue(a)-Color.blue(b));
                         if(delta>=60)changed++;
                     }
+                    Log.i(TAG,"DIAGNOSTIC native 505 pixels="+changed
+                        +" selectedCRC="+selectedCrc+" otherCRC="+otherCrc);
                     assertTrue("Selected original product did not alter podium "
                         +"GLES2 pixels (changed="+changed+")",changed>=32);
                 }finally{first.recycle();second.recycle();}
@@ -708,12 +711,14 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                     otherCrc,again);
                 assertTrue("No durable native stock selection",saved.isFile()
                     &&saved.length()>100L);
-                game.releaseSurface();
-                game.stop();
                 Log.i(TAG,"PASS Red Ledger original 505 selected/reselected "
                     +"native GLES2 realFrames=true saveBytes="+saved.length()
                     +" selectedCRC="+selectedCrc+" otherCRC="+otherCrc
                     +" reselectedCRC="+again);
+                }finally{
+                    game.releaseSurface();
+                    game.stop();
+                }
             }
             // A distinct JNI instance must restore the selected offer;
             // clicking the same card then fails rather than changing state.
@@ -727,6 +732,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                     resumed.start("between-deliveries-red-ledger"));
                 assertTrue("Saved Red Ledger GLES2 context failed: "
                     +resumed.getLastError(),resumed.onSurfaceCreated());
+                try{
                 long restoredCrc=omegaFrame(resumed,restored);
                 int same=redLedgerSelect(resumed,resumedControls,1.23f,-.86f);
                 assertTrue("505 selection did not survive native save/reopen",
@@ -736,8 +742,10 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                     restored.isFile()&&restored.length()>300L);
                 Log.i(TAG,"PASS Red Ledger 505 save/reopen real Android GLES2 "
                     +"restoredCRC="+restoredCrc+" bytes="+restored.length());
-                resumed.releaseSurface();
-                resumed.stop();
+                }finally{
+                    resumed.releaseSurface();
+                    resumed.stop();
+                }
             }
         }finally{remove(root);}
     }
