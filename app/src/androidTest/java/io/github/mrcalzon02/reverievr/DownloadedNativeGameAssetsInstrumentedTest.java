@@ -535,6 +535,130 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         atlas.recycle();
     }
 
+
+    // This test drives the actual installed JNI Breakwater game and reads
+    // GLES2 pixels. A purchased gun must be selectable through its physical
+    // left-wall rack, not merely appear in a shop label or a mesh unit test.
+    private static int breakwaterPress(NativeModuleRuntime game,
+                                       VirtualInputBus controls,
+                                       float[] origin,float[] direction) {
+        VirtualOutput primary=VirtualOutput.joystickButton(0);
+        game.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+            origin,direction); // hover and re-arm after any focus change
+        controls.applyDigital(primary,true);
+        int feedback=game.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+            origin,direction);
+        controls.applyDigital(primary,false);
+        game.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+            origin,direction);
+        return feedback;
+    }
+
+    private static int breakwaterMenuPress(NativeModuleRuntime game,
+                                           VirtualInputBus controls,float x,float y) {
+        return breakwaterPress(game,controls,new float[]{x,y,0.f},
+            new float[]{0.f,0.f,-1.f});
+    }
+
+    private static int breakwaterSaveWord(byte[] save,int byteOffset){
+        assertEquals("Real Breakwater checkpoint must be 88 bytes",88,save.length);
+        return (save[byteOffset]&255) |
+            ((save[byteOffset+1]&255)<<8) |
+            ((save[byteOffset+2]&255)<<16) |
+            ((save[byteOffset+3]&255)<<24);
+    }
+
+    private static int breakwaterGunPixels(File a,File b) {
+        Bitmap first=BitmapFactory.decodeFile(a.getAbsolutePath());
+        Bitmap second=BitmapFactory.decodeFile(b.getAbsolutePath());
+        assertNotNull("Missing first actual Breakwater GLES2 frame",first);
+        assertNotNull("Missing second actual Breakwater GLES2 frame",second);
+        try {
+            assertEquals(512,first.getWidth());
+            assertEquals(512,second.getWidth());
+            int changed=0;
+            // The forward-mounted artillery occupies this lower-center view.
+            // Exclude the sea/horizon so a moving enemy cannot masquerade as
+            // evidence that changing the actual 3D gun altered pixels.
+            for(int y=280;y<512;y++)for(int x=135;x<377;x++) {
+                int c=first.getPixel(x,y),d=second.getPixel(x,y);
+                int delta=Math.abs(Color.red(c)-Color.red(d))+
+                    Math.abs(Color.green(c)-Color.green(d))+
+                    Math.abs(Color.blue(c)-Color.blue(d));
+                if(delta>48)changed++;
+            }
+            return changed;
+        }finally{first.recycle();second.recycle();}
+    }
+
+    private static void verifyBreakwaterPurchasedRack(
+        NativeModuleRuntime game,VirtualInputBus controls,File home,Context app)
+        throws Exception {
+        File save=new File(home,"breakwater-battery/breakwater-run-1-v2.bin");
+        final int activated=NativeModuleRuntime.FEEDBACK_ACTIVATION;
+        assertTrue("Breakwater did not select real slot 1",
+            (breakwaterMenuPress(game,controls,-1.79f,.20f)&activated)!=0);
+        assertTrue("Breakwater did not start Cadet shop",
+            (breakwaterMenuPress(game,controls,-2.10f,.28f)&activated)!=0);
+        assertTrue("Breakwater did not open armory",
+            (breakwaterMenuPress(game,controls,-.90f,-.36f)&activated)!=0);
+        assertTrue("Real Heavy Gun purchase was rejected",
+            (breakwaterMenuPress(game,controls,-.70f,.34f)&activated)!=0);
+        assertTrue("Breakwater purchase was not durably saved",save.isFile());
+        byte[] purchased=Files.readAllBytes(save.toPath());
+        assertEquals("Saved purchase must use checked v3 format",3,
+            purchased[4]&255);
+        assertEquals("Purchase must retain starter and newly owned Heavy Gun",3,
+            breakwaterSaveWord(purchased,64));
+        assertEquals("Purchased Heavy Gun must be selected on disk",1,
+            breakwaterSaveWord(purchased,68));
+        assertEquals("Heavy Gun must actually spend 900 of 1300 credits",400,
+            breakwaterSaveWord(purchased,32));
+
+        game.releaseSurface();
+        game.stop();
+        assertTrue("Cannot reopen purchased Breakwater game",game.start("breakwater-battery"));
+        assertTrue("Cannot restore purchased Breakwater GLES2",game.onSurfaceCreated());
+        assertTrue("Reopened Breakwater did not load saved slot",
+            (breakwaterMenuPress(game,controls,-1.79f,.20f)&activated)!=0);
+        assertArrayEquals("Reopen modified real shop checkpoint unexpectedly",
+            purchased,Files.readAllBytes(save.toPath()));
+        // The saved shop's Heavy Gun becomes the active mounted mesh on the
+        // first combat frame. In-wave rack switches remain transient by
+        // design; after a crash the last acknowledged shop is restored.
+        assertTrue("Restored Heavy Gun could not enter its actual wave",
+            (breakwaterMenuPress(game,controls,.90f,-.36f)&activated)!=0);
+        File heavyRestored=new File(app.getFilesDir(),
+            "breakwater-rack-heavy-restored.png");
+        long restoredCrc=omegaFrame(game,heavyRestored);
+        assertTrue("Starter Machine Gun physical rack click rejected",
+            (breakwaterPress(game,controls,new float[]{0.f,0.f,0.f},
+                new float[]{-1.85f,.55f,.48f})&activated)!=0);
+        File machine=new File(app.getFilesDir(),"breakwater-rack-machine.png");
+        long machineCrc=omegaFrame(game,machine);
+        assertTrue("Purchased Heavy Gun physical rack click rejected",
+            (breakwaterPress(game,controls,new float[]{0.f,0.f,0.f},
+                new float[]{-1.85f,.20f,.48f})&activated)!=0);
+        File heavySelected=new File(app.getFilesDir(),
+            "breakwater-rack-heavy-selected.png");
+        long selectedCrc=omegaFrame(game,heavySelected);
+        int restoredDifference=breakwaterGunPixels(heavyRestored,machine);
+        int rackDifference=breakwaterGunPixels(machine,heavySelected);
+        assertTrue("Restore changed only UI, not actual mounted weapon pixels: "+
+            restoredDifference,restoredDifference>=48);
+        assertTrue("Physical rack changed only text, not actual 3D weapon pixels: "+
+            rackDifference,rackDifference>=48);
+        assertNotEquals("Rack switch did not change actual GLES2 framebuffer",
+            machineCrc,selectedCrc);
+        assertArrayEquals("Combat rack press must not replace durable shop checkpoint",
+            purchased,Files.readAllBytes(save.toPath()));
+        Log.i(TAG,"PASS Breakwater purchased Heavy rack GLES2 "+
+            "purchase=true modelPixels="+rackDifference+
+            " restoredPixels="+restoredDifference+
+            " restoredCRC="+restoredCrc+" machineCRC="+machineCrc+
+            " selectedCRC="+selectedCrc+" saveBytes="+purchased.length);
+    }
+
     @Test public void captureAllNativeMainMenus() throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
         File root=new File(app.getCacheDir(),"native-menu-ci-"+System.nanoTime());
@@ -558,7 +682,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 }
                 File evidence=new File(app.getFilesDir(),
                     "native-menu-"+game.id+".png");
-                VirtualInputBus galleryBus="omega-front".equals(game.id)?
+                VirtualInputBus galleryBus=("omega-front".equals(game.id) ||
+                    "breakwater-battery".equals(game.id))?
                     new VirtualInputBus():null;
                 try(NativeModuleRuntime runtime=new NativeModuleRuntime(
                     home,app.getAssets(),galleryBus,true,
@@ -573,13 +698,15 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                         long crc=omegaFrame(runtime,evidence);
                         assertTrue("Empty real frame "+game.id,
                             evidence.isFile() && evidence.length()>300L);
+                        if("breakwater-battery".equals(game.id))
+                            verifyBreakwaterPurchasedRack(runtime,galleryBus,home,app);
                         rows.append(game.id).append(",CAPTURED,")
                             .append(crc).append(",").append(evidence.length())
                             .append("\n");
                         saved++;
                         Log.i(TAG,"PASS REAL native menu capture id="+game.id+
                             " crc32="+crc+" bytes="+evidence.length());
-                        if(galleryBus!=null){
+                        if("omega-front".equals(game.id)){
                             // Visual-only diagnostic: real gallery navigation,
                             // read_asset + GLES2 texture upload + pixel captures.
                             // Failures must not block playable game releases.

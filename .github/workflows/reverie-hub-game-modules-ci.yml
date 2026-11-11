@@ -204,7 +204,8 @@ jobs:
             # The 505 evidence comes from JNI/GLES2 glReadPixels during actual
             # controller-driven stock selection, re-selection and save/reopen.
             # Unlike optional gallery diagnostics, these exact files are required.
-            for NAME in red-ledger-505-selected.png red-ledger-505-other.png red-ledger-505-reselected.png red-ledger-505-restored.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}"; test -s "validation/hub/${NAME}"; done
+            for NAME in red-ledger-505-selected.png red-ledger-505-other.png red-ledger-505-reselected.png red-ledger-505-restored.png breakwater-rack-heavy-restored.png breakwater-rack-machine.png breakwater-rack-heavy-selected.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}"; test -s "validation/hub/${NAME}"; done
+            grep -F "PASS Breakwater purchased Heavy rack GLES2" validation/hub/logcat.txt
             grep -F 'OK (13 tests)' validation/hub/instrumentation-output.txt
             # Emulator runner uses separate sh -c for each line. Keep dynamic identity
             # count and required capture grep together in one command.
