@@ -201,6 +201,13 @@ jobs:
             # BEFORE the success gate, including when the checkpoint assertion fails.
             # These are synthetic test-session files, never a player's saves.
             for NAME in omega-front-ci-tactical.png omega-front-ci-restored.png omega-front-ci-checkpoint-before.bin omega-front-ci-checkpoint-after.bin omega-front-gallery-f06.png omega-front-gallery-f10.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}" || rm -f "validation/hub/${NAME}"; done
+            # The 505 evidence comes from JNI/GLES2 glReadPixels during actual
+            # controller-driven stock selection, re-selection and save/reopen.
+            # Unlike optional gallery diagnostics, these exact files are required.
+            for NAME in red-ledger-505-selected.png red-ledger-505-other.png red-ledger-505-reselected.png red-ledger-505-restored.png; do
+              adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}"
+              test -s "validation/hub/${NAME}"
+            done
             grep -F 'OK (13 tests)' validation/hub/instrumentation-output.txt
             # Emulator runner uses separate sh -c for each line. Keep dynamic identity
             # count and required capture grep together in one command.

@@ -623,8 +623,129 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
     }
 
 
-    @Test public void redLedgerReal24DownloadedIconsRenderThroughNativeGles(){
+
+    // Script the very same controller ray and primary input as the headset.
+    // Reject an interaction which does not reach its real native target.
+    private static int redLedgerSelect(NativeModuleRuntime runtime,
+                                      VirtualInputBus controls,float x,float y){
+        float[] origin={x,y,0.f},direction={0.f,0.f,-1.f};
+        VirtualOutput select=VirtualOutput.joystickButton(0);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+            origin,direction);
+        controls.applyDigital(select,true);
+        int feedback=runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+            origin,direction);
+        controls.applyDigital(select,false);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+            origin,direction);
+        return feedback;
+    }
+
+    // This is the real saved/game-controlled SKU: 505Snacks.fbx and its
+    // 1024px owner texture, not a generated proof image or thumbnail.
+    private static void verifyRedLedger505VisibleOnAndroidGles()
+        throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File root=new File(app.getCacheDir(),
+            "red-ledger-505-ci-"+System.nanoTime());
+        assertTrue("Cannot allocate isolated Red Ledger test storage",root.mkdirs());
+        File home=new File(root,"native-modules");
+        assertTrue("Cannot allocate Red Ledger game save home",home.mkdirs());
+        File selected=new File(app.getFilesDir(),"red-ledger-505-selected.png");
+        File alternate=new File(app.getFilesDir(),"red-ledger-505-other.png");
+        File reselected=new File(app.getFilesDir(),"red-ledger-505-reselected.png");
+        File restored=new File(app.getFilesDir(),"red-ledger-505-restored.png");
+        File saved=new File(home,"between-deliveries-red-ledger/state-v4.bin");
+        try(Pbuffer egl=new Pbuffer()){
+            VirtualInputBus controls=new VirtualInputBus();
+            try(NativeModuleRuntime game=new NativeModuleRuntime(
+                home,app.getAssets(),controls,true,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))){
+                assertTrue("Red Ledger native launch failed: "+game.getLastError(),
+                    game.start("between-deliveries-red-ledger"));
+                assertTrue("Red Ledger GLES2 initialization failed: "+game.getLastError(),
+                    game.onSurfaceCreated());
+                // Door to stockroom: physical AABB (2.53,-.20,-2.93).
+                assertTrue("Could not enter genuine stockroom",
+                    (redLedgerSelect(game,controls,2.53f,-.20f)
+                     &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                // Card 22 (zero-based): supplier 505, snack row, offer 23.
+                assertTrue("505 snack card did not select offer 23",
+                    (redLedgerSelect(game,controls,1.23f,-.86f)
+                     &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                long selectedCrc=omegaFrame(game,selected);
+                // Card 21: neighboring supplier 404 snack, offer 22.
+                assertTrue("Neighbor snack card was not selectable",
+                    (redLedgerSelect(game,controls,.41f,-.86f)
+                     &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                long otherCrc=omegaFrame(game,alternate);
+                assertNotEquals("Changing SKU did not change real GLES2 frame",
+                    selectedCrc,otherCrc);
+                Bitmap first=BitmapFactory.decodeFile(selected.getAbsolutePath());
+                Bitmap second=BitmapFactory.decodeFile(alternate.getAbsolutePath());
+                assertNotNull("No selected-product framebuffer PNG",first);
+                assertNotNull("No alternate-product framebuffer PNG",second);
+                try{
+                    // The podium projects to the lower-right of the 512px
+                    // camera. Require material change THERE, not only HUD text.
+                    int changed=0;
+                    for(int y=310;y<440;++y)for(int x=330;x<465;++x){
+                        int a=first.getPixel(x,y),b=second.getPixel(x,y);
+                        int delta=Math.abs(Color.red(a)-Color.red(b))
+                            +Math.abs(Color.green(a)-Color.green(b))
+                            +Math.abs(Color.blue(a)-Color.blue(b));
+                        if(delta>=60)changed++;
+                    }
+                    assertTrue("Selected original product did not alter podium "
+                        +"GLES2 pixels (changed="+changed+")",changed>=32);
+                }finally{first.recycle();second.recycle();}
+                assertTrue("505 snack could not be reselected",
+                    (redLedgerSelect(game,controls,1.23f,-.86f)
+                     &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                long again=omegaFrame(game,reselected);
+                assertNotEquals("Reselection did not redraw original SKU",
+                    otherCrc,again);
+                assertTrue("No durable native stock selection",saved.isFile()
+                    &&saved.length()>100L);
+                game.releaseSurface();
+                game.stop();
+                Log.i(TAG,"PASS Red Ledger original 505 selected/reselected "
+                    +"native GLES2 realFrames=true saveBytes="+saved.length()
+                    +" selectedCRC="+selectedCrc+" otherCRC="+otherCrc
+                    +" reselectedCRC="+again);
+            }
+            // A distinct JNI instance must restore the selected offer;
+            // clicking the same card then fails rather than changing state.
+            VirtualInputBus resumedControls=new VirtualInputBus();
+            try(NativeModuleRuntime resumed=new NativeModuleRuntime(
+                home,app.getAssets(),resumedControls,true,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))){
+                assertTrue("Saved native Red Ledger launch failed: "
+                    +resumed.getLastError(),
+                    resumed.start("between-deliveries-red-ledger"));
+                assertTrue("Saved Red Ledger GLES2 context failed: "
+                    +resumed.getLastError(),resumed.onSurfaceCreated());
+                long restoredCrc=omegaFrame(resumed,restored);
+                int same=redLedgerSelect(resumed,resumedControls,1.23f,-.86f);
+                assertTrue("505 selection did not survive native save/reopen",
+                    (same&NativeModuleRuntime.FEEDBACK_FAILURE)!=0
+                    &&(same&NativeModuleRuntime.FEEDBACK_ACTIVATION)==0);
+                assertTrue("Saved selected SKU screenshot missing",
+                    restored.isFile()&&restored.length()>300L);
+                Log.i(TAG,"PASS Red Ledger 505 save/reopen real Android GLES2 "
+                    +"restoredCRC="+restoredCrc+" bytes="+restored.length());
+                resumed.releaseSurface();
+                resumed.stop();
+            }
+        }finally{remove(root);}
+    }
+
+    @Test public void redLedgerReal24DownloadedIconsRenderThroughNativeGles()
+        throws Exception {
         runInstalledAssets("between-deliveries-red-ledger",24);
+        verifyRedLedger505VisibleOnAndroidGles();
     }
     @Test public void omegaFrontDownloadedTexturesRenderThroughNativeGles(){
         // The 141-file fixture selects exactly two shared concrete/steel
