@@ -339,6 +339,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             assertNotEquals("Tactical input/step produced no visible change",
                 tactical,moved);
             runtime.pauseForLifecycle();
+            assertTrue("Lifecycle pause did not suspend native input",runtime.isPaused());
             assertTrue("No actual native campaign checkpoint",saved.isFile());
             assertEquals("Native campaign checkpoint size",2048L,saved.length());
             byte[] savedCheckpoint=Files.readAllBytes(saved.toPath());
@@ -352,6 +353,13 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 runtime.start("omega-front"));
             assertTrue("Cannot restore Omega Front GLES2 after relaunch",
                 runtime.onSurfaceCreated());
+            // A stopped module does not end the Activity lifecycle pause.
+            // The Android Activity resumes explicitly before accepting input;
+            // without that transition both CONTINUE taps are ignored and the
+            // captured frame is still the title, not the restored battle.
+            assertTrue("Relaunch unexpectedly cleared Activity pause",runtime.isPaused());
+            runtime.resumeForLifecycle();
+            assertFalse("Reopened Omega Front still rejects input",runtime.isPaused());
             long reloadTitle=omegaFrame(runtime,null);
             assertNotEquals("Relaunch should show title, not dispatch old battle input",
                 moved,reloadTitle);
