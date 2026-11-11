@@ -539,25 +539,49 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
     // This test drives the actual installed JNI Breakwater game and reads
     // GLES2 pixels. A purchased gun must be selectable through its physical
     // left-wall rack, not merely appear in a shop label or a mesh unit test.
+    // Sound-backed Breakwater confirmations intentionally suppress the legacy
+    // FEEDBACK_ACTIVATION bit. Check the actual pressed-frame JNI sound instead
+    // of treating a successfully played control sound as an input failure.
+    // Cue IDs below follow the ReverieNativeSoundCueV1 native ABI.
+    private static boolean breakwaterHasCue(long packed,int expected) {
+        for(int i=0;i<8;i++)
+            if(((packed >>> (8*i)) & 255L)==expected)return true;
+        return false;
+    }
+
     private static int breakwaterPress(NativeModuleRuntime game,
                                        VirtualInputBus controls,
-                                       float[] origin,float[] direction) {
+                                       float[] origin,float[] direction,
+                                       int expectedSoundCue) {
         VirtualOutput primary=VirtualOutput.joystickButton(0);
         game.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
             origin,direction); // hover and re-arm after any focus change
+        game.drainSoundCues(); // stale audio cannot prove a new action
         controls.applyDigital(primary,true);
         int feedback=game.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
             origin,direction);
+        long sounds=game.drainSoundCues();
         controls.applyDigital(primary,false);
         game.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
             origin,direction);
+        game.drainSoundCues();
+        if(expectedSoundCue!=0) {
+            assertEquals("Breakwater rejected action with cue "+expectedSoundCue,
+                0,feedback & NativeModuleRuntime.FEEDBACK_FAILURE);
+            assertTrue("Breakwater action sound "+expectedSoundCue+
+                " absent from pressed frame "+Long.toHexString(sounds),
+                breakwaterHasCue(sounds,expectedSoundCue));
+            // A success bit is returned only after matching the native cue.
+            return feedback | NativeModuleRuntime.FEEDBACK_ACTIVATION;
+        }
         return feedback;
     }
 
     private static int breakwaterMenuPress(NativeModuleRuntime game,
-                                           VirtualInputBus controls,float x,float y) {
+                                           VirtualInputBus controls,float x,float y,
+                                           int expectedSoundCue) {
         return breakwaterPress(game,controls,new float[]{x,y,0.f},
-            new float[]{0.f,0.f,-1.f});
+            new float[]{0.f,0.f,-1.f},expectedSoundCue);
     }
 
     private static int breakwaterSaveWord(byte[] save,int byteOffset){
@@ -597,13 +621,13 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         File save=new File(home,"breakwater-battery/breakwater-run-1-v2.bin");
         final int activated=NativeModuleRuntime.FEEDBACK_ACTIVATION;
         assertTrue("Breakwater did not select real slot 1",
-            (breakwaterMenuPress(game,controls,-1.79f,.20f)&activated)!=0);
+            (breakwaterMenuPress(game,controls,-1.79f,.20f,0)&activated)!=0);
         assertTrue("Breakwater did not start Cadet shop",
-            (breakwaterMenuPress(game,controls,-2.10f,.28f)&activated)!=0);
+            (breakwaterMenuPress(game,controls,-2.10f,.28f,37)&activated)!=0);
         assertTrue("Breakwater did not open armory",
-            (breakwaterMenuPress(game,controls,-.90f,-.36f)&activated)!=0);
+            (breakwaterMenuPress(game,controls,-.90f,-.36f,35)&activated)!=0);
         assertTrue("Real Heavy Gun purchase was rejected",
-            (breakwaterMenuPress(game,controls,-.70f,.34f)&activated)!=0);
+            (breakwaterMenuPress(game,controls,-.70f,.34f,16)&activated)!=0);
         assertTrue("Breakwater purchase was not durably saved",save.isFile());
         byte[] purchased=Files.readAllBytes(save.toPath());
         assertEquals("Saved purchase must use checked v3 format",3,
@@ -620,25 +644,25 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         assertTrue("Cannot reopen purchased Breakwater game",game.start("breakwater-battery"));
         assertTrue("Cannot restore purchased Breakwater GLES2",game.onSurfaceCreated());
         assertTrue("Reopened Breakwater did not load saved slot",
-            (breakwaterMenuPress(game,controls,-1.79f,.20f)&activated)!=0);
+            (breakwaterMenuPress(game,controls,-1.79f,.20f,0)&activated)!=0);
         assertArrayEquals("Reopen modified real shop checkpoint unexpectedly",
             purchased,Files.readAllBytes(save.toPath()));
         // The saved shop's Heavy Gun becomes the active mounted mesh on the
         // first combat frame. In-wave rack switches remain transient by
         // design; after a crash the last acknowledged shop is restored.
         assertTrue("Restored Heavy Gun could not enter its actual wave",
-            (breakwaterMenuPress(game,controls,.90f,-.36f)&activated)!=0);
+            (breakwaterMenuPress(game,controls,.90f,-.36f,14)&activated)!=0);
         File heavyRestored=new File(app.getFilesDir(),
             "breakwater-rack-heavy-restored.png");
         long restoredCrc=omegaFrame(game,heavyRestored);
         assertTrue("Starter Machine Gun physical rack click rejected",
             (breakwaterPress(game,controls,new float[]{0.f,0.f,0.f},
-                new float[]{-1.85f,.55f,.48f})&activated)!=0);
+                new float[]{-1.85f,.55f,.48f},28)&activated)!=0);
         File machine=new File(app.getFilesDir(),"breakwater-rack-machine.png");
         long machineCrc=omegaFrame(game,machine);
         assertTrue("Purchased Heavy Gun physical rack click rejected",
             (breakwaterPress(game,controls,new float[]{0.f,0.f,0.f},
-                new float[]{-1.85f,.20f,.48f})&activated)!=0);
+                new float[]{-1.85f,.20f,.48f},28)&activated)!=0);
         File heavySelected=new File(app.getFilesDir(),
             "breakwater-rack-heavy-selected.png");
         long selectedCrc=omegaFrame(game,heavySelected);
