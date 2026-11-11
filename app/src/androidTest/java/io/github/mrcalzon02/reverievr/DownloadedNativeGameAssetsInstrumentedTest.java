@@ -641,6 +641,20 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         return feedback;
     }
 
+    // Count differences in the actual foreground inspection region, not
+    // differences in HUD text that could make a broken model appear to pass.
+    private static int redLedgerPreviewPixelChanges(Bitmap a,Bitmap b){
+        int changed=0;
+        for(int y=310;y<440;++y)for(int x=330;x<465;++x){
+            int lhs=a.getPixel(x,y),rhs=b.getPixel(x,y);
+            int delta=Math.abs(Color.red(lhs)-Color.red(rhs))
+                +Math.abs(Color.green(lhs)-Color.green(rhs))
+                +Math.abs(Color.blue(lhs)-Color.blue(rhs));
+            if(delta>=60)changed++;
+        }
+        return changed;
+    }
+
     // This is the real saved/game-controlled SKU: 505Snacks.fbx and its
     // 1024px owner texture, not a generated proof image or thumbnail.
     private static void verifyRedLedger505VisibleOnAndroidGles()
@@ -690,14 +704,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 try{
                     // The podium projects to the lower-right of the 512px
                     // camera. Require material change THERE, not only HUD text.
-                    int changed=0;
-                    for(int y=310;y<440;++y)for(int x=330;x<465;++x){
-                        int a=first.getPixel(x,y),b=second.getPixel(x,y);
-                        int delta=Math.abs(Color.red(a)-Color.red(b))
-                            +Math.abs(Color.green(a)-Color.green(b))
-                            +Math.abs(Color.blue(a)-Color.blue(b));
-                        if(delta>=60)changed++;
-                    }
+                    int changed=redLedgerPreviewPixelChanges(first,second);
                     Log.i(TAG,"DIAGNOSTIC native 505 pixels="+changed
                         +" selectedCRC="+selectedCrc+" otherCRC="+otherCrc);
                     assertTrue("Selected original product did not alter podium "
@@ -709,6 +716,14 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 long again=omegaFrame(game,reselected);
                 assertNotEquals("Reselection did not redraw original SKU",
                     otherCrc,again);
+                Bitmap otherFrame=BitmapFactory.decodeFile(alternate.getAbsolutePath());
+                Bitmap againFrame=BitmapFactory.decodeFile(reselected.getAbsolutePath());
+                assertNotNull("Missing alternate product frame",otherFrame);
+                assertNotNull("Missing reselected product frame",againFrame);
+                try{
+                    assertTrue("Reselection changed text but not real podium geometry",
+                        redLedgerPreviewPixelChanges(otherFrame,againFrame)>=32);
+                }finally{otherFrame.recycle();againFrame.recycle();}
                 assertTrue("No durable native stock selection",saved.isFile()
                     &&saved.length()>100L);
                 Log.i(TAG,"PASS Red Ledger original 505 selected/reselected "

@@ -50,8 +50,10 @@ constexpr Entry kCatalog[]={
 };
 constexpr int kCount=sizeof(kCatalog)/sizeof(kCatalog[0]);
 
-// The native FBX decoder centers assets at this original podium anchor.
-// Positions are kept in one place so render placement and tests agree.
+// The native FBX decoder centers each mesh at the original staging anchor.
+// Inspection uses a separate placement on top of the actual StockBuy surface;
+// do not leave the selected model hidden behind the foreground counter.
+// Positions are kept in one place so rendering and tests agree.
 struct Placement { float x,y,z,scale; };
 constexpr float kModelAnchorX=.60f;
 constexpr float kModelAnchorY=-.57f;
@@ -62,7 +64,7 @@ constexpr Placement StockShelf(int index) {
     return {-1.55f+static_cast<float>(index/4)*.55f,
             -.52f+static_cast<float>(index%4)*.30f,-1.55f,.68f};
 }
-constexpr Placement StockPodium() { return {.60f,-.57f,-1.54f,1.f}; }
+constexpr Placement StockPodium() { return {.40f,-.24f,-.99f,1.f}; }
 constexpr Placement BarCounter() { return {.65f,-.30f,-1.25f,.70f}; }
 inline int UnitsOnHand(const trade::Trade &market,int index) {
     if(index<0 || index>=kCount)return 0;

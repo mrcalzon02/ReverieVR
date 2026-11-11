@@ -75,6 +75,17 @@ int main(int argc,char **argv) {
     assert(inventory.AcceptStock());
     assert(products::UnitsOnHand(inventory,1)==trade::kDrinkCatalog[2].units);
     assert(products::StockPodium().scale==1.f);
+    // The source FBX decoder bounds each full-sized model by +/-0.20 m.
+    // StockBuy is the real metal surface: center (0.40,-0.54,-1.02),
+    // dimensions (0.53,0.19,0.48). The inspected SKU must be in front
+    // of the shelf and entirely above / within that support footprint.
+    const auto preview=products::StockPodium();
+    constexpr float half_mesh=.20f;
+    assert(preview.x-half_mesh>=.40f-.53f*.5f);
+    assert(preview.x+half_mesh<=.40f+.53f*.5f);
+    assert(preview.z-half_mesh>=-1.02f-.48f*.5f);
+    assert(preview.z+half_mesh<=-1.02f+.48f*.5f);
+    assert(preview.y-half_mesh>=-.54f+.19f*.5f);
     assert(products::BarCounter().scale<1.f);
     assert(products::IndexForOffer(5)==5);
     assert(products::IndexForOffer(20)==7);
