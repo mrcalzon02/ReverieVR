@@ -224,10 +224,17 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         Matrix.setIdentityM(view,0);
         Matrix.perspectiveM(projection,0,80.f,1.f,0.08f,150.f);
         GLES20.glClearColor(0,0,0,1);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
-        for(int eye=0;eye<2;eye++)
+        // Each headset eye has its own cleared depth attachment. Rendering
+        // both eyes into this one test pbuffer without clearing between them
+        // lets the second eye's sky cover the first eye's geometry while
+        // the first eye's depth rejects the second eye's identical 3D meshes.
+        // Clear each simulated eye, then inspect the completed final eye.
+        for(int eye=0;eye<2;eye++) {
+            GLES20.glDepthMask(true);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
             assertTrue("Omega Front native eye rendering failed: "+
                 runtime.getLastError(),runtime.renderEye(eye,view,projection));
+        }
         GLES20.glFinish();
         ByteBuffer pixels=ByteBuffer.allocateDirect(512*512*4);
         GLES20.glReadPixels(0,0,512,512,GLES20.GL_RGBA,
