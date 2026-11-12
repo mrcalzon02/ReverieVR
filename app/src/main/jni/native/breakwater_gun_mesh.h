@@ -350,17 +350,21 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
     // Sloped armor plates provide a stable recognizable gun shield in 3D.
     const Vec p0={-.52f,-.95f,mount.z-.20f};
     const Vec p1={.52f,-.95f,mount.z-.20f};
-    const Vec p2={-.44f,-.38f,mount.z-.29f};
-    const Vec p3={.44f,-.38f,mount.z-.29f};
+    // The former tall face stood between the seated camera and the real
+    // receiver at both downward head pitches. Retain a solid, low armored
+    // shield over the lower carriage while exposing the actual selected
+    // breech and feed geometry above it.
+    const Vec p2={-.44f,-.68f,mount.z-.29f};
+    const Vec p3={.44f,-.68f,mount.z-.29f};
     Tri(emit,p0,p1,p2,.30f,.37f,.32f);
     Tri(emit,p1,p3,p2,.30f,.37f,.32f);
     // Faint upper rim edge, two forward braces and a solid rear breech face.
-    Tri(emit,{- .44f,-.38f,mount.z-.29f},
-        {.44f,-.38f,mount.z-.29f},
-        {.44f,-.42f,mount.z-.36f},.52f,.54f,.47f);
-    Tri(emit,{- .44f,-.38f,mount.z-.29f},
-        {.44f,-.42f,mount.z-.36f},
-        {-.44f,-.42f,mount.z-.36f},.52f,.54f,.47f);
+    Tri(emit,{- .44f,-.68f,mount.z-.29f},
+        {.44f,-.68f,mount.z-.29f},
+        {.44f,-.72f,mount.z-.36f},.52f,.54f,.47f);
+    Tri(emit,{- .44f,-.68f,mount.z-.29f},
+        {.44f,-.72f,mount.z-.36f},
+        {-.44f,-.72f,mount.z-.36f},.52f,.54f,.47f);
 }
 // Selectable real miniature artillery models mounted in a cabinet left of
 // the seated player. This does not change the combat gun, ammunition or saves.

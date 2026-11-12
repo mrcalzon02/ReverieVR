@@ -945,14 +945,8 @@ void BuildScene(State *s) {
         // The gun cradle is below/behind the seated player. The long barrel
         // now projects seawards from this mount without overshooting the
         // soldiers/armored vehicles' landward target positions.
-        // Keep the continuous supporting apron below the seated operator's
-        // down-look sightline. The former near-edge platform top hid much
-        // of the actual selected gun's lower receiver in +20/+35 degree
-        // headset captures even though its barrel rendered correctly.
-        // Both lower supports still intersect the real wheels and trunnion;
-        // muzzle origin, aiming/traverse, save state and rack are untouched.
-        Box(s,0,-1.24f,.26f,1.28f,.16f,1.16f,.35f,.37f,.34f);
-        Box(s,0,-1.12f,.65f,.66f,.14f,.52f,.29f,.30f,.30f);
+        Box(s,0,-1.05f,.26f,1.28f,.16f,1.16f,.35f,.37f,.34f);
+        Box(s,0,-.98f,.65f,.66f,.14f,.52f,.29f,.30f,.30f);
         const float *aim=s->gun_direction;
         const WeaponKind equipped=game.selected_weapon();
         gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
