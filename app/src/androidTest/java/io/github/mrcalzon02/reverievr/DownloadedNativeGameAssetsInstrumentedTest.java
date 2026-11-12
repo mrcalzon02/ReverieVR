@@ -220,8 +220,17 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
     // GLES2 pbuffer for a headset; it does not fake tactical game state.
     private static long omegaFrame(NativeModuleRuntime runtime,File evidence)
         throws IOException {
+        return omegaFrame(runtime,evidence,0.f);
+    }
+
+    // Optional true head-rotation diagnostic. All ordinary gameplay captures
+    // retain the original zero-pitch camera, viewport, stereo and pixel gates.
+    private static long omegaFrame(NativeModuleRuntime runtime,File evidence,
+                                   float cameraPitchDegrees) throws IOException {
         float[] view=new float[16],projection=new float[16];
         Matrix.setIdentityM(view,0);
+        if(cameraPitchDegrees!=0.f)
+            Matrix.rotateM(view,0,cameraPitchDegrees,1.f,0.f,0.f);
         Matrix.perspectiveM(projection,0,80.f,1.f,0.08f,150.f);
         GLES20.glClearColor(0,0,0,1);
         // Each headset eye has its own cleared depth attachment. Rendering
@@ -667,12 +676,22 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 new float[]{-1.85f,.55f,.48f},28)&activated)!=0);
         File machine=new File(app.getFilesDir(),"breakwater-rack-machine.png");
         long machineCrc=omegaFrame(game,machine);
+        // Same selected gameplay gun, actual tilted-head GLES2 eye frames:
+        // these expose any gun mesh hidden under the neutral view's sight.
+        omegaFrame(game,new File(app.getFilesDir(),
+            "breakwater-rack-machine-pitch20.png"),20.f);
+        omegaFrame(game,new File(app.getFilesDir(),
+            "breakwater-rack-machine-pitch35.png"),35.f);
         assertTrue("Purchased Heavy Gun physical rack click rejected",
             (breakwaterPress(game,controls,new float[]{0.f,0.f,0.f},
                 new float[]{-1.85f,.20f,.48f},28)&activated)!=0);
         File heavySelected=new File(app.getFilesDir(),
             "breakwater-rack-heavy-selected.png");
         long selectedCrc=omegaFrame(game,heavySelected);
+        omegaFrame(game,new File(app.getFilesDir(),
+            "breakwater-rack-heavy-pitch20.png"),20.f);
+        omegaFrame(game,new File(app.getFilesDir(),
+            "breakwater-rack-heavy-pitch35.png"),35.f);
         int restoredDifference=breakwaterGunPixels(heavyRestored,machine);
         int rackDifference=breakwaterGunPixels(machine,heavySelected);
         assertTrue("Restore changed only UI, not actual mounted weapon pixels: "+
