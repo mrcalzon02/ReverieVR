@@ -46,7 +46,9 @@ constexpr Entry kCatalog[]={
     {trade::kDrinks+3,"404snacks","native/red-ledger/models/404snacks.fbx",
         "native/red-ledger/textures/404snacks_texture_0.png"},
     {trade::kDrinks+4,"505Snacks","native/red-ledger/models/505Snacks.fbx",
-        "native/red-ledger/textures/505Snacks_texture_0.png"}
+        "native/red-ledger/textures/505Snacks_texture_0.png"},
+    {trade::kDrinks+5,"606Snacks","native/red-ledger/models/606Snacks.fbx",
+        "native/red-ledger/textures/606Snacks_texture_0.png"}
 };
 constexpr int kCount=sizeof(kCatalog)/sizeof(kCatalog[0]);
 
@@ -61,8 +63,12 @@ constexpr float kModelAnchorZ=-1.54f;
 constexpr Placement StockShelf(int index) {
     // One supplier per column, four product classes per vertical rack.
     // This scales to all 6x4 original SKUs without models leaving the room.
-    return {-1.55f+static_cast<float>(index/4)*.55f,
-            -.52f+static_cast<float>(index%4)*.30f,-1.55f,.68f};
+    // The final original 606 snack is the sixth supplier's snack tier.
+    // Preserve all 17 previously authored positions and saved offer IDs.
+    const int column=index==17?5:index/4;
+    const int tier=index==17?3:index%4;
+    return {-1.55f+static_cast<float>(column)*.55f,
+            -.52f+static_cast<float>(tier)*.30f,-1.55f,.68f};
 }
 constexpr Placement StockPodium() { return {.40f,-.24f,-.99f,1.f}; }
 constexpr Placement BarCounter() { return {.65f,-.30f,-1.25f,.70f}; }
@@ -84,7 +90,7 @@ constexpr int IndexForOffer(int offer) {
         if(kCatalog[i].offer==offer)return i;
     return -1;
 }
-static_assert(kCount==17,"Sixteen previous sets plus genuine Mozoli snack asset");
+static_assert(kCount==18,"Sixteen originals plus the genuine 505 and 606 snack exports");
 static_assert(IndexForOffer(0)==-1,"House lager is not a branded product");
 static_assert(IndexForOffer(19)==3,"First snack shares the real shop SKU");
 static_assert(IndexForOffer(4)==4 && IndexForOffer(5)==5 &&
@@ -98,6 +104,10 @@ static_assert(IndexForOffer(10)==12 && IndexForOffer(11)==13 &&
               "Map Salihorsk goods and snack to their genuine export files");
 static_assert(IndexForOffer(trade::kDrinks+4)==16,
               "Mozoli sausage snack maps to the real source product");
+static_assert(IndexForOffer(trade::kDrinks+5)==17,
+              "Mazar beans, chicken and potato maps to the actual 606 export");
+static_assert(StockShelf(17).x>StockShelf(16).x,
+              "The sixth supplier has a separate physical shelf column");
 static_assert(IndexForOffer(13)==-1,
               "No model substitution for suppliers without imported art");
 }}}

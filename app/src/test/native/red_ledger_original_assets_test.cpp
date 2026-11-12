@@ -29,6 +29,7 @@ int main(int argc,char **argv) {
     assert(products::UnitsOnHand(inventory,12)==1);
     assert(products::UnitsOnHand(inventory,15)==0);
     assert(products::UnitsOnHand(inventory,16)==1);
+    assert(products::UnitsOnHand(inventory,17)==0);
     assert(products::UnitsOnHand(inventory,-1)==0);
     assert(products::UnitsOnHand(inventory,products::kCount)==0);
     for(int i=0;i<products::kCount;++i) {
@@ -38,9 +39,14 @@ int main(int argc,char **argv) {
         assert(shelf.y > -.8f && shelf.y < .5f);
         assert(products::kCatalog[i].offer>0);
         if(i>0 && i%4==0)assert(products::StockShelf(i-1).x<shelf.x);
-        if(i>0 && i%4!=0) {
+        if(i>0 && i%4!=0 && i!=17) {
             assert(products::StockShelf(i-1).x==shelf.x);
             assert(products::StockShelf(i-1).y<shelf.y);
+        }
+        if(i==17) {
+            // 606 snack belongs to its own sixth-supplier column.
+            assert(products::StockShelf(16).x<shelf.x);
+            assert(products::StockShelf(16).y<shelf.y);
         }
         const products::Entry &product=products::kCatalog[i];
         assert(products::IndexForOffer(product.offer)==i);
@@ -74,6 +80,14 @@ int main(int argc,char **argv) {
     assert(products::UnitsOnHand(inventory,1)==0);
     assert(inventory.AcceptStock());
     assert(products::UnitsOnHand(inventory,1)==trade::kDrinkCatalog[2].units);
+    assert(inventory.SelectOffer(trade::kDrinks+5));
+    assert(inventory.AcceptStock());
+    assert(products::UnitsOnHand(inventory,17)==trade::kSnackCatalog[5].units);
+    std::vector<uint8_t> saved(trade::Trade::kSerializedSize);
+    assert(inventory.Serialize(saved.data(),saved.size()));
+    trade::Trade reopened;
+    assert(reopened.Deserialize(saved.data(),saved.size()));
+    assert(products::UnitsOnHand(reopened,17)==trade::kSnackCatalog[5].units);
     assert(products::StockPodium().scale==1.f);
     // The source FBX decoder bounds each full-sized model by +/-0.20 m.
     // StockBuy is the real metal surface: center (0.40,-0.54,-1.02),
@@ -96,7 +110,8 @@ int main(int argc,char **argv) {
     assert(products::IndexForOffer(12)==14);
     assert(products::IndexForOffer(22)==15);
     assert(products::IndexForOffer(23)==16);
+    assert(products::IndexForOffer(24)==17);
     assert(products::IndexForOffer(13)==-1);
     assert(products::IndexForOffer(trade::kOffers)==-1);
-    std::cout<<"Seventeen original merchant meshes and textures validated\n";
+    std::cout<<"Eighteen original merchant meshes and textures validated\n";
 }
