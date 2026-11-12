@@ -14,108 +14,108 @@
         1,
         0
       ],
-      "bytes": 111373,
-      "eye_frame_crc32": 761941661,
-      "sha256": "f867589e8c69f79ccdaed6be914c10356f65efe7dfa14b083008304322d35dd2"
+      "bytes": 113154,
+      "eye_frame_crc32": 1191325141,
+      "sha256": "f0df68b22d4fc83bd2d477b3fc769b12135127cc1b4fa30204a0d0fdfd11a060"
     },
     "breakwater-battery": {
       "atlas_cell": [
         0,
         0
       ],
-      "bytes": 74578,
-      "eye_frame_crc32": 1573703433,
-      "sha256": "03e86ffdad0d6c032edb751143abb314d4d2ccf5c6756592279cec4a1aa27d58"
+      "bytes": 73249,
+      "eye_frame_crc32": 2583020758,
+      "sha256": "b2ec7b1c6fc3c7b591198667bcf802e1bdcd709e6c96d8ead63a75606ee626f8"
     },
     "classic-breakout": {
       "atlas_cell": [
         2,
         3
       ],
-      "bytes": 26302,
-      "eye_frame_crc32": 1669647563,
-      "sha256": "6454dd9f5c2ad36dad81b44537ff3759e7695f1be77a65490fb8e81d0cb541e3"
+      "bytes": 27212,
+      "eye_frame_crc32": 1425326963,
+      "sha256": "e804144ca319c1cf02866072231040906446bd6f03f8d77719c33ea5077fa548"
     },
     "classic-checkers": {
       "atlas_cell": [
         2,
         2
       ],
-      "bytes": 28450,
-      "eye_frame_crc32": 768513209,
-      "sha256": "4b94c0e7b21731e2b393ae487899b9330a4c20e27fbfbee9adfc77ffd76616ea"
+      "bytes": 29247,
+      "eye_frame_crc32": 3506400498,
+      "sha256": "2b1cae8aa54ef3d212561834da1ded8a36593b925d3d4c8effa559d241da33e2"
     },
     "classic-chess": {
       "atlas_cell": [
         0,
         2
       ],
-      "bytes": 146806,
-      "eye_frame_crc32": 1570379654,
-      "sha256": "8b7d015b852bbf49ad2765911f40c3bc27ba0371792991a86c92701377696033"
+      "bytes": 148854,
+      "eye_frame_crc32": 95553576,
+      "sha256": "ab123f490b4a4edb7397d98c6c47493abb7851ac7294983c90473f36baadc453"
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
         3,
         3
       ],
-      "bytes": 42786,
-      "eye_frame_crc32": 3795042141,
-      "sha256": "719b9fdab455e6d130dab671bd0ef6ffbfac38069508db2b63375bbe751ca78b"
+      "bytes": 43801,
+      "eye_frame_crc32": 2981316696,
+      "sha256": "32d6e8b2b6dfed91e75c86622a13025aa380ef5ac9d3070f45c66a919c4b99ce"
     },
     "classic-go": {
       "atlas_cell": [
         1,
         2
       ],
-      "bytes": 32644,
-      "eye_frame_crc32": 1537482059,
-      "sha256": "82516a5f6d17c3ce5c7f953212c073b3f18d3787f1950510a8d9c068212cef00"
+      "bytes": 33638,
+      "eye_frame_crc32": 2498344459,
+      "sha256": "658ffc877e2f43cea83a895f4aeba883e7105a50ff5177fad281963c1528fc1c"
     },
     "classic-pong": {
       "atlas_cell": [
         3,
         2
       ],
-      "bytes": 15503,
-      "eye_frame_crc32": 2464708144,
-      "sha256": "c772b3a56e673a37b7d012568555d79f7e31d57e5125155536cdaf1b891f9da3"
+      "bytes": 15872,
+      "eye_frame_crc32": 2819363299,
+      "sha256": "e6fcb914c76cea93454c88fb79f170a9361589f50572d8976d004f1fdba64629"
     },
     "classic-reversi": {
       "atlas_cell": [
         1,
         3
       ],
-      "bytes": 30957,
-      "eye_frame_crc32": 679812155,
-      "sha256": "421fa5c95a87d5ccb609dc6fd016f414a24602ae8004c97de1b0e0633776c958"
+      "bytes": 32011,
+      "eye_frame_crc32": 4200147201,
+      "sha256": "6bb61221538d888d5e29ea4fa998543efd8f3da852bfeac96dcdc94f06f50440"
     },
     "classic-snake": {
       "atlas_cell": [
         0,
         3
       ],
-      "bytes": 20313,
-      "eye_frame_crc32": 136625018,
-      "sha256": "8c76c2aa311878e4af83dc0abd4a8370560b90130bbb980f7e4a180f66aa92b6"
+      "bytes": 20441,
+      "eye_frame_crc32": 606775480,
+      "sha256": "11c4cd6e4bbe95dbfcc80fe161e6fd0133497c1142862c7783ffe69715bca296"
     },
     "guess-the-door": {
       "atlas_cell": [
         3,
         1
       ],
-      "bytes": 55119,
-      "eye_frame_crc32": 2512390415,
-      "sha256": "fbeb3e062f40c65b6e8befaa3cb5212d241a2003ab7bf12075412012ea4f43a0"
+      "bytes": 53685,
+      "eye_frame_crc32": 2731360798,
+      "sha256": "864e5ed5a2c98b7f23e2175e1458dfc8578c49f3cee9bded00db1592e57bdd88"
     },
     "gumball-armada": {
       "atlas_cell": [
         2,
         0
       ],
-      "bytes": 89930,
-      "eye_frame_crc32": 1202659329,
-      "sha256": "01a54e40bea93180b2b5bc9ae016b9d016852bace647e88822f121ec764636fd"
+      "bytes": 90090,
+      "eye_frame_crc32": 3868195000,
+      "sha256": "ffdffd48a1526360dc691c2acd2e58aa6bf7192a419dbee05711a8786da6e368"
     },
     "iron-sight-forward-detachment": {
       "atlas_cell": [
@@ -149,9 +149,9 @@
         2,
         1
       ],
-      "bytes": 369335,
-      "eye_frame_crc32": 78003428,
-      "sha256": "ce255eaf149cf235a3722cd8a5df48ba528cea7cc50f64b3693f3941a0f4cc69"
+      "bytes": 370826,
+      "eye_frame_crc32": 2200505887,
+      "sha256": "8f7c8fe7c8182f67683e8bdb79fa35ade5da158a2c4f6f6e3008ef70a3b39a66"
     }
   },
   "ordered_ids": [
