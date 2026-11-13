@@ -51,8 +51,8 @@
         2
       ],
       "bytes": 148854,
-      "eye_frame_crc32": 95553576,
-      "sha256": "ab123f490b4a4edb7397d98c6c47493abb7851ac7294983c90473f36baadc453"
+      "eye_frame_crc32": 706820967,
+      "sha256": "0f3c5d927d44f8e18de3fdb06c04a32f72508c380469a613056e6e33170c197b"
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
@@ -104,9 +104,9 @@
         3,
         1
       ],
-      "bytes": 55377,
-      "eye_frame_crc32": 2354642590,
-      "sha256": "9eee83dec29539feb4b02b3a7ca36c223fbb4cda2dc999d7942cbe463a9740d0"
+      "bytes": 53093,
+      "eye_frame_crc32": 2724863677,
+      "sha256": "cb3a711c329fd1a5602ce25bbd198918af56edb89ebf9e4c9d2e7ba987681c5a"
     },
     "gumball-armada": {
       "atlas_cell": [
@@ -122,9 +122,9 @@
         3,
         0
       ],
-      "bytes": 46417,
-      "eye_frame_crc32": 3620519497,
-      "sha256": "96b8a840890bd446a0f1f5010c1acbe8a280f21a33970cb3e96bf157581c76f6"
+      "bytes": 46449,
+      "eye_frame_crc32": 639577142,
+      "sha256": "cfaf52216a26fc650b25b6565bf06632a8c84b41ba0acae3ab73d0858dfed762"
     },
     "ministry-lantern-desk": {
       "atlas_cell": [
@@ -132,26 +132,26 @@
         1
       ],
       "bytes": 38414,
-      "eye_frame_crc32": 2380054978,
-      "sha256": "03d30265ea3ebf2c4f5e3f7cfd64f5f2c14bac32bb2924558810cddcd424b44b"
+      "eye_frame_crc32": 2742143334,
+      "sha256": "0f231f0123ea8045381403c0f269e1f8ab2ea001f473cc946034efa0da7d9080"
     },
     "omega-front": {
       "atlas_cell": [
         1,
         1
       ],
-      "bytes": 21671,
-      "eye_frame_crc32": 3852338494,
-      "sha256": "1d14024ca95f95d2512bf385f0330835992a081d19881ccba91c984d0783942a"
+      "bytes": 21670,
+      "eye_frame_crc32": 3558170203,
+      "sha256": "2ffe6c403a1019e56cd5d61888ff7d95db921a285f06333c6a644a02f514e422"
     },
     "procedural-test-chamber": {
       "atlas_cell": [
         2,
         1
       ],
-      "bytes": 370825,
-      "eye_frame_crc32": 264350810,
-      "sha256": "eaa75aaffb5252a24b988b47aa90627c4bcc89273fcc3a88878b24706f4c4973"
+      "bytes": 370843,
+      "eye_frame_crc32": 3098891602,
+      "sha256": "5c700e8752a4302db4c1bc087a5410f8e62b91c37f9dbab81e7ea296181e445c"
     }
   },
   "ordered_ids": [
