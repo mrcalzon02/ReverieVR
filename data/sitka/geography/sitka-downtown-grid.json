@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "id": "sitka-downtown-geography-v1",
+  "purpose": "AUTHENTIC_SOURCE_ELEVATION_NOT_YET_PLAYABLE_TERRAIN",
+  "horizontal_crs": "EPSG:32608",
+  "source_dataset": "USGS National Map 3DEP Elevation Dynamic ImageServer",
+  "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage",
+  "service_product": "raw_F32_elevation",
+  "legal_basis": "United States Government public-domain elevation; USGS attribution preserved",
+  "source_vertical_datum": "UNVERIFIED_DYNAMIC_3DEP_MOSAIC",
+  "authorization": "Land-only staging; no topography/bathymetry datum merge until separately verified",
+  "reference_landmark": {
+    "name": "John O'Connell Memorial Bridge HAER AK-27 approximate locator only",
+    "longitude": -135.340627,
+    "latitude": 57.047899,
+    "authority": "https://www.loc.gov/item/ak0342/"
+  },
+  "grid": {
+    "west_grid_node_m": 478720,
+    "north_grid_node_m": 6324480,
+    "columns": 4,
+    "rows": 4,
+    "tile_intervals": 128,
+    "sample_spacing_m": 4,
+    "epsg": 32608
+  },
+  "tile_dimension_m": 512,
+  "time_note": "The output is a current 3DEP dynamic service export, not proof that every pixel derives from 2018 Sitka DGGS lidar",
+  "other_verified_source": {
+    "dataset": "2018 AK DGGS Sitka lidar-derived DEM",
+    "publication": "2018",
+    "bulk_file": "sitka_fall_2018_dtm.tif",
+    "bulk_size_megabytes": 476.4,
+    "bulk_url": "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/AK_Sitka_DEM_2018_9612/sitka_fall_2018_dtm.tif",
+    "noaa_dataset_id": 9612,
+    "use": "Higher-resolution candidate; native CRS EPSG:6337 must be independently reprojected and vertical datum reconciled"
+  }
+}

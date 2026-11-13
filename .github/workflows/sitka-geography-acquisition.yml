@@ -1,0 +1,108 @@
+name: Sitka authentic USGS geographic tile acquisition
+
+# One bounded data-production job; no fake map, separate game APK or auto
+# release. Later updates normally use manual dispatch.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/sitka-geography-acquisition.yml'
+      - 'data/sitka/geography/sitka-downtown-grid.json'
+      - 'scripts/sitka/acquire_3dep_geography.py'
+      - 'scripts/sitka/build_geography_tiles.py'
+      - 'scripts/sitka/render_geography_preview.py'
+      - 'scripts/sitka/test_geography_tiles.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sitka-authentic-geography-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  acquire-real-elevation:
+    name: Bounded Sitka USGS 3DEP to exact 512m elevation tiles
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - name: Checkout authoritative ReverieVR main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install geospatial authoring tools (not APK runtime dependencies)
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            'numpy==2.1.3' 'rasterio==1.4.3' 'pyproj==3.7.2' \
+            'shapely==2.1.2' 'matplotlib==3.10.1'
+      - name: Test source/tiling security gates and legacy coast baker
+        run: |
+          python -m unittest discover -s scripts/sitka -p 'test_geography_tiles.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_build_coast.py' -v
+      - name: Download bounded genuine USGS 3DEP numeric elevation
+        run: |
+          mkdir -p work/sitka
+          python scripts/sitka/acquire_3dep_geography.py \
+            --grid data/sitka/geography/sitka-downtown-grid.json \
+            --output work/sitka/usgs3dep-downtown-dem.tif
+      - name: Bake checked georeferenced source-height tiles
+        run: |
+          python scripts/sitka/build_geography_tiles.py \
+            --dem work/sitka/usgs3dep-downtown-dem.tif \
+            --receipt work/sitka/usgs3dep-downtown-dem.source.json \
+            --grid data/sitka/geography/sitka-downtown-grid.json \
+            --output-dir work/sitka/tiled-geography
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('work/sitka/tiled-geography/index.json').read_text())
+          assert m['format']=='sitka-land-tiles-1'
+          assert m['tile_count']==16 and m['tile_meters']==512
+          assert m['terrain_tiles_baked']==0 and not m['game_runtime_ready']
+          assert all(x['native_mesh_file'] is None for x in m['tiles'])
+          assert sum(x['valid_samples'] for x in m['tiles'])>0
+          print('PASS: 16 real elevation tiles; no fabricated land/water boundary')
+          PY
+      - name: Render evidence directly from real USGS heights
+        run: |
+          python scripts/sitka/render_geography_preview.py \
+            --dem work/sitka/usgs3dep-downtown-dem.tif \
+            --grid data/sitka/geography/sitka-downtown-grid.json \
+            --output work/sitka/elevation-source-preview.png
+      - name: Preserve real DEM source and tile data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitka-authentic-elevation-tiles-${{ github.run_id }}
+          path: work/sitka/
+          if-no-files-found: warn
+          retention-days: 21
+          compression-level: 6
+      - name: Commit real source bytes and only verified elevation tiles
+        run: |
+          set -euo pipefail
+          TARGET=data/sitka/geography/generated/downtown-3dep-v1
+          test ! -e "$TARGET" || { echo 'Target exists; refuse overwrite'; exit 1; }
+          mkdir -p "$TARGET"
+          cp work/sitka/usgs3dep-downtown-dem.tif "$TARGET/authoritative-source-dem.tif"
+          cp work/sitka/usgs3dep-downtown-dem.source.json "$TARGET/source-receipt.json"
+          cp work/sitka/elevation-source-preview.png "$TARGET/actual-elevation-preview.png"
+          cp -R work/sitka/tiled-geography/. "$TARGET/"
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
+            echo 'Main advanced. Artifact is retained; no competing push.'
+            exit 1
+          }
+          git config user.name 'Sitka Geography Import'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$TARGET"
+          git diff --cached --quiet && { echo 'No real data produced'; exit 1; }
+          git commit -m 'Archive validated Sitka USGS 3DEP 512m elevation tiles'
+          git push origin HEAD:main
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          echo "VERIFIED geographic-data commit $(git rev-parse HEAD)"
