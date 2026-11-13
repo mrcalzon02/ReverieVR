@@ -53,14 +53,14 @@ public class NativeGamesGalleryTest {
             "breakwater-battery","between-deliveries-red-ledger",
             "gumball-armada","iron-sight-forward-detachment",
             "ministry-lantern-desk","omega-front","procedural-test-chamber",
-            "classic-chess","classic-go","classic-checkers","classic-pong",
+            "guess-the-door","classic-chess","classic-go","classic-checkers","classic-pong",
             "classic-snake","classic-reversi","classic-breakout",
             "classic-chutes-ladders"
         };
-        // Guess the Door has been registered but has no verified screenshot.
-        // Don't fabricate an image to satisfy a count assertion.
-        assertEquals(GameModuleRegistry.GAMES.length-1,ids.length);
-        assertEquals(15,NativeGamesGallery.CAPTURED_IDS.length);
+        // The archive contains sixteen genuine Android JNI/GLES2 captures.
+        // Sitka remains source-only and outside the verified capture atlas.
+        assertEquals(GameModuleRegistry.GAMES.length,ids.length);
+        assertEquals(ids.length,NativeGamesGallery.CAPTURED_IDS.length);
         assertEquals(168,NativeGamesGallery.ATLAS_CELL_WIDTH);
         assertEquals(230,NativeGamesGallery.ATLAS_CELL_HEIGHT);
         for(int i=0;i<ids.length;i++) {
@@ -75,19 +75,19 @@ public class NativeGamesGalleryTest {
             assertTrue(cell[1]+230<=920);
             assertTrue(seen.add(cell[0]+":"+cell[1]));
         }
-        assertEquals(15,seen.size());
+        assertEquals(ids.length,seen.size());
         assertNotNull(GameModuleRegistry.find("guess-the-door"));
         assertEquals(4,NativeGamesGallery.order("guess-the-door"));
         assertNotNull(NativeGamesGallery.descriptionLines("guess-the-door"));
-        assertNull("No unverified Guess the Door capture",
-            NativeGamesGallery.atlasCell("guess-the-door"));
+        assertArrayEquals("Verified Guess the Door atlas slot",
+            new int[]{3*168,230},NativeGamesGallery.atlasCell("guess-the-door"));
         assertNull(NativeGamesGallery.atlasCell("unlisted"));
     }
     @Test public void hoverPreviewProvidesGameImageAndDescriptionWithoutCoveringFocus() {
         assertNull(NativeGamesGallery.hoverPopupRect(true,-1));
         assertNull(NativeGamesGallery.hoverPopupRect(false,6));
         assertNull(NativeGamesGallery.hoverPopupRect(true,7));
-        assertEquals(15,NativeGamesGallery.CAPTURED_IDS.length);
+        assertEquals(GameModuleRegistry.GAMES.length,NativeGamesGallery.CAPTURED_IDS.length);
         for(String id:NativeGamesGallery.CAPTURED_IDS){
             assertNotNull("Captured game must be registered: "+id,
                 GameModuleRegistry.find(id));
