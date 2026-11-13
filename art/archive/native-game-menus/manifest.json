@@ -29,7 +29,7 @@
     },
     "classic-breakout": {
       "atlas_cell": [
-        2,
+        3,
         3
       ],
       "bytes": 27212,
@@ -38,7 +38,7 @@
     },
     "classic-checkers": {
       "atlas_cell": [
-        2,
+        3,
         2
       ],
       "bytes": 29247,
@@ -47,7 +47,7 @@
     },
     "classic-chess": {
       "atlas_cell": [
-        0,
+        1,
         2
       ],
       "bytes": 148854,
@@ -56,8 +56,8 @@
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
-        3,
-        3
+        0,
+        4
       ],
       "bytes": 43801,
       "eye_frame_crc32": 2981316696,
@@ -65,7 +65,7 @@
     },
     "classic-go": {
       "atlas_cell": [
-        1,
+        2,
         2
       ],
       "bytes": 33638,
@@ -74,8 +74,8 @@
     },
     "classic-pong": {
       "atlas_cell": [
-        3,
-        2
+        0,
+        3
       ],
       "bytes": 15872,
       "eye_frame_crc32": 2819363299,
@@ -83,7 +83,7 @@
     },
     "classic-reversi": {
       "atlas_cell": [
-        1,
+        2,
         3
       ],
       "bytes": 32011,
@@ -92,7 +92,7 @@
     },
     "classic-snake": {
       "atlas_cell": [
-        0,
+        1,
         3
       ],
       "bytes": 20441,
@@ -104,9 +104,9 @@
         3,
         1
       ],
-      "bytes": 53093,
-      "eye_frame_crc32": 2724863677,
-      "sha256": "cb3a711c329fd1a5602ce25bbd198918af56edb89ebf9e4c9d2e7ba987681c5a"
+      "bytes": 55637,
+      "eye_frame_crc32": 462581364,
+      "sha256": "6b1c9c0cf3cc76c354f075574af02dda23c1e1a5d53f9214a86b89f608a43780"
     },
     "gumball-armada": {
       "atlas_cell": [
@@ -149,9 +149,18 @@
         2,
         1
       ],
-      "bytes": 370843,
-      "eye_frame_crc32": 3098891602,
-      "sha256": "5c700e8752a4302db4c1bc087a5410f8e62b91c37f9dbab81e7ea296181e445c"
+      "bytes": 370836,
+      "eye_frame_crc32": 1115303845,
+      "sha256": "6d16a4aadf42b15511852015062c497ee3185fee93e933067d0d205f61f2fb77"
+    },
+    "sitka": {
+      "atlas_cell": [
+        0,
+        2
+      ],
+      "bytes": 14932,
+      "eye_frame_crc32": 1354013429,
+      "sha256": "f60a2e6067c4c819d211e513bba519ec28084be3a569e949fcd7ff9dcbec1433"
     }
   },
   "ordered_ids": [
@@ -163,6 +172,7 @@
     "omega-front",
     "procedural-test-chamber",
     "guess-the-door",
+    "sitka",
     "classic-chess",
     "classic-go",
     "classic-checkers",
