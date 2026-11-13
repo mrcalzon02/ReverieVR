@@ -51,8 +51,8 @@
         2
       ],
       "bytes": 148854,
-      "eye_frame_crc32": 706820967,
-      "sha256": "0f3c5d927d44f8e18de3fdb06c04a32f72508c380469a613056e6e33170c197b"
+      "eye_frame_crc32": 95553576,
+      "sha256": "ab123f490b4a4edb7397d98c6c47493abb7851ac7294983c90473f36baadc453"
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
@@ -104,9 +104,9 @@
         3,
         1
       ],
-      "bytes": 55637,
-      "eye_frame_crc32": 462581364,
-      "sha256": "6b1c9c0cf3cc76c354f075574af02dda23c1e1a5d53f9214a86b89f608a43780"
+      "bytes": 52893,
+      "eye_frame_crc32": 1106716683,
+      "sha256": "b3ad710280333ab949fe7b207a9cf1b128e5c9671c25c2f1367068d80cbeb201"
     },
     "gumball-armada": {
       "atlas_cell": [
@@ -122,9 +122,9 @@
         3,
         0
       ],
-      "bytes": 46449,
-      "eye_frame_crc32": 639577142,
-      "sha256": "cfaf52216a26fc650b25b6565bf06632a8c84b41ba0acae3ab73d0858dfed762"
+      "bytes": 46417,
+      "eye_frame_crc32": 3620519497,
+      "sha256": "96b8a840890bd446a0f1f5010c1acbe8a280f21a33970cb3e96bf157581c76f6"
     },
     "ministry-lantern-desk": {
       "atlas_cell": [
@@ -132,26 +132,26 @@
         1
       ],
       "bytes": 38414,
-      "eye_frame_crc32": 2742143334,
-      "sha256": "0f231f0123ea8045381403c0f269e1f8ab2ea001f473cc946034efa0da7d9080"
+      "eye_frame_crc32": 2380054978,
+      "sha256": "03d30265ea3ebf2c4f5e3f7cfd64f5f2c14bac32bb2924558810cddcd424b44b"
     },
     "omega-front": {
       "atlas_cell": [
         1,
         1
       ],
-      "bytes": 21670,
-      "eye_frame_crc32": 3558170203,
-      "sha256": "2ffe6c403a1019e56cd5d61888ff7d95db921a285f06333c6a644a02f514e422"
+      "bytes": 21671,
+      "eye_frame_crc32": 3852338494,
+      "sha256": "1d14024ca95f95d2512bf385f0330835992a081d19881ccba91c984d0783942a"
     },
     "procedural-test-chamber": {
       "atlas_cell": [
         2,
         1
       ],
-      "bytes": 370836,
-      "eye_frame_crc32": 1115303845,
-      "sha256": "6d16a4aadf42b15511852015062c497ee3185fee93e933067d0d205f61f2fb77"
+      "bytes": 370896,
+      "eye_frame_crc32": 921433674,
+      "sha256": "a6a0e60e0b63ca14a6278677f44c9e2f873a10847478e6c329064a0aad3d45f4"
     },
     "sitka": {
       "atlas_cell": [
