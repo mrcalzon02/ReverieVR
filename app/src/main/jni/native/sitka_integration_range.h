@@ -8,11 +8,18 @@ void* CreateIntegrationRange(const ReverieNativeHostV1* host) {
         auto state=std::make_unique<State>();
         state->host=host;
         state->integration_range=true;
+        // The freestanding, double-sided colored range marker is visible
+        // from the actual first-person spawn even before a controller/head
+        // pose is delivered. A horizontal ground alone would be edge-on in
+        // the initial no-controller GLES menu capture and appear blank.
         state->terrain.vertices={
             {-32.f,0.f,-24.f,52,92,70},{32.f,0.f,-24.f,52,92,70},
-            {32.f,0.f,24.f,76,108,80},{-32.f,0.f,24.f,76,108,80}
+            {32.f,0.f,24.f,76,108,80},{-32.f,0.f,24.f,76,108,80},
+            {-8.5f,.20f,-6.f,233,182,74},{-3.5f,.20f,-6.f,47,110,129},
+            {-3.5f,3.2f,-6.f,58,170,187},{-8.5f,3.2f,-6.f,238,201,90}
         };
-        state->terrain.indices={0u,1u,2u,0u,2u,3u};
+        state->terrain.indices={0u,1u,2u,0u,2u,3u,
+            4u,5u,6u,4u,6u,7u,4u,6u,5u,4u,7u,6u};
         reverie::sitka::Water bay;
         bay.id="test_water";bay.shape="SQUARE";
         bay.x=9.f;bay.z=0.f;bay.y=.15f;

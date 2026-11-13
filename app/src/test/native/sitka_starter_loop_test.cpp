@@ -1,5 +1,6 @@
 // Actual module Update route with a synthetic walkable harbor fixture.
 // This does not certify real Sitka geography, packaged startup or headset input.
+#define REVERIE_SITKA_INTEGRATION_RANGE 1
 #include "../../main/jni/native/sitka_terrain_module.cpp"
 #include <cassert>
 #include <cstring>
@@ -220,5 +221,39 @@ int main(){
         assert(boat.instruments.rpm==0.);
         assert(boat.skiff->Pose().speed_mps<=coasting);
     }
-    std::cout<<"PASS actual Sitka Update: walk/office/sale/register/upgrade/save/retry/shellfish bundle/skiff touch throttle\n";
+    // Verify the real guest Create() route, not a separately constructed
+    // lookalike of the test-range State. A missing geographic asset must
+    // create a playable non-geographic test range and retain a checked save.
+    saved.clear();
+    host.log=+[](int32_t,const char*,const char*){};
+    host.read_asset=+[](const char*,void*,uint32_t,uint32_t* out)->int32_t {
+        if(out)*out=0u;
+        return REVERIE_NATIVE_SAVE_NOT_FOUND;
+    };
+    auto* range=static_cast<State*>(Create(&host));
+    assert(range&&range->integration_range);
+    assert(range->walk_session&&range->skiff&&range->stream&&range->generated);
+    assert(range->terrain.indices.size()==18u);
+    assert(range->fishing_spots.size()==1u&&range->harbor_sites.size()==1u);
+    assert(range->fishing.fishing.journal.fish_inventory[1]==1u);
+    assert(PrepareExit(range)==1);
+    Destroy(range);
+    assert(!saved.empty());
+    const auto stored=saved;
+    auto* reopened_range=static_cast<State*>(Create(&host));
+    assert(reopened_range&&reopened_range->integration_range);
+    assert(saved==stored); // reopening cannot grant starter inventory again
+    assert(reopened_range->fishing.fishing.journal.fish_inventory[1]==1u);
+    assert(reopened_range->fishing.Discover(5u,BeachFind::Shell));
+    fail_write=true;
+    assert(PrepareExit(reopened_range)==0);
+    fail_write=false;
+    assert(PrepareExit(reopened_range)==1);
+    Destroy(reopened_range);
+    host.read_asset=+[](const char*,void*,uint32_t,uint32_t* out)->int32_t {
+        if(out)*out=48u;
+        return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+    };
+    assert(Create(&host)==nullptr); // invalid PRESENT terrain stays invalid
+    std::cout<<"PASS actual Sitka Create/Update integration: first-person range, save, exit, corrupt asset refusal, skiff\n";
 }

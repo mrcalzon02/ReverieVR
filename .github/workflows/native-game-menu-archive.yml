@@ -17,6 +17,10 @@ on:
       - 'scripts/verify-native-vector-font.py'
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
       - 'modules/game-identity-matrix.json'
+      - 'app/src/main/jni/native/sitka_integration_range.h'
+      - 'app/src/main/jni/native/sitka_terrain_module.cpp'
+      - 'app/src/main/jni/native/reverie_native_host.cpp'
+      - 'app/src/main/jni/Android.mk'
 
 permissions:
   contents: write
