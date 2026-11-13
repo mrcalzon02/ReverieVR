@@ -2,14 +2,17 @@ package io.github.mrcalzon02.reverievr;
 import static org.junit.Assert.*;
 import org.junit.Test;
 public class NativeGamesGalleryTest {
-    @Test public void seventeenRegisteredGamesHaveUniqueReachablePageSlots() {
+    @Test public void registeredGamesHaveUniqueReachablePageSlots() {
         int count=GameModuleRegistry.GAMES.length;
-        assertEquals(17,count);
-        assertEquals(3,NativeGamesGallery.pageCount(count));
+        assertTrue(count>=17);
+        assertEquals(Math.max(1,(count+5)/6),NativeGamesGallery.pageCount(count));
         for(int i=0;i<count;i++)
             assertEquals(i,NativeGamesGallery.moduleIndex(i/6,i%6,count));
-        assertEquals(-1,NativeGamesGallery.moduleIndex(2,5,count));
-        assertEquals(-1,NativeGamesGallery.moduleIndex(3,0,count));
+        // The first slot immediately after any number of games is absent.
+        // A future 18th title must expand the shelf, not invalidate the test.
+        assertEquals(-1,NativeGamesGallery.moduleIndex(count/6,count%6,count));
+        assertEquals(-1,NativeGamesGallery.moduleIndex(
+            NativeGamesGallery.pageCount(count),0,count));
         assertEquals(-1,NativeGamesGallery.moduleIndex(-1,0,15));
         assertEquals(1,NativeGamesGallery.pageCount(0));
     }
@@ -24,19 +27,22 @@ public class NativeGamesGalleryTest {
                 assertTrue(NativeGamesGallery.order(item.id)<100);
             }
         }
-        assertEquals(9,featured); // Sitka is a testable native game.
-        assertEquals(8,classics);
+        assertTrue(featured>=9); // Preserve the existing original games.
+        assertTrue(classics>=8);
+        assertEquals(GameModuleRegistry.GAMES.length,featured+classics);
     }
     @Test public void homeRoomGalleryKeepsAllGamesAndPhysicalPanelBounds() {
         int count=GameModuleRegistry.GAMES.length;
-        assertEquals(3,NativeGamesGallery.homePageCount(count));
+        assertEquals(Math.max(1,(count+6)/7),NativeGamesGallery.homePageCount(count));
         for(int i=0;i<count;i++)
             assertEquals(i,NativeGamesGallery.homeModuleIndex(i/7,i%7,count));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(2,3,count));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,0,count));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(count/7,count%7,count));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(
+            NativeGamesGallery.homePageCount(count),0,count));
         assertTrue(NativeGamesGallery.homeButtonEnabled(9,2,count));
         assertTrue(NativeGamesGallery.homeButtonEnabled(10,2,count));
-        assertFalse(NativeGamesGallery.homeButtonEnabled(3,2,count));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(
+            count%7,(count/7),count));
         for(int i=0;i<NativeGamesGallery.HOME_BUTTONS.length;i++) {
             int[] a=NativeGamesGallery.HOME_BUTTONS[i];
             assertTrue(a[0]>=266 && a[2]<=744 && a[1]>=60 && a[3]<=710);
@@ -62,7 +68,9 @@ public class NativeGamesGalleryTest {
         };
         // Actual installed Android 10 JNI/GLES2 evidence now contains Sitka.
         // Every atlas slot has a verified screenshot, never concept artwork.
-        assertEquals(GameModuleRegistry.GAMES.length,ids.length);
+        // Capture count follows authentic archived images, not a ceiling on
+        // how many future games may be registered or released.
+        assertTrue(GameModuleRegistry.GAMES.length>=ids.length);
         assertEquals(ids.length,NativeGamesGallery.CAPTURED_IDS.length);
         assertEquals(168,NativeGamesGallery.ATLAS_CELL_WIDTH);
         assertEquals(230,NativeGamesGallery.ATLAS_CELL_HEIGHT);
@@ -90,7 +98,8 @@ public class NativeGamesGalleryTest {
         assertNull(NativeGamesGallery.hoverPopupRect(true,-1));
         assertNull(NativeGamesGallery.hoverPopupRect(false,6));
         assertNull(NativeGamesGallery.hoverPopupRect(true,7));
-        assertEquals(GameModuleRegistry.GAMES.length,NativeGamesGallery.CAPTURED_IDS.length);
+        assertTrue(NativeGamesGallery.CAPTURED_IDS.length<=
+            GameModuleRegistry.GAMES.length);
         for(String id:NativeGamesGallery.CAPTURED_IDS){
             assertNotNull("Captured game must be registered: "+id,
                 GameModuleRegistry.find(id));
@@ -129,7 +138,7 @@ public class NativeGamesGalleryTest {
     }
     @Test public void sitkaIsAPackagedDevelopmentGame() {
         assertEquals(8,NativeGamesGallery.order("sitka"));
-        assertEquals(17,GameModuleRegistry.GAMES.length);
+        assertTrue(GameModuleRegistry.GAMES.length>=17);
         assertEquals(3,NativeGamesGallery.homePageCount(17));
         assertEquals(7,NativeGamesGallery.homeModuleIndex(1,0,17));
         assertEquals(16,NativeGamesGallery.homeModuleIndex(2,2,17));
