@@ -1,3 +1,11 @@
+## Verified 2026-11-13 real-source acquisition checkpoint
+
+- **Verified remote commit:** [6386f53](https://github.com/mrcalzon02/ReverieVR/commit/6386f53eeaf995768dd1959ebdb1944e98bf7b15). Acquisition workflow [#2](https://github.com/mrcalzon02/ReverieVR/actions/runs/43527649045) **SUCCESS**, including synthetic regression tests, real USGS service download, affine/CRS validation, 16 raster tiles, shared-edge checks, preview and source commit readback.
+- **Acquired official USGS 3DEP elevation source:** 513 x 513 unique nodes (263,169), EPSG:32608, 4 m grid, range −2.160 to 76.931 m, 100% non-NoData source pixels for this AOI. The marine-looking low values are DEM heights, NOT independently accepted water or seabed geometry.
+- **Archive:** [source DEM, 16 elevation tiles, per-tile source manifest, actual elevation PNG](https://github.com/mrcalzon02/ReverieVR/tree/main/data/sitka/geography/generated/downtown-3dep-v1). Source response SHA-256 `f61b73056300911eaba035e875a92f5be6742e351b34044525f0ad86d434db83`. Normalized DEM SHA-256 `bcc1cf5239fec9823c61de457597caf0360d26279f8043cfb3f8043c8e692c00`.
+- **Next shoreline authority candidate:** [NOAA Port of Sitka AK2309-CS-N](https://www.fisheries.noaa.gov/inport/item/72222), shoreline vectors compiled from 2023-05-05 imagery, EPSG:4269, published 2024 (updated metadata March 2026), uses NOAA NSDE vector archive. Reported 0.8 m (95%) accuracy in metadata. Its geometries are **not imported or polygonized yet**. Avoid interpreting administrative boundary, parcels or generalized 1998 coast as an authoritative present coastline.
+- **Open:** acquire NOAA shoreline vectors, audit project boundaries/closing segments, derive license-cleared land polygons and coastline clips, apply existing per-tile SITKA01 baker, test seam geometry, reconcile USGS height datum with NOAA bathymetry/water, add native land index streaming, integrated phone/headset proof. **0 production land mesh tiles** have been admitted; 16 source-height tiles are valid but not runtime terrain.
+
 # Sitka real-world geographic tiling
 
 Status (2026-11-13): **real elevation acquisition pipeline implemented; the
