@@ -34,7 +34,7 @@ class GeographyTilesTest(unittest.TestCase):
         import rasterio
         from rasterio.io import MemoryFile
         from rasterio.transform import from_origin
-        (_, _), (width, height) = geometry(cfg)
+        _, (width, height) = geometry(cfg)
         # Smooth but nonconstant source heights, known no-data boundary:
         # synthetic only for a repeatable test of real DEM import rejection.
         yy, xx = np.mgrid[:height, :width]
