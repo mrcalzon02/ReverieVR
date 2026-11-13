@@ -161,5 +161,64 @@ int main(){
     assert(reopened.fishing.journal.shellfish_inventory==0u);
     assert(!reopened.CollectShellfishBundle(2u)); // duplicate after reopen
     assert(!reopened.dirty);
-    std::cout<<"PASS actual Sitka Update: walk/office/sale/register/upgrade/save/retry/shellfish bundle\n";
+    // Exercise the ACTUAL module Update route, not just the dynamics helper.
+    // This is a synthetic game basin, not sourced geographic/navigational data.
+    {
+        State boat;boat.host=&host;
+        boat.terrain.origin_east=500000.;
+        boat.terrain.origin_north=6200000.;
+        Water basin;
+        basin.id="fixture-water";basin.shape="SQUARE";
+        basin.x=200.f;basin.z=400.f;
+        basin.width=600.f;basin.depth=300.f;
+        boat.waters.push_back(basin);
+        const uint32_t datum=BathyDatumId("NAVD88");
+        const auto directory=ParseBathyStreamIndex(
+            "SITKA-BATHY-INDEX-2\n"
+            "datum NAVD88\n"
+            "tiles 1\n"
+            "bathymetry-r00-c00.sitkab 900000 7000500 100 100 3 3\n");
+        boat.stream.reset(new BathyStreamCache(directory));
+        SeabedGeneration settings;
+        settings.datum_id=datum;
+        settings.water_reference_m=0.;
+        settings.seed=44556677u;
+        settings.influence_radius_m=1000.;
+        boat.generated.reset(new ProceduralSeabed(settings));
+        SkiffLaunch berth;
+        berth.datum_id=datum;berth.water_id="fixture-water";
+        berth.east=500190.;berth.north=6200400.;
+        berth.heading=1.5707963267948966;
+        boat.skiff.reset(new SitkaSkiffSession(berth));
+        ReverieNativeInputV1 touch{};
+        touch.struct_size=sizeof(touch);touch.delta_seconds=.05f;
+        touch.listener_valid=1u;
+        touch.listener_position[0]=190.f;
+        touch.listener_position[2]=400.f;
+        touch.primary_down=1u;touch.secondary_down=1u;
+        Update(&boat,&touch);
+        assert(boat.skiff->Active());
+        touch.primary_down=touch.secondary_down=0u;
+        // Touchpad up sends NEGATIVE Y, exactly as walking already uses.
+        touch.move_y=-1.f;
+        for(int n=0;n<80;++n)Update(&boat,&touch);
+        assert(boat.skiff->Pose().speed_mps>.4);
+        assert(boat.skiff->Pose().east>berth.east+1.);
+        assert(boat.instruments.rpm>2000.);
+        const double powered=boat.skiff->Pose().speed_mps;
+        touch.move_y=0.f; // ACTION_UP / lost touch returns to idle
+        for(int n=0;n<20;++n)Update(&boat,&touch);
+        assert(boat.instruments.rpm==0.);
+        assert(boat.skiff->Pose().speed_mps<powered);
+        const double coasting=boat.skiff->Pose().speed_mps;
+        touch.move_y=-.08f; // center jitter must not add thrust
+        for(int n=0;n<20;++n)Update(&boat,&touch);
+        assert(boat.instruments.rpm==0.);
+        assert(boat.skiff->Pose().speed_mps<coasting);
+        touch.move_y=1.f; // backwards gesture cannot accelerate skiff
+        for(int n=0;n<20;++n)Update(&boat,&touch);
+        assert(boat.instruments.rpm==0.);
+        assert(boat.skiff->Pose().speed_mps<=coasting);
+    }
+    std::cout<<"PASS actual Sitka Update: walk/office/sale/register/upgrade/save/retry/shellfish bundle/skiff touch throttle\n";
 }

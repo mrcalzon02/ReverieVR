@@ -4,6 +4,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -46,6 +47,14 @@ static bool Bad(const std::string& text,uint32_t datum){
     catch(const std::invalid_argument&){return true;}
 }
 int main(){
+    // Actual native touch/joystick sign, idle deadzone and release.
+    assert(SkiffForwardThrottle(-1.)==1.);
+    assert(SkiffForwardThrottle(1.)==0.);
+    assert(SkiffForwardThrottle(0.)==0.);
+    assert(SkiffForwardThrottle(-.08)==0.);
+    assert(SkiffForwardThrottle(.08)==0.);
+    assert(std::abs(SkiffForwardThrottle(-.56)-.5)<1.e-10);
+    assert(SkiffForwardThrottle(std::numeric_limits<double>::quiet_NaN())==0.);
     const uint32_t datum=BathyDatumId("NAVD88");
     assert(Bad(LaunchDocument(),BathyDatumId("MLLW")));
     assert(Bad(LaunchDocument()+"surprise\n",datum));

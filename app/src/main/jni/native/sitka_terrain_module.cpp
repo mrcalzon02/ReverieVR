@@ -709,8 +709,12 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     // editor focus. The same bathymetry cache backs movement, sounder and
     // subsequent GL visual tile selection.
     if(state->skiff&&state->stream&&state->generated){
+        // Touchpad UP and gamepad forward are both negative native Y.
+        // Release immediately drops throttle to zero; 30 Hz hull inertia
+        // still governs the deceleration of the vessel itself.
+        const double throttle=reverie::sitka::SkiffForwardThrottle(input->move_y);
         const auto event=state->skiff->Update(
-            input->delta_seconds,input->move_y,
+            input->delta_seconds,throttle,
             state->helm_rudder.Advance(input->delta_seconds,input->move_x),
             boat_chord,listener_east,listener_north,
             *state->stream,*state->generated,state->waters,
@@ -719,12 +723,12 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             state->instruments=reverie::sitka::HelmReadouts(
                 state->helm,state->skiff->Pose(),state->weather,
                 state->skiff->Sounder().reading(),
-                state->helm_rudder.degrees,input->move_y,1.);
+                state->helm_rudder.degrees,throttle,1.);
             // Build real Lato text only when data changes. This executes
             // once in the simulation tick, never from a stereo-eye callback.
             const auto panels=reverie::sitka::BuildBoatPanels(
                 state->helm,state->skiff->Pose(),state->weather,
-                state->skiff->Sounder().reading(),input->move_y);
+                state->skiff->Sounder().reading(),throttle);
             const std::string signature=panels.Signature();
             if(signature!=state->last_boat_text){
                 state->boat_text.Clear();

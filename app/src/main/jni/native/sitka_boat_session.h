@@ -7,6 +7,7 @@
 #include "sitka_bathymetry_stream.h"
 #include "sitka_procedural_seabed.h"
 #include "sitka_environment.h"
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -18,6 +19,15 @@
 #include <utility>
 #include <vector>
 namespace reverie { namespace sitka {
+// Native Sitka walking uses -move_y for forward. The skiff accepts the
+// same upward touch/joystick gesture; neutral or tiny finger jitter is idle.
+// This gameplay throttle is forward-only: positive Y is not reverse thrust.
+inline double SkiffForwardThrottle(double move_y){
+    if(!std::isfinite(move_y))return 0.;
+    constexpr double deadzone=.12;
+    const double forward=std::clamp(-move_y,0.,1.);
+    return forward<=deadzone?0.:(forward-deadzone)/(1.-deadzone);
+}
 struct SkiffLaunch {
     uint32_t datum_id=0u;
     std::string water_id;
