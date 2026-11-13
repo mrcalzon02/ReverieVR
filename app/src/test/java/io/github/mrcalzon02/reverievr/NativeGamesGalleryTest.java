@@ -55,14 +55,14 @@ public class NativeGamesGalleryTest {
             "breakwater-battery","between-deliveries-red-ledger",
             "gumball-armada","iron-sight-forward-detachment",
             "ministry-lantern-desk","omega-front","procedural-test-chamber",
-            "guess-the-door","classic-chess","classic-go","classic-checkers","classic-pong",
+            "guess-the-door","sitka","classic-chess","classic-go","classic-checkers",
+            "classic-pong",
             "classic-snake","classic-reversi","classic-breakout",
             "classic-chutes-ladders"
         };
-        // The archive contains sixteen genuine Android JNI/GLES2 captures.
-        // Sitka is packaged, but this old atlas contains only sixteen genuine
-        // Android captures. Never invent an image until the 17th real capture.
-        assertEquals(GameModuleRegistry.GAMES.length-1,ids.length);
+        // Actual installed Android 10 JNI/GLES2 evidence now contains Sitka.
+        // Every atlas slot has a verified screenshot, never concept artwork.
+        assertEquals(GameModuleRegistry.GAMES.length,ids.length);
         assertEquals(ids.length,NativeGamesGallery.CAPTURED_IDS.length);
         assertEquals(168,NativeGamesGallery.ATLAS_CELL_WIDTH);
         assertEquals(230,NativeGamesGallery.ATLAS_CELL_HEIGHT);
@@ -75,7 +75,7 @@ public class NativeGamesGalleryTest {
             assertEquals(i%4*168,cell[0]);
             assertEquals(i/4*230,cell[1]);
             assertTrue(cell[0]+168<=672);
-            assertTrue(cell[1]+230<=920);
+            assertTrue(cell[1]+230<=230*((ids.length+3)/4));
             assertTrue(seen.add(cell[0]+":"+cell[1]));
         }
         assertEquals(ids.length,seen.size());
@@ -90,7 +90,7 @@ public class NativeGamesGalleryTest {
         assertNull(NativeGamesGallery.hoverPopupRect(true,-1));
         assertNull(NativeGamesGallery.hoverPopupRect(false,6));
         assertNull(NativeGamesGallery.hoverPopupRect(true,7));
-        assertEquals(GameModuleRegistry.GAMES.length-1,NativeGamesGallery.CAPTURED_IDS.length);
+        assertEquals(GameModuleRegistry.GAMES.length,NativeGamesGallery.CAPTURED_IDS.length);
         for(String id:NativeGamesGallery.CAPTURED_IDS){
             assertNotNull("Captured game must be registered: "+id,
                 GameModuleRegistry.find(id));
@@ -137,8 +137,8 @@ public class NativeGamesGalleryTest {
         assertFalse(NativeGamesGallery.homeButtonEnabled(3,2,17));
         assertNotNull("Sitka must be a real native library in the registry",
             GameModuleRegistry.find("sitka"));
-        assertNull("No fabricated georeferenced Sitka screenshot",
-            NativeGamesGallery.atlasCell("sitka"));
+        assertArrayEquals("Verified non-geographic Sitka Android capture",
+            new int[]{0,2*230},NativeGamesGallery.atlasCell("sitka"));
         String[] details=NativeGamesGallery.descriptionLines("sitka");
         assertNotNull(details);
         assertEquals(3,details.length);

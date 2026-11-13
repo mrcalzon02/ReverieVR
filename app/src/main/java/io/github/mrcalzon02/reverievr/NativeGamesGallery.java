@@ -345,7 +345,8 @@ final class NativeGamesGallery {
         "breakwater-battery","between-deliveries-red-ledger",
         "gumball-armada","iron-sight-forward-detachment",
         "ministry-lantern-desk","omega-front","procedural-test-chamber",
-        "guess-the-door","classic-chess","classic-go","classic-checkers","classic-pong",
+        "guess-the-door","sitka","classic-chess","classic-go","classic-checkers",
+        "classic-pong",
         "classic-snake","classic-reversi","classic-breakout",
         "classic-chutes-ladders"
     };

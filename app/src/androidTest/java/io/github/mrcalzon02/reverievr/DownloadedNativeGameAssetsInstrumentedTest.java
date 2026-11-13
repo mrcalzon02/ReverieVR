@@ -502,7 +502,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         }
         assertNotNull("Bundled game screenshot atlas absent",atlas);
         assertEquals("Unexpected gallery width",672,atlas.getWidth());
-        assertTrue("Incomplete screenshot archive",atlas.getHeight()>=920);
+        assertTrue("Incomplete 17-game screenshot archive",
+            atlas.getHeight()>=230*((GameModuleRegistry.GAMES.length+3)/4));
         java.util.List<NativeModuleRuntime.Descriptor> games=
             new java.util.ArrayList<>();
         for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES)
