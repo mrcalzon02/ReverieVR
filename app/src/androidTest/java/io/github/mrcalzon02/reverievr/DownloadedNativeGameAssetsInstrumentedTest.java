@@ -950,10 +950,113 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         }finally{remove(root);}
     }
 
+
+    // Actual installed JNI/GLES2 acceptance for the newly imported sixth supplier.
+    // 606 must render differently from the previously validated 505 model on
+    // the inspection podium, support a real stock purchase, and survive a
+    // distinct native-module process opening the same persisted game save.
+    private static void verifyRedLedger606VisibleOnAndroidGles()
+        throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File root=new File(app.getCacheDir(),
+            "red-ledger-606-ci-"+System.nanoTime());
+        assertTrue("Cannot allocate isolated 606 test storage",root.mkdirs());
+        File home=new File(root,"native-modules");
+        assertTrue("Cannot allocate 606 game save home",home.mkdirs());
+        File comparison=new File(app.getFilesDir(),"red-ledger-606-compare-505.png");
+        File selected=new File(app.getFilesDir(),"red-ledger-606-selected.png");
+        File stocked=new File(app.getFilesDir(),"red-ledger-606-stocked.png");
+        File restored=new File(app.getFilesDir(),"red-ledger-606-restored.png");
+        File saved=new File(home,"between-deliveries-red-ledger/state-v4.bin");
+        try(Pbuffer egl=new Pbuffer()){
+            VirtualInputBus controls=new VirtualInputBus();
+            try(NativeModuleRuntime game=new NativeModuleRuntime(
+                home,app.getAssets(),controls,true,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))){
+                assertTrue("606 game launch failed: "+game.getLastError(),
+                    game.start("between-deliveries-red-ledger"));
+                assertTrue("606 GLES2 context failed: "+game.getLastError(),
+                    game.onSurfaceCreated());
+                try{
+                    assertTrue("606 test could not enter stockroom",
+                        (redLedgerSelect(game,controls,2.53f,-.20f)
+                         &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                    // Sixth supplier snack card: slot 23, offer 24.
+                    // Neighbor 505 snack card: slot 22, offer 23.
+                    assertTrue("Could not select authentic 505 comparison SKU",
+                        (redLedgerSelect(game,controls,1.23f,-.86f)
+                         &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                    long referenceCrc=omegaFrame(game,comparison);
+                    assertTrue("606 snack card did not activate offer 24",
+                        (redLedgerSelect(game,controls,2.05f,-.86f)
+                         &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                    long selectedCrc=omegaFrame(game,selected);
+                    assertNotEquals("606 versus 505 did not alter GLES2 output",
+                        referenceCrc,selectedCrc);
+                    Bitmap before=BitmapFactory.decodeFile(comparison.getAbsolutePath());
+                    Bitmap after=BitmapFactory.decodeFile(selected.getAbsolutePath());
+                    assertNotNull("Missing actual 505 comparison PNG",before);
+                    assertNotNull("Missing actual 606 selected PNG",after);
+                    try{
+                        int changed=redLedgerPreviewPixelChanges(before,after);
+                        Log.i(TAG,"DIAGNOSTIC Red Ledger 606-vs-505 podiumPixels="
+                            +changed+" sku23CRC="+referenceCrc
+                            +" sku24CRC="+selectedCrc);
+                        assertTrue("606 differs only in text, not visible stock "
+                            +"podium model/texture (pixels="+changed+")",
+                            changed>=32);
+                    }finally{before.recycle();after.recycle();}
+                    // The original game begins with enough cash for the 700c
+                    // sixth-supplier snack lot. Use the real stock-buy collider.
+                    assertTrue("606 wholesale lot was not actually purchased",
+                        (redLedgerSelect(game,controls,.40f,-.48f)
+                         &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                    long stockedCrc=omegaFrame(game,stocked);
+                    assertTrue("606 purchase did not produce a durable save",
+                        saved.isFile()&&saved.length()>100L);
+                    Log.i(TAG,"DIAGNOSTIC Red Ledger 606 stock purchase "
+                        +"sku24CRC="+stockedCrc+" saveBytes="+saved.length());
+                }finally{
+                    game.releaseSurface();
+                    game.stop();
+                }
+            }
+            VirtualInputBus resumedControls=new VirtualInputBus();
+            try(NativeModuleRuntime resumed=new NativeModuleRuntime(
+                home,app.getAssets(),resumedControls,true,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))){
+                assertTrue("606 save/reopen native launch failed: "
+                    +resumed.getLastError(),
+                    resumed.start("between-deliveries-red-ledger"));
+                assertTrue("606 save/reopen GLES2 context failed: "
+                    +resumed.getLastError(),resumed.onSurfaceCreated());
+                try{
+                    long restoredCrc=omegaFrame(resumed,restored);
+                    int same=redLedgerSelect(resumed,resumedControls,2.05f,-.86f);
+                    assertTrue("Saved SKU24 selection was not restored",
+                        (same&NativeModuleRuntime.FEEDBACK_FAILURE)!=0
+                        &&(same&NativeModuleRuntime.FEEDBACK_ACTIVATION)==0);
+                    assertTrue("606 reopened real GLES2 image was not captured",
+                        restored.isFile()&&restored.length()>300L);
+                    Log.i(TAG,"PASS Red Ledger original 606 selected/purchased/"
+                        +"save-reopen native GLES2 realFrames=true "
+                        +"saveBytes="+saved.length()
+                        +" restoredCRC="+restoredCrc);
+                }finally{
+                    resumed.releaseSurface();
+                    resumed.stop();
+                }
+            }
+        }finally{remove(root);}
+    }
+
     @Test public void redLedgerReal24DownloadedIconsRenderThroughNativeGles()
         throws Exception {
         runInstalledAssets("between-deliveries-red-ledger",24);
         verifyRedLedger505VisibleOnAndroidGles();
+        verifyRedLedger606VisibleOnAndroidGles();
     }
     @Test public void omegaFrontDownloadedTexturesRenderThroughNativeGles(){
         // The 141-file fixture selects exactly two shared concrete/steel
