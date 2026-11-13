@@ -709,6 +709,133 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             " selectedCRC="+selectedCrc+" saveBytes="+purchased.length);
     }
 
+
+    // Read actual JNI-authored private save instead of constructing a rule-engine
+    // fixture. Offsets follow classic_games_save.h BoardCore's v1 wire layout.
+    private static final class ChessNativeState {
+        int[] board=new int[64];
+        int color,side,ply;
+    }
+    private static ChessNativeState chessNativeState(File home)throws IOException {
+        File dir=new File(home,"classic-chess");
+        byte[] manifest=Files.readAllBytes(new File(dir,"classic-match.v1").toPath());
+        assertEquals("Native Chess manifest",56,manifest.length);
+        assertEquals("RVCLIDX1",new String(manifest,0,8,StandardCharsets.US_ASCII));
+        ByteBuffer index=ByteBuffer.wrap(manifest).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1,index.getInt(8));
+        assertEquals(5,index.getInt(12));
+        int bank=index.getInt(24);
+        assertTrue("Chess bank",bank==0||bank==1);
+        assertTrue("Chess body bounds",index.getInt(28)>=845);
+        assertTrue("Chess page bounds",index.getInt(32)>=1);
+        byte[] body=Files.readAllBytes(new File(dir,
+            bank==0?"classic-a-00.v1":"classic-b-00.v1").toPath());
+        assertTrue("Native Chess snapshot too short",body.length>=845);
+        assertEquals("RVCLASS1",new String(body,0,8,StandardCharsets.US_ASCII));
+        ByteBuffer data=ByteBuffer.wrap(body).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1,data.getInt(8));
+        assertEquals(5,data.getInt(12));
+        ChessNativeState state=new ChessNativeState();
+        for(int square=0;square<64;square++)
+            state.board[square]=(body[32+square]&255)-6;
+        state.color=data.getInt(32+742);
+        state.side=data.getInt(32+793);
+        state.ply=data.getInt(32+809);
+        return state;
+    }
+    private static void chessNativeTap(NativeModuleRuntime runtime,
+                                       VirtualInputBus bus,float x,float y) {
+        float[] origin={x,y,0.f},forward={0.f,0.f,-1.f};
+        VirtualOutput trigger=VirtualOutput.joystickButton(0);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,origin,forward);
+        bus.applyDigital(trigger,true);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,origin,forward);
+        bus.applyDigital(trigger,false);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,origin,forward);
+    }
+    @Test public void chessInstalledPointerLegalityAndBlackCpuFirstInGles()
+        throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File sandbox=new File(app.getCacheDir(),"chess-controller-"+System.nanoTime());
+        assertTrue("Chess test isolation",sandbox.mkdirs());
+        File home=new File(sandbox,"native-modules");
+        assertTrue("Chess save root",home.mkdirs());
+        File opening=new File(app.getFilesDir(),"chess-ci-initial.png");
+        File e4Frame=new File(app.getFilesDir(),"chess-ci-legal-e4.png");
+        File blackFrame=new File(app.getFilesDir(),"chess-ci-black-cpu.png");
+        VirtualInputBus bus=new VirtualInputBus();
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime runtime=new NativeModuleRuntime(
+                home,app.getAssets(),bus,false,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))) {
+            assertTrue("Installed Chess launch: "+runtime.getLastError(),
+                runtime.start("classic-chess"));
+            try {
+                assertTrue("Chess GLES2 creation: "+runtime.getLastError(),
+                    runtime.onSurfaceCreated());
+                runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                long before=omegaFrame(runtime,opening);
+                // Blocked d1->d3 queen ray must not alter the actual board.
+                chessNativeTap(runtime,bus,-.16f,-1.12f);
+                ChessNativeState picked=chessNativeState(home);
+                assertEquals(0,picked.ply);
+                assertEquals(5,picked.board[59]);
+                assertEquals(1,picked.board[51]);
+                chessNativeTap(runtime,bus,-.16f,-.48f);
+                ChessNativeState illegal=chessNativeState(home);
+                assertEquals("Blocked queen click advanced a ply",0,illegal.ply);
+                assertArrayEquals("Blocked queen click changed board",
+                    picked.board,illegal.board);
+                // The same installed native path must accept e2->e4.
+                chessNativeTap(runtime,bus,.16f,-.80f);
+                chessNativeTap(runtime,bus,.16f,-.16f);
+                ChessNativeState played=chessNativeState(home);
+                assertEquals("Legal e4 did not advance turn",1,played.ply);
+                assertEquals(-1,played.side);
+                assertEquals(0,played.board[52]);
+                assertEquals(1,played.board[36]);
+                assertEquals(5,played.board[59]);
+                assertNotEquals("GLES2 board did not react to e4",
+                    before,omegaFrame(runtime,e4Frame));
+                // Right-wing NEW GAME button, then true front-plane BLACK.
+                chessNativeTap(runtime,bus,2.22f,1.42f);
+                chessNativeTap(runtime,bus,.60f,.10f);
+                ChessNativeState black=chessNativeState(home);
+                assertEquals("Black choice not saved",-1,black.color);
+                assertEquals("White must begin",1,black.side);
+                assertEquals("New game not reset",0,black.ply);
+                ChessNativeState cpu=black;
+                long deadline=System.nanoTime()+25_000_000_000L;
+                while(System.nanoTime()<deadline) {
+                    runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                    cpu=chessNativeState(home);
+                    if(cpu.ply==1)break;
+                    Thread.sleep(25L);
+                }
+                assertEquals("White CPU never made first move",1,cpu.ply);
+                assertEquals("Black human not on move after CPU",-1,cpu.side);
+                int from=0,to=0;
+                for(int square=0;square<64;square++) {
+                    int prior=black.board[square],next=cpu.board[square];
+                    if(prior>0&&next==0)from++;
+                    if(prior==0&&next>0)to++;
+                    if(prior<0)assertEquals(
+                        "CPU changed a Black piece",prior,next);
+                }
+                assertEquals("CPU must depart one White source",1,from);
+                assertEquals("CPU must arrive on one White destination",1,to);
+                assertNotEquals("Black-first GLES2 did not update",
+                    before,omegaFrame(runtime,blackFrame));
+                assertTrue("Opening PNG absent",opening.isFile()&&opening.length()>300);
+                assertTrue("Legal e4 PNG absent",e4Frame.isFile()&&e4Frame.length()>300);
+                assertTrue("Black CPU PNG absent",blackFrame.isFile()&&blackFrame.length()>300);
+                Log.i(TAG,"PASS installed Chess pointer legality, blocked queen, "+
+                    "White e4, Black-first CPU transition and actual GLES2 frames");
+            }finally { runtime.releaseSurface(); runtime.stop(); }
+        }finally { remove(sandbox); }
+    }
+
     @Test public void captureAllNativeMainMenus() throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
         File root=new File(app.getCacheDir(),"native-menu-ci-"+System.nanoTime());

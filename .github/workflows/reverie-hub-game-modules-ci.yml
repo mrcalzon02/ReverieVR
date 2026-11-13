@@ -210,12 +210,15 @@ jobs:
             # weapon pixel, save, or all-game-menu acceptance assertions.
             for NAME in breakwater-rack-machine-pitch20.png breakwater-rack-machine-pitch35.png breakwater-rack-heavy-pitch20.png breakwater-rack-heavy-pitch35.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}" || rm -f "validation/hub/${NAME}"; done
             grep -F "PASS Breakwater purchased Heavy rack GLES2" validation/hub/logcat.txt
-            grep -F 'OK (13 tests)' validation/hub/instrumentation-output.txt
+            grep -F 'OK (14 tests)' validation/hub/instrumentation-output.txt
             # Emulator runner uses separate sh -c for each line. Keep dynamic identity
             # count and required capture grep together in one command.
             grep -F "PASS all $(python3 -c 'import json; print(len(json.load(open("modules/game-identity-matrix.json"))["games"]))') registered native game initial menus captured from installed Android GLES2 implementation" validation/hub/logcat.txt
             adb exec-out run-as io.github.mrcalzon02.reverievr cat files/native-menu-capture.csv > validation/hub/native-menu-capture.csv
             for GAME in $(python3 -c 'import json; print(" ".join(g["id"] for g in json.load(open("modules/game-identity-matrix.json"))["games"]))'); do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/native-menu-${GAME}.png" > "validation/hub/native-menu-${GAME}.png"; test -s "validation/hub/native-menu-${GAME}.png"; done
+            # Required genuine installed GLES2 frames after Chess controller transactions.
+            for NAME in chess-ci-initial.png chess-ci-legal-e4.png chess-ci-black-cpu.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}"; test -s "validation/hub/${NAME}"; done
+            grep -F 'PASS installed Chess pointer legality, blocked queen, White e4, Black-first CPU transition and actual GLES2 frames' validation/hub/logcat.txt
             grep -F 'PASS real downloaded between-deliveries-red-ledger assets=24' validation/hub/logcat.txt
             grep -F 'PASS Red Ledger original 606 selected/purchased/save-reopen native GLES2' validation/hub/logcat.txt
             grep -F 'PASS real downloaded omega-front assets=141' validation/hub/logcat.txt
