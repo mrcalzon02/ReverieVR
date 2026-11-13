@@ -26,7 +26,10 @@ games=matrix["games"]
 
 class AllGameContentPackagesTest(unittest.TestCase):
     def test_every_registered_game_builds_independent_verified_revision(self):
-        self.assertEqual(16,len(games))
+        # Verify all registered games, including future additions. The
+        # per-ID build and archive checks below enforce exact coverage.
+        self.assertEqual(len({game["id"] for game in games}),len(games))
+        self.assertGreaterEqual(len(games),17)
         with tempfile.TemporaryDirectory(prefix="reverie-game-pack-matrix-") as temp:
             root=Path(temp)
             signatures=set()
