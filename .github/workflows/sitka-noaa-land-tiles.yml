@@ -1,0 +1,109 @@
+name: Sitka NOAA land polygons to source-masked 512m terrain
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/sitka-noaa-land-tiles.yml'
+      - 'scripts/sitka/acquire_noaa_enc_land.py'
+      - 'scripts/sitka/test_noaa_enc_land.py'
+      - 'scripts/sitka/render_noaa_enc_land.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sitka-noaa-coast-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  noaa-enc-land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - name: Check out authoritative main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install off-device GIS authoring tools
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            'numpy==2.1.3' 'rasterio==1.4.3' 'pyproj==3.7.2' \
+            'shapely==2.1.2' 'matplotlib==3.10.1'
+      - name: Validate NOAA polygon query, bounds and coastline baker
+        run: |
+          python -m unittest discover -s scripts/sitka -p 'test_noaa_enc_land.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_geography_tiles.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_build_coast.py' -v
+      - name: Retrieve real NOAA ENC Harbour land polygons near Sitka
+        run: |
+          mkdir -p work/sitka/noaa-chart
+          python scripts/sitka/acquire_noaa_enc_land.py \
+            --grid data/sitka/geography/sitka-downtown-grid.json \
+            --output work/sitka/noaa-chart/noaa-enc-harbour-land.geojson
+      - name: Bake source-masked actual land terrain using USGS elevation
+        run: |
+          python scripts/sitka/build_geography_tiles.py \
+            --grid data/sitka/geography/sitka-downtown-grid.json \
+            --dem data/sitka/geography/generated/downtown-3dep-v1/authoritative-source-dem.tif \
+            --receipt data/sitka/geography/generated/downtown-3dep-v1/source-receipt.json \
+            --coast work/sitka/noaa-chart/noaa-enc-harbour-land.geojson \
+            --coast-provenance work/sitka/noaa-chart/noaa-enc-harbour-land.source.json \
+            --output-dir work/sitka/noaa-chart/land-tiles
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('work/sitka/noaa-chart/land-tiles/index.json').read_text())
+          assert m['format']=='sitka-land-tiles-1'
+          assert m['tile_count']==16 and m['tile_meters']==512
+          assert m['terrain_tiles_baked']>0 and not m['game_runtime_ready']
+          assert m['sourced_elevation_only'] is False
+          assert all(p['native_mesh_file'] is None or p['coastline_mask_status']=='SOURCE_MASKED'
+                     for p in m['tiles'])
+          assert 'land tile streaming JNI integration' in m['runtime_blockers']
+          print('PASS real NOAA-chart geometry baked into',
+                m['terrain_tiles_baked'],'native SITKA01 meshes')
+          PY
+      - name: Generate visual proof from NOAA land and genuine USGS heights
+        run: |
+          python scripts/sitka/render_noaa_enc_land.py \
+            --dem data/sitka/geography/generated/downtown-3dep-v1/authoritative-source-dem.tif \
+            --land work/sitka/noaa-chart/noaa-enc-harbour-land.geojson \
+            --output work/sitka/noaa-chart/noaa-land-over-real-elevation.png
+      - name: Preserve NOAA/USGS GIS source and mesh artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitka-noaa-chart-land-tiles-${{ github.run_id }}
+          path: work/sitka/noaa-chart/
+          if-no-files-found: warn
+          retention-days: 21
+          compression-level: 6
+      - name: Commit verified chart land and terrain with remote readback
+        run: |
+          set -euo pipefail
+          TARGET=data/sitka/geography/generated/noaa-enc-chart-land-v1
+          test ! -e "$TARGET" || {
+            echo 'NOAA chart archive already exists; refuse overwrite'
+            exit 1
+          }
+          mkdir -p "$TARGET"
+          cp -R work/sitka/noaa-chart/. "$TARGET/"
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
+            echo 'Main changed during import; artifact retained'
+            exit 1
+          }
+          git config user.name 'Sitka NOAA Land Import'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$TARGET"
+          git diff --cached --quiet && { echo 'No geographic output'; exit 1; }
+          git commit -m 'Archive real NOAA ENC Sitka land polygons and source-masked terrain'
+          git push origin HEAD:main
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          echo "VERIFIED real NOAA geographic commit $(git rev-parse HEAD)"
