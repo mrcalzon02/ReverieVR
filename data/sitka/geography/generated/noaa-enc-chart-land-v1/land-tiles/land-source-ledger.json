@@ -1,0 +1,16 @@
+{
+  "elevation": {
+    "dataset": "USGS National Map 3DEP Elevation Dynamic ImageServer",
+    "license": "US Government public domain",
+    "provider": "USGS National Map",
+    "retrieved": "2026-11-13",
+    "url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage"
+  },
+  "shoreline": {
+    "dataset": "ENC Harbour Land Area (dynamic published cartographic polygons)",
+    "license": "U.S. federal NOAA data; attribution; not for navigation",
+    "provider": "NOAA Office of Coast Survey",
+    "retrieved": "2026-11-13",
+    "url": "https://encdirect.noaa.gov/arcgis/rest/services/encdirect/enc_harbour/MapServer/233"
+  }
+}

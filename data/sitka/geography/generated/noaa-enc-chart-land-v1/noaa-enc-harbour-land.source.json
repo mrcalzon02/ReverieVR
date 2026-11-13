@@ -1,0 +1,37 @@
+{
+  "NOT_FOR_NAVIGATION": true,
+  "approved_for_redistribution": true,
+  "clipped_area_m2": 3064643.2,
+  "coast_polygons": 7,
+  "current_geography_reviewed": true,
+  "currentness_scope": "current NOAA ENC published polygons, not independently ground-surveyed",
+  "dataset": "ENC Harbour Land Area (dynamic published cartographic polygons)",
+  "epsg_dem": "EPSG:32608",
+  "epsg_output": "EPSG:4326",
+  "geometry_source": "AUTHENTIC_NOAA_ENC_CHART_LAND",
+  "geometry_type": "Polygon or MultiPolygon",
+  "grid_config_sha256": "8d26592b33efe1a8943173885a3d2d3c91dfa9e79b9646781a6ad7070062ca61",
+  "has_aoi_clipping_edges_not_actual_shoreline": true,
+  "license": "U.S. federal NOAA data; attribution; not for navigation",
+  "provider": "NOAA Office of Coast Survey",
+  "query_bbox_wgs84": [
+    -135.35089660291692,
+    57.044840277790385,
+    -135.31696994292813,
+    57.06332797123078
+  ],
+  "query_url": "https://encdirect.noaa.gov/arcgis/rest/services/encdirect/enc_harbour/MapServer/233/query",
+  "retrieved": "2026-11-13",
+  "retrieved_at_utc": "2026-11-13T23:50:11+00:00",
+  "schema": 1,
+  "shoreline_date": "UNKNOWN_USE_NOAA_CHART_SOURCE_ONLY",
+  "source_batch_sha256": [
+    "1f62f3c03cb3ad7eda2e759e705493c0329ff5c943eabfd7922b0ffb93c1170a",
+    "4a7b4590164f2251e6079efdebcc55c976d452eaa6d4f5df0aa8a72f0853760b"
+  ],
+  "source_geojson_sha256": "fd5e859f7cabfffa4ebe2f15ea10a18397c4c9f9ddca0fdf28a1af1a2173bbb3",
+  "source_geometry_review": "official NOAA mapped land area; on-site shoreline accuracy not certified",
+  "source_ids_count": 6,
+  "survey_project_AK2309_CS_N": "NOT_VERIFIED_IN_ENC",
+  "url": "https://encdirect.noaa.gov/arcgis/rest/services/encdirect/enc_harbour/MapServer/233"
+}

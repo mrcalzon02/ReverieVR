@@ -1,0 +1,35 @@
+{
+  "coordinate_system": "EPSG:32608",
+  "east_origin": 479232.0,
+  "elevation_sha256": "a2f6dc2ce6b8f03757c4944ee815dcf8d8635539b162a75877f4974140dc1c08",
+  "format": "sitka-static-terrain-1",
+  "mesh": "terrain-r02-c01.sitkam",
+  "mesh_sha256": "0536bb5462c0554f5707577b7d32989f61a19e8d2e3b1b98fd088708fa231ca0",
+  "north_origin": 6323456.0,
+  "provenance_sha256": "7a98a22f6f363912c9fcb18af855a42dfb4a174f83c7a4f5a9236ee15434241a",
+  "shoreline_sha256": "fd5e859f7cabfffa4ebe2f15ea10a18397c4c9f9ddca0fdf28a1af1a2173bbb3",
+  "source": {
+    "elevation": {
+      "dataset": "USGS National Map 3DEP Elevation Dynamic ImageServer",
+      "license": "US Government public domain",
+      "provider": "USGS National Map",
+      "retrieved": "2026-11-13",
+      "url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage"
+    },
+    "shoreline": {
+      "dataset": "ENC Harbour Land Area (dynamic published cartographic polygons)",
+      "license": "U.S. federal NOAA data; attribution; not for navigation",
+      "provider": "NOAA Office of Coast Survey",
+      "retrieved": "2026-11-13",
+      "url": "https://encdirect.noaa.gov/arcgis/rest/services/encdirect/enc_harbour/MapServer/233"
+    }
+  },
+  "step": 1,
+  "surveyed_land_only": true,
+  "triangle_count": 30996,
+  "vertex_count": 16641,
+  "vertical_units": "metres, as supplied by DEM; datum not converted",
+  "x_axis": "east",
+  "y_axis": "up",
+  "z_axis": "north"
+}
