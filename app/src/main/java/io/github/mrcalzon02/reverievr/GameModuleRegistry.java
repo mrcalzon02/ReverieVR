@@ -36,6 +36,8 @@ final class GameModuleRegistry {
             "io.github.mrcalzon02.reverievr.game.forwarddetachment",true),
         new Entry("guess-the-door","Guess the Door","guess-the-door",
             "io.github.mrcalzon02.reverievr.game.guessthedoor",true),
+        new Entry("sitka","Sitka: Integration Test Range","sitka",
+            "io.github.mrcalzon02.reverievr.game.sitka",true),
         new Entry("classic-chess","Chess","classic-chess",
             "io.github.mrcalzon02.reverievr.game.classicchess",false),
         new Entry("classic-go","Go","classic-go",

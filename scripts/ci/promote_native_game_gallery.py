@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FEATURED = [
     "breakwater-battery", "between-deliveries-red-ledger", "gumball-armada",
     "iron-sight-forward-detachment", "ministry-lantern-desk", "omega-front",
-    "procedural-test-chamber",
+    "procedural-test-chamber", "guess-the-door", "sitka",
 ]
 CELL = (168, 230)
 COLUMNS = 4
@@ -59,7 +59,7 @@ def produce(capture_dir: Path):
     gallery = ROOT / "app/src/main/assets/native/gallery"
     cards.mkdir(parents=True, exist_ok=True)
     gallery.mkdir(parents=True, exist_ok=True)
-    atlas = Image.new("RGB", (CELL[0] * COLUMNS, CELL[1] * 4), (7, 14, 24))
+    atlas = Image.new("RGB", (CELL[0] * COLUMNS, CELL[1] * ((len(ordered) + COLUMNS - 1) // COLUMNS)), (7, 14, 24))
     manifest = {
         "schema": 1,
         "source": "installed Android 10 emulator; real JNI/GLES2 initial-eye frame",

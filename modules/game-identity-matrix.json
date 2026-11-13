@@ -58,6 +58,14 @@
       "companion_build_target": null
     },
     {
+      "id": "sitka",
+      "content_namespace": "sitka",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.sitka",
+      "native_library": "libreverie_module_sitka.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
       "id": "classic-chess",
       "content_namespace": "classic-chess",
       "companion_package": "io.github.mrcalzon02.reverievr.game.classicchess",

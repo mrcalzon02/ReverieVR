@@ -651,7 +651,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int uiFocusDosListRevision = -1;
     // Content on the real Home center panel, never a separate room or mode.
     private boolean nativeGamesPanelVisible;
-    private boolean sitkaProjectDetailsVisible;
     private static final int HOME_GALLERY_HIT_OFFSET = 2000;
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
@@ -800,7 +799,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             nativeModuleRuntime;
         // Installed games must not depend on a logging verbosity setting.
         nativeModules = NativeModuleRuntime.listBuiltIns(true);
-        // Include all fifteen packaged games; keep functional shell tools
+        // Include all actual packaged games; keep functional shell tools
         // accessible from the gallery without a second Home entry.
         List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
         List<NativeModuleRuntime.Descriptor> games = new ArrayList<>();
@@ -814,10 +813,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 apps.add(entry);
             }
         }
-        // Sitka is an authored project, not yet a playable native .so.
-        // Give its archive card a real inspect action rather than a broken launch.
-        games.add(new NativeModuleRuntime.Descriptor(
-            NativeGamesGallery.SITKA_PROJECT_ID,"Sitka"));
         // Order featured games like the user-selected gallery reference.
         // Only registered, loaded native modules appear as game launch cards.
         Collections.sort(games, (left, right) -> Integer.compare(
@@ -5914,14 +5909,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         int pages = NativeGamesGallery.homePageCount(nativeGames.size());
         int index = NativeGamesGallery.homeModuleIndex(
             nativeLibraryPage,button,nativeGames.size());
-        if (sitkaProjectDetailsVisible) {
-            // Project inspector consumes the next click rather than allowing
-            // a concealed launch target behind its non-playable detail pane.
-            sitkaProjectDetailsVisible=false;
-            hoveredButton=-1;
-            textureDirty=true;
-            return;
-        }
         if (index >= 0) {
             launchNativeGame(nativeGames.get(index));
             return;
@@ -5945,13 +5932,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void launchNativeGame(NativeModuleRuntime.Descriptor selected) {
-        if(NativeGamesGallery.SITKA_PROJECT_ID.equals(selected.id)){
-            sitkaProjectDetailsVisible=true;
-            hoveredButton=-1;
-            textureDirty=true;
-            return;
-        }
-        sitkaProjectDetailsVisible=false;
         if (host.onNativeModulePlaybackRequested(selected.id)) {
             clearNativeModuleFailure();
             preferences.markLastActivityNative(
@@ -5971,12 +5951,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         int count = nativeGames.size();
         int pages = NativeGamesGallery.pageCount(count);
         int index = NativeGamesGallery.moduleIndex(nativeLibraryPage, button, count);
-        if(sitkaProjectDetailsVisible) {
-            sitkaProjectDetailsVisible=false;
-            hoveredButton=-1;
-            textureDirty=true;
-            return;
-        }
         if (index >= 0) {
             launchNativeGame(nativeGames.get(index));
             return;
@@ -6891,8 +6865,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     hoveredButton >= HOME_GALLERY_HIT_OFFSET
                         ? hoveredButton - HOME_GALLERY_HIT_OFFSET : -1,
                     uiScale,lastNativeFailureReason,nativeGamesPreviewAtlas);
-            if(nativeGamesPanelVisible&&sitkaProjectDetailsVisible)
-                NativeGamesGallery.drawSitkaProjectDetails(canvas,paint,true);
         } else if (mode == MODE_CONTROLLER_SOURCE) {
             drawControllerSourcePanel(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {
@@ -8344,8 +8316,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 nativeLibraryPage, hoveredButton, uiScale,
                 preferences.getLoggingMode() == LoggingMode.DEVELOPMENT,
                 lastNativeFailureReason,nativeGamesPreviewAtlas);
-            if(sitkaProjectDetailsVisible)
-                NativeGamesGallery.drawSitkaProjectDetails(canvas,paint,false);
             return;
         }
         List<NativeModuleRuntime.Descriptor> shelf = currentNativeShelf();

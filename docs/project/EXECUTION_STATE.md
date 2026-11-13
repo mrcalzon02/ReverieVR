@@ -1,3 +1,9 @@
+## 2026-11-13 — Sitka native integration-test source candidate
+
+**Intent:** Honor the owner's instruction to make Sitka actually launchable from the existing ReverieVR game library, not a nonplayable project card. The source candidate registers `sitka` as the seventeenth native game, bundles an ARM library, uses the normal `NativeModuleRuntime` launcher/input/exit path, and adds explicit save-aware exit refusal. Missing genuine geography enters a visibly labeled **non-geographic integration test range** with basic dry terrain, a water footprint, target fishing, a service desk, starter inventory and skiff dynamics. A malformed PRESENT real geodata asset still fails closed; test geometry must never be described as Sitka's geographic terrain. The source uses the unchanged native ABI, no independent game APK, and no added release-blocking visual gate.
+
+**Validation state at preparation:** Source staged for a single `main` integration commit; exact-source Android build, integrated JNI/GLES2 capture, signing, updater and physical Daydream controls remain pending evidence. The game identity validator now permits future added native games while preserving strict Java/C++/Android.mk alignment. Historical source-only audits below remain as dated records.
+
 ## 2026-11-08 — Native-game repairs published; device gates open
 
 **Source checkpoint:** `9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c`, following

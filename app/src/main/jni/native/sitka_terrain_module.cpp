@@ -1,5 +1,5 @@
-// Source-only native terrain proof. Not registered as a playable game until
-// licensed Sitka geography, shell content scope and real activities exist.
+// Integrated native Sitka gameplay. An explicitly labeled NON-GEOGRAPHIC
+// test range is used only when approved geographic assets are absent.
 #include "sitka_terrain_gl.h"
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
@@ -36,10 +36,12 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace {
 struct State {
     const ReverieNativeHostV1* host = nullptr;
+    bool integration_range = false;
     reverie::sitka::TerrainMesh terrain;
     reverie::sitka::Lighting lighting;
     reverie::sitka::TerrainGl gl;
@@ -133,6 +135,7 @@ bool WriteFishingSave(void* user,const std::string& text) {
 reverie::sitka::FishingStore Store(State* state) {
     return {state,ReadFishingSave,WriteFishingSave};
 }
+#include "sitka_integration_range.h"
 void* Create(const ReverieNativeHostV1* host) {
     if (!ReverieNativeHostSupportsLogV1(host) ||
         !ReverieNativeHostSupportsSaveV1(host) ||
@@ -143,6 +146,10 @@ void* Create(const ReverieNativeHostV1* host) {
     const char* path = "sitka/coast/terrain.sitkam";
     uint32_t size = 0u;
     const int32_t probe = host->read_asset(path, nullptr, 0u, &size);
+#if defined(REVERIE_SITKA_INTEGRATION_RANGE)
+    if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND)
+        return CreateIntegrationRange(host);
+#endif
     const size_t max_bytes = reverie::sitka::kTerrainHeaderBytes +
         size_t(reverie::sitka::kMaxTerrainVertices)*reverie::sitka::kTerrainVertexBytes +
         size_t(reverie::sitka::kMaxTerrainTriangles)*12u;
@@ -595,6 +602,10 @@ void Pause(void* instance) {
     if(state&&!state->fishing.Flush(Store(state)))
         Log(state->host,"Sitka journal flush failed on pause");
 }
+int32_t PrepareExit(void* instance) {
+    auto* state=static_cast<State*>(instance);
+    return state && state->fishing.Flush(Store(state)) ? 1 : 0;
+}
 void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
@@ -890,9 +901,11 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         state->shop_rz=input->listener_right[2];
         state->shop_y=foot.ground_y+
             std::clamp(input->listener_position[1],.8f,2.f);
-        const auto lines=state->harbor_shop.open()?
+        auto lines=state->harbor_shop.open()?
             reverie::sitka::HarborShopPanel(state->harbor_shop,state->fishing):
             reverie::sitka::ShoreGameplayPanel(state->fishing,aimed_shop>=0);
+        if(state->integration_range)
+            lines[0]="SITKA TEST RANGE / NOT REAL GEOGRAPHY";
         std::string signature;
         for(const auto& line:lines){signature+=line;signature+='\n';}
         if(signature!=state->harbor_last_text){
@@ -1106,9 +1119,9 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
 const ReverieNativeModuleApiV1 kApi = {
     sizeof(ReverieNativeModuleApiV1), REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1), REVERIE_NATIVE_MODULE_ABI_VERSION,
-     "sitka", "Sitka [TERRAIN PROOF]", 2u, 0u},
+     "sitka", "Sitka [INTEGRATION TEST]", 2u, 0u},
     Create, Destroy, OnGlCreated, ReleaseGl, Resume, Pause, Update, RenderEye,
-    nullptr, PrepareFrame, nullptr
+    nullptr, PrepareFrame, PrepareExit
 };
 } // namespace
 extern "C" __attribute__((visibility("default")))

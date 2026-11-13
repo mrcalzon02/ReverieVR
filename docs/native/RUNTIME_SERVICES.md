@@ -1,3 +1,7 @@
+## Sitka development integration checkpoint — November 13, 2026
+
+The owner requested Sitka be wired into the existing unified Android host for installation and controller/save tests rather than remaining a detached source-only project. The integration test range must be clearly labeled NON-GEOGRAPHIC until real vetted Sitka coastline assets are packaged. Missing geography may enter that test range; invalid present geography must fail closed. A source-only pass is not a device-accepted launch.
+
 ## Doom Shareware corrected Daydream combat input and binocular legend (2026-11-06)
 
 **Current source contract (supersedes the 2026-10-13 Doom head-tilt navigation description below):** bundled Doom v1.9's stock `dos-doom-shareware` profile sends head-yaw deltas continuously to guest relative mouse X without any pad touch or click. Original DOS Doom does not support pitch freelook; the stock profile **does not** use head tilt for forward/back. Touchpad Y holds Up/Down for forward/back; touchpad X holds comma/period for independent strafing, not arrow-key turning. Click/hold sends left mouse and Ctrl for Fire; App/minus sends Space/Use; reported Daydream rocker edges invoke the existing Doom-only numeric weapon-slot 1–7 cycle (not Android volume). Home is shell/recovery-owned where the system exposes the button. Actual platform-reserved events are not guaranteed to reach the app on every Android/Daydream stack.

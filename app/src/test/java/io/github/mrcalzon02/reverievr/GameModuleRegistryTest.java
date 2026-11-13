@@ -12,11 +12,11 @@ public class GameModuleRegistryTest {
             assertTrue(ids.add(entry.id));
             assertTrue(packages.add(entry.companionPackage));
         }
-        // Guess the Door is a registered development module in addition to
-        // the previous fifteen; Sitka remains an inspectable project only.
-        assertEquals(16,ids.size());
+        // One unified APK now includes the Sitka test-range game.
+        assertEquals(17,ids.size());
         assertNotNull(GameModuleRegistry.find("guess-the-door"));
-        assertNull(GameModuleRegistry.find("sitka"));
+        assertNotNull(GameModuleRegistry.find("sitka"));
+        assertTrue(GameModuleRegistry.find("sitka").developmentOnly);
         // The game must appear in the normal VR Games shelf and pass
         // NativeModuleRuntime.start without a Development logging gate.
         assertFalse(GameModuleRegistry.find("omega-front").developmentOnly);

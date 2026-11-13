@@ -57,6 +57,7 @@ static const BuiltInModuleSpec kBuiltIns[] = {
     {"iron-sight-forward-detachment", "Iron Sight: Forward Detachment [DEV]",
      "libreverie_module_forward_detachment.so"},
     {"guess-the-door", "Guess the Door [DEV]", "libreverie_module_guess_the_door.so"},
+    {"sitka", "Sitka: Integration Test Range [DEV]", "libreverie_module_sitka.so"},
     {"classic-pong", "Classic Pong", "libreverie_module_classic_pong.so"},
     {"classic-snake", "Classic Snake", "libreverie_module_classic_snake.so"},
     {"classic-chutes-ladders", "Chutes and Ladders",

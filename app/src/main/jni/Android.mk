@@ -143,6 +143,17 @@ LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 
+# Sitka integrated native library, including a clearly labeled test range.
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_sitka
+LOCAL_SRC_FILES := native/sitka_terrain_module.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DREVERIE_SITKA_INTEGRATION_RANGE=1
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
+include $(BUILD_SHARED_LIBRARY)
+
 # Seated procedural memory maze: development-only built-in game.
 LOCAL_PATH := $(REVERIE_JNI_PATH)
 include $(CLEAR_VARS)

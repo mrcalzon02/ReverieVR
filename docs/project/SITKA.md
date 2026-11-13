@@ -1,3 +1,5 @@
+> **2026-11-13 integration-test admission:** Sitka has a genuine native-host ID, both-ABI Android library target, launcher action and explicit **NON-GEOGRAPHIC test range** when licensed terrain has not been packaged. The test range exercises walking, fishing, harbor sales/upgrades, save/exit, water and skiff **inside ReverieVR**. It is NOT Sitka's actual surveyed coastline or a real harbor-office representation. A supplied but corrupt geographic terrain asset still refuses to load. Native compilation, Android emulator capture and physical Galaxy S9/Daydream acceptance must be observed before claiming they passed. Historical source-only paragraphs below describe previous milestones.
+
 ## Authored shellfish-bundle pickup and harbor sale — 2026-11-08
 
 The **source-only** Sitka Update path can now take a game-authored inert

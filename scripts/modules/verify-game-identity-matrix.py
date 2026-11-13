@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed when the 16-game release registry drifts from real C++/Java modules.
+"""Fail closed when the growing native game registry drifts from Java and compiled C++.
 
 This does not imply every game has a separate compiled companion APK.
 It verifies data-only content/release identities and bundled native binaries.
@@ -50,8 +50,8 @@ def check():
         if actual!=expected:
             raise ValueError("Missing or unverified independent game target: "+game)
         by_id[game]=x
-    if len(items)!=16:
-        raise ValueError("Expected 16 authoritative game identities, got "+str(len(items)))
+    if len(items)<17:
+        raise ValueError("Expected Sitka and at least the original 16 games, got "+str(len(items)))
 
     java=(ROOT/"app/src/main/java/io/github/mrcalzon02/reverievr/"
           "GameModuleRegistry.java").read_text("utf-8")

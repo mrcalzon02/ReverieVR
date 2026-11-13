@@ -2,13 +2,14 @@ package io.github.mrcalzon02.reverievr;
 import static org.junit.Assert.*;
 import org.junit.Test;
 public class NativeGamesGalleryTest {
-    @Test public void sixteenRegisteredGamesHaveUniqueReachablePageSlots() {
-        assertEquals(16, GameModuleRegistry.GAMES.length);
-        assertEquals(3, NativeGamesGallery.pageCount(16));
-        for(int i=0;i<16;i++)
-            assertEquals(i,NativeGamesGallery.moduleIndex(i/6,i%6,16));
-        assertEquals(-1,NativeGamesGallery.moduleIndex(2,4,16));
-        assertEquals(-1,NativeGamesGallery.moduleIndex(3,0,16));
+    @Test public void seventeenRegisteredGamesHaveUniqueReachablePageSlots() {
+        int count=GameModuleRegistry.GAMES.length;
+        assertEquals(17,count);
+        assertEquals(3,NativeGamesGallery.pageCount(count));
+        for(int i=0;i<count;i++)
+            assertEquals(i,NativeGamesGallery.moduleIndex(i/6,i%6,count));
+        assertEquals(-1,NativeGamesGallery.moduleIndex(2,5,count));
+        assertEquals(-1,NativeGamesGallery.moduleIndex(3,0,count));
         assertEquals(-1,NativeGamesGallery.moduleIndex(-1,0,15));
         assertEquals(1,NativeGamesGallery.pageCount(0));
     }
@@ -23,18 +24,19 @@ public class NativeGamesGalleryTest {
                 assertTrue(NativeGamesGallery.order(item.id)<100);
             }
         }
-        assertEquals(8,featured); // Guess the Door joined the featured modules.
+        assertEquals(9,featured); // Sitka is a testable native game.
         assertEquals(8,classics);
     }
     @Test public void homeRoomGalleryKeepsAllGamesAndPhysicalPanelBounds() {
-        assertEquals(3,NativeGamesGallery.homePageCount(16));
-        for(int i=0;i<16;i++)
-            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/7,i%7,16));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(2,2,16));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,0,16));
-        assertTrue(NativeGamesGallery.homeButtonEnabled(9,2,16));
-        assertTrue(NativeGamesGallery.homeButtonEnabled(10,2,16));
-        assertFalse(NativeGamesGallery.homeButtonEnabled(2,2,16));
+        int count=GameModuleRegistry.GAMES.length;
+        assertEquals(3,NativeGamesGallery.homePageCount(count));
+        for(int i=0;i<count;i++)
+            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/7,i%7,count));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(2,3,count));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,0,count));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(9,2,count));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(10,2,count));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(3,2,count));
         for(int i=0;i<NativeGamesGallery.HOME_BUTTONS.length;i++) {
             int[] a=NativeGamesGallery.HOME_BUTTONS[i];
             assertTrue(a[0]>=266 && a[2]<=744 && a[1]>=60 && a[3]<=710);
@@ -58,8 +60,9 @@ public class NativeGamesGalleryTest {
             "classic-chutes-ladders"
         };
         // The archive contains sixteen genuine Android JNI/GLES2 captures.
-        // Sitka remains source-only and outside the verified capture atlas.
-        assertEquals(GameModuleRegistry.GAMES.length,ids.length);
+        // Sitka is packaged, but this old atlas contains only sixteen genuine
+        // Android captures. Never invent an image until the 17th real capture.
+        assertEquals(GameModuleRegistry.GAMES.length-1,ids.length);
         assertEquals(ids.length,NativeGamesGallery.CAPTURED_IDS.length);
         assertEquals(168,NativeGamesGallery.ATLAS_CELL_WIDTH);
         assertEquals(230,NativeGamesGallery.ATLAS_CELL_HEIGHT);
@@ -87,7 +90,7 @@ public class NativeGamesGalleryTest {
         assertNull(NativeGamesGallery.hoverPopupRect(true,-1));
         assertNull(NativeGamesGallery.hoverPopupRect(false,6));
         assertNull(NativeGamesGallery.hoverPopupRect(true,7));
-        assertEquals(GameModuleRegistry.GAMES.length,NativeGamesGallery.CAPTURED_IDS.length);
+        assertEquals(GameModuleRegistry.GAMES.length-1,NativeGamesGallery.CAPTURED_IDS.length);
         for(String id:NativeGamesGallery.CAPTURED_IDS){
             assertNotNull("Captured game must be registered: "+id,
                 GameModuleRegistry.find(id));
@@ -124,22 +127,22 @@ public class NativeGamesGalleryTest {
             }
         }
     }
-    @Test public void sitkaAppearsAsInspectableUnpackagedProject() {
+    @Test public void sitkaIsAPackagedDevelopmentGame() {
         assertEquals(8,NativeGamesGallery.order("sitka"));
-        assertEquals(17,GameModuleRegistry.GAMES.length+1);
+        assertEquals(17,GameModuleRegistry.GAMES.length);
         assertEquals(3,NativeGamesGallery.homePageCount(17));
         assertEquals(7,NativeGamesGallery.homeModuleIndex(1,0,17));
         assertEquals(16,NativeGamesGallery.homeModuleIndex(2,2,17));
         assertTrue(NativeGamesGallery.homeButtonEnabled(2,2,17));
         assertFalse(NativeGamesGallery.homeButtonEnabled(3,2,17));
-        assertNull("No fake playable Sitka native module yet",
+        assertNotNull("Sitka must be a real native library in the registry",
             GameModuleRegistry.find("sitka"));
         assertNull("No fabricated georeferenced Sitka screenshot",
             NativeGamesGallery.atlasCell("sitka"));
         String[] details=NativeGamesGallery.descriptionLines("sitka");
         assertNotNull(details);
         assertEquals(3,details.length);
-        assertTrue(details[2].contains("not ready"));
+        assertTrue(details[2].contains("Not surveyed"));
     }
     @Test public void cardAndNavigationTargetsNeverOverlap() {
         assertEquals(10,NativeGamesGallery.BUTTONS.length);

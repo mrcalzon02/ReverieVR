@@ -30,12 +30,7 @@ final class NativeGamesGallery {
         {508,617,614,693},{623,617,730,693}
     };
     private static String galleryCount(List<NativeModuleRuntime.Descriptor> games) {
-        int installed=0,projects=0;
-        for(NativeModuleRuntime.Descriptor item:games){
-            if(SITKA_PROJECT_ID.equals(item.id))projects++;
-            else installed++;
-        }
-        return installed+" GAMES"+(projects>0?" + "+projects+" PROJECT":"");
+        return games.size()+" GAMES";
     }
     static int homePageCount(int count) {
         return Math.max(1,(Math.max(0,count)+HOME_PAGE_SIZE-1)/HOME_PAGE_SIZE);
@@ -161,7 +156,7 @@ final class NativeGamesGallery {
     static String[] descriptionLines(String id) {
         switch(id) {
             case "sitka":
-                return new String[]{"Sitka Sound fishing and beachcombing.","Terrain and coastal editor are in work.","Playable geographic world not ready."};
+                return new String[]{"Launch the coastal integration test.","Fish, trade, walk and test the skiff.","Not surveyed Sitka geography."};
             case "breakwater-battery":
                 return new String[]{"Defend your coastal bunker against","beach landings, aircraft and ships.","Upgrade weapons between waves."};
             case "between-deliveries-red-ledger":
@@ -229,7 +224,7 @@ final class NativeGamesGallery {
         float tx=imageRight+15;
         float available=r[2]-tx-12;
         p.setColor(Color.rgb(124,197,222));
-        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"PROJECT / IN DEVELOPMENT":
+        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"INTEGRATION TEST GAME":
             game.id.startsWith("classic-")?"CLASSIC GAME":"NATIVE GAME",
             tx,r[1]+35,available,14f*Math.min(scale,1.10f),false);
         p.setColor(Color.rgb(249,231,178));
@@ -248,8 +243,7 @@ final class NativeGamesGallery {
             c.drawText(lines[i],tx,r[1]+92+i*23,p);
         }
         p.setColor(Color.rgb(248,206,116));
-        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"CLICK FOR PROJECT DETAILS":
-            "CLICK TO LAUNCH",tx,r[3]-17,available,14f,false);
+        fit(c,p,"CLICK TO LAUNCH",tx,r[3]-17,available,14f,false);
         c.restore();
         p.setStyle(Paint.Style.FILL);
         p.setTextAlign(Paint.Align.LEFT);
@@ -323,8 +317,7 @@ final class NativeGamesGallery {
                 13f*Math.min(scale,1.12f),true);
         }
         p.setColor(Color.rgb(137,190,201));
-        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"PROJECT / INSPECT":
-            NativeModuleRuntime.isDevelopmentOnly(game.id)
+        fit(c,p,NativeModuleRuntime.isDevelopmentOnly(game.id)
             ?"DEV / PLAY":"SELECT TO PLAY",
             (x+right)/2f,bottom-9,right-x-14,10f,true);
         p.setColor(hover?Color.rgb(251,214,103):Color.rgb(65,131,183));
@@ -440,8 +433,8 @@ final class NativeGamesGallery {
         }
         float w=r-x,h=b-y;
         if(SITKA_PROJECT_ID.equals(id)) {
-            // Clearly a procedural project-identity drawing, not a captured
-            // Sitka landscape or a derivative of restricted map imagery.
+            // Clearly an illustrated test identity, not a real screenshot
+            // of Sitka's geographic coastline or restricted map imagery.
             p.setStyle(Paint.Style.FILL);
             p.setColor(Color.rgb(65,132,161));c.drawRect(x,y,r,b,p);
             p.setColor(Color.rgb(108,164,184));c.drawRect(x,y+h*.57f,r,b,p);
@@ -471,7 +464,7 @@ final class NativeGamesGallery {
             p.setColor(Color.rgb(230,241,224));
             p.setTextAlign(Paint.Align.CENTER);p.setTextSize(14f);
             p.setFakeBoldText(true);
-            if(w>=140.f)c.drawText("SITKA / PROJECT",x+w*.5f,b-13,p);
+            if(w>=140.f)c.drawText("SITKA / TEST RANGE",x+w*.5f,b-13,p);
             p.setFakeBoldText(false);p.setTextAlign(Paint.Align.LEFT);
             return;
         }
