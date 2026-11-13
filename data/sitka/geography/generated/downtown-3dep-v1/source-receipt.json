@@ -1,0 +1,43 @@
+{
+  "bounds_outer": [
+    478718.0,
+    6322430.0,
+    480770.0,
+    6324482.0
+  ],
+  "dataset": "USGS National Map 3DEP Elevation Dynamic ImageServer",
+  "format": "sitka-usgs-3dep-source-receipt-1",
+  "grid_config_sha256": "8d26592b33efe1a8943173885a3d2d3c91dfa9e79b9646781a6ad7070062ca61",
+  "horizontal_crs": "EPSG:32608",
+  "license": "US Government public domain",
+  "normalized_dem": "usgs3dep-downtown-dem.tif",
+  "normalized_dem_sha256": "bcc1cf5239fec9823c61de457597caf0360d26279f8043cfb3f8043c8e692c00",
+  "provider": "USGS National Map",
+  "ready_for_real_seafloor_merging": false,
+  "ready_for_runtime_coast": false,
+  "request_url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?bbox=478718.000000%2C6322430.000000%2C480770.000000%2C6324482.000000&bboxSR=32608&imageSR=32608&size=513%2C513&format=tiff&pixelType=F32&interpolation=RSP_BilinearInterpolation&f=image",
+  "retrieved": "2026-11-13",
+  "retrieved_at_utc": "2026-11-13T23:31:12+00:00",
+  "schema": 1,
+  "source_kind": "AUTHENTIC_USGS_3DEP_INTERPOLATED_ELEVATION",
+  "source_response_sha256": "f61b73056300911eaba035e875a92f5be6742e351b34044525f0ad86d434db83",
+  "statistics": {
+    "grid_node_north_m": 6324480,
+    "grid_node_west_m": 478720,
+    "max_elevation_m": 76.931,
+    "min_elevation_m": -2.16,
+    "pixel_spacing_m": 4.0,
+    "raster_crs": "EPSG:32608",
+    "raster_height": 513,
+    "raster_width": 513,
+    "sample_count": 263169,
+    "saved_nodata": -9999.0,
+    "source_nodata": null,
+    "unknown_samples": 0,
+    "valid_fraction": 1.0,
+    "valid_samples": 263169
+  },
+  "units": "metres above published 3DEP vertical reference",
+  "url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage",
+  "vertical_datum": "UNVERIFIED_DYNAMIC_3DEP_MOSAIC"
+}
