@@ -133,6 +133,30 @@ int main(){
     assert(replay.restore(finalSave));
     assert(replay.node()==game.node() && replay.bosses()==game.bosses());
     assert(!replay.restore(tampered));
+    // Actual combat code must debit HP only for a real occupied 3D hull:
+    // these two swept paths share X/Y but occupy separated Z planes.
+    Enemy targetVolume{};
+    targetVolume.active=true;targetVolume.hp=4;targetVolume.x=.2f;
+    targetVolume.y=.4f;targetVolume.kind=EnemyKind::Scout;
+    const ShipVolumePoint center=EnemyWorldPoint(targetVolume);
+    const ShipVolumePoint nearA{center.x,center.y-.30f,center.z};
+    const ShipVolumePoint nearB{center.x,center.y+.30f,center.z};
+    const ShipVolumePoint farA{center.x,center.y-.30f,center.z+.80f};
+    const ShipVolumePoint farB{center.x,center.y+.30f,center.z+.80f};
+    assert(!DamageEnemyVolume(targetVolume,0u,farA,farB,2));
+    assert(targetVolume.hp==4);
+    assert(DamageEnemyVolume(targetVolume,0u,nearA,nearB,2));
+    assert(targetVolume.hp==2);
+    // A real Simulation player bolt carries live Z and changes it in flight.
+    Simulation volumeFlight(4);
+    assert(volumeFlight.launch(0));
+    volumeFlight.update(.025f,0.f,0.f,true);
+    const Shot& initialBolt=volumeFlight.shots()[0];
+    assert(initialBolt.active&&initialBolt.volume&&!initialBolt.hostile);
+    const float initialDepth=initialBolt.z;
+    volumeFlight.update(.025f,0.f,0.f,false);
+    assert(volumeFlight.shots()[0].active);
+    assert(volumeFlight.shots()[0].z<initialDepth);
     // Verify that an actual pilot can win by steering and hitting enemies.
     Simulation ace(4);
     auto equipped=ace.snapshot();
@@ -155,6 +179,8 @@ int main(){
         ace.update(.025f,steering,0.f,true);
     }
     assert(ace.phase()==Phase::Won);
+    assert(ace.volumetric_hits()>0u);
+    assert(ace.volumetric_hits()==ace.shots_hit());
     assert(scouts>0&&interceptors>0&&bombers>0);
     assert(ace.escaped()==0&&ace.defeated()==ace.target());
     assert(ace.shots_fired()>ace.shots_hit()&&ace.shots_hit()>0);
