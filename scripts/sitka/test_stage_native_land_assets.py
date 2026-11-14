@@ -65,5 +65,50 @@ class StagedLandTest(unittest.TestCase):
                 write_assets(root/"out",copy)
             self.assertFalse((root/"out").exists())
 
+    def test_out_of_range_triangle_is_rejected_even_with_updated_hash(self):
+        import struct
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            copy = root/"source"
+            shutil.copytree(SOURCE, copy)
+            manifest_path = copy/"land-tiles/index.json"
+            manifest = json.loads(manifest_path.read_text())
+            entry = manifest["tiles"][0]
+            mesh = copy/"land-tiles"/entry["native_mesh_file"]
+            payload = bytearray(mesh.read_bytes())
+            _, count, triangles, _, _ = HEADER.unpack_from(payload)
+            self.assertGreater(triangles, 0)
+            # Change an actual face index, then update the source manifest's
+            # SHA-256: a checksum-only gate would incorrectly admit this tile.
+            struct.pack_into("<I", payload, HEADER.size+count*15, count)
+            mesh.write_bytes(payload)
+            entry["native_mesh_sha256"] = digest(payload)
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "triangle index out of vertex range"):
+                write_assets(root/"out", copy)
+            self.assertFalse((root/"out").exists())
+
+    def test_degenerate_triangle_is_rejected_even_with_updated_hash(self):
+        import struct
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            copy = root/"source"
+            shutil.copytree(SOURCE, copy)
+            manifest_path = copy/"land-tiles/index.json"
+            manifest = json.loads(manifest_path.read_text())
+            entry = manifest["tiles"][0]
+            mesh = copy/"land-tiles"/entry["native_mesh_file"]
+            payload = bytearray(mesh.read_bytes())
+            _, count, triangles, _, _ = HEADER.unpack_from(payload)
+            self.assertGreater(triangles, 0)
+            first_index = struct.unpack_from("<I", payload, HEADER.size+count*15)[0]
+            struct.pack_into("<I", payload, HEADER.size+count*15+4, first_index)
+            mesh.write_bytes(payload)
+            entry["native_mesh_sha256"] = digest(payload)
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "degenerate triangle"):
+                write_assets(root/"out", copy)
+            self.assertFalse((root/"out").exists())
+
 if __name__=="__main__":
     unittest.main()

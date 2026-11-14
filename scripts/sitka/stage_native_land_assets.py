@@ -92,6 +92,14 @@ def write_assets(output, source=SOURCE):
                 not 1 <= triangles <= 32768 or
                 len(payload) != HEADER.size+count*15+triangles*12):
                 raise ValueError("invalid binary SITKA01 tile header")
+            # A matching manifest hash authenticates bytes, not GPU-safe topology.
+            # Reject corrupt source triangles before any indices reach GLES2.
+            index_offset = HEADER.size + count*15
+            for a, b, c in struct.iter_unpack("<III", payload[index_offset:]):
+                if a >= count or b >= count or c >= count:
+                    raise ValueError("source SITKA01 triangle index out of vertex range")
+                if a == b or b == c or c == a:
+                    raise ValueError("source SITKA01 degenerate triangle")
             expected_east = 478720 + col*512
             expected_north = 6324480 - row*512
             if (east != expected_east or north != expected_north or
