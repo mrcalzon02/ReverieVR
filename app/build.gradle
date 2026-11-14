@@ -144,10 +144,21 @@ abstract class StageSitkaGeographyTask extends DefaultTask {
         def isWindows = System.getProperty("os.name").toLowerCase().contains("win")
         String python = (project.findProperty("sitkaAssetPython")
             ?: (isWindows ? "python" : "python3")).toString()
-        project.exec {
-            workingDir project.rootProject.projectDir
-            commandLine python, tool.absolutePath, "--output", destination.absolutePath
-        }
+        // Gradle 9 removed Project.exec. Use a standard, synchronous,
+        // bounded-output subprocess without making Python an APK dependency.
+        def command = [python, tool.absolutePath,
+            "--output", destination.absolutePath]
+        def process = new ProcessBuilder(command)
+            .directory(project.rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        String output = process.inputStream.getText("UTF-8")
+        int status = process.waitFor()
+        if (status != 0)
+            throw new GradleException(
+                "Authenticated Sitka land asset stage failed (exit " + status
+                    + "): " + output.takeRight(1800))
+        logger.lifecycle(output.trim())
         File manifest = new File(destination,"sitka/coast/index.txt")
         if (!manifest.isFile() || manifest.length() < 512L)
             throw new GradleException("Validated Sitka NOAA/USGS land index not staged")
