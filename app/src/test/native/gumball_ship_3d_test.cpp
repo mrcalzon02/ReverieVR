@@ -23,9 +23,27 @@ int main(){
     assert(ship.edit(3,3,2,Part::Armor)==ShipEdit::CoreLocked);
     assert(ship.edit(0,0,0,Part::Armor)==ShipEdit::NotConnected);
     assert(ship.stock(Part::Armor)==3u);
+    // Shot paths must intersect fitted 3D voxels, including their actual
+    // occupied depth; an otherwise aligned XY shot can miss in Z.
+    const ShipVolumePoint hullOrigin{0.f,0.f,-4.f};
+    const ShipVolumePoint forwardCore{0.f,0.f,-4.3f};
+    const ShipVolumePoint rearCore{0.f,0.f,-3.7f};
+    assert(ShipSegmentHitsVoxels(ship,hullOrigin,.1f,0.f,
+                                 forwardCore,rearCore));
+    const ShipVolumePoint depthOnly{0.f,0.f,-3.9f};
+    assert(!ShipSegmentHitsVoxels(ship,hullOrigin,.1f,0.f,
+                                  depthOnly,depthOnly));
+    const ShipVolumePoint emptyFlank{.8f,0.f,-4.f};
+    assert(!ShipSegmentHitsVoxels(ship,hullOrigin,.1f,0.f,
+                                  emptyFlank,emptyFlank));
+
     // Connected placement in Z changes the actually saved volume.
     assert(ship.edit(3,3,3,Part::Armor)==ShipEdit::Placed);
     assert(ship.at(3,3,3)==Part::Armor);
+    // Adding a connected voxel in the next Z layer changes hit volume.
+    assert(ShipSegmentHitsVoxels(ship,hullOrigin,.1f,0.f,
+                                 depthOnly,depthOnly));
+
     assert(ship.stock(Part::Armor)==2u);
     assert(ship.edit(3,3,4,Part::Frame)==ShipEdit::Placed);
     assert(ship.edit(3,3,3,Part::Armor)==ShipEdit::NotConnected);
@@ -90,6 +108,23 @@ int main(){
             for(float v:a)assert(std::isfinite(v));
         }
     }
+    // The projectile tests use the SAME yaw transform as mesh rendering.
+    const ShipAssembly rotatedHull=ShipAssembly::enemy(0u,0u);
+    const ShipVolumePoint rotatedWing{0.f,0.f,-3.8f};
+    const ShipVolumePoint unrotatedWing{-.2f,0.f,-4.f};
+    assert(ShipSegmentHitsVoxels(rotatedHull,hullOrigin,.1f,0.f,
+                                 unrotatedWing,unrotatedWing));
+    assert(ShipSegmentHitsVoxels(rotatedHull,hullOrigin,.1f,1.57079632679f,
+                                 rotatedWing,rotatedWing));
+    assert(!ShipSegmentHitsVoxels(rotatedHull,hullOrigin,.1f,1.57079632679f,
+                                  unrotatedWing,unrotatedWing));
+    const ShipVolumePoint nearCoreEdge{.052f,0.f,-4.f};
+    assert(!ShipSegmentHitsVoxels(rotatedHull,hullOrigin,.1f,0.f,
+                                  nearCoreEdge,nearCoreEdge));
+    assert(ShipSegmentHitsVoxels(rotatedHull,hullOrigin,.1f,0.f,
+                                 nearCoreEdge,nearCoreEdge,.003f));
+    assert(!ShipSegmentHitsVoxels(rotatedHull,hullOrigin,0.f,0.f,
+                                  forwardCore,rearCore));
     // A perspective lane moves its world-space Z positions as time passes.
     std::vector<float> scene0,scene1;
     AppendSpaceLane(scene0,0.f,42u);

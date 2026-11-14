@@ -190,6 +190,56 @@ private:
     std::array<uint8_t,kShipVoxels> cells_{};
     std::array<uint8_t,kPartKinds> stock_{};
 };
+// The exact voxel cubes used by AppendAssemblyMesh are also available to
+// combat collision code. Sweep a finite projectile segment through the hull
+// in the same translated, scaled and yaw-rotated three-dimensional space.
+// Radius expands the boxes conservatively; no 2D screen rectangle is used.
+struct ShipVolumePoint {float x=0.f,y=0.f,z=0.f;};
+inline bool ShipSegmentHitsVoxels(const ShipAssembly& ship,
+                                  ShipVolumePoint origin,float scale,float yaw,
+                                  ShipVolumePoint start,ShipVolumePoint end,
+                                  float radius=0.f){
+    const auto finite=[](ShipVolumePoint p){
+        return std::isfinite(p.x)&&std::isfinite(p.y)&&std::isfinite(p.z);
+    };
+    if(!(scale>0.f)||!std::isfinite(scale)||!std::isfinite(yaw)
+       ||!(radius>=0.f)||!std::isfinite(radius)
+       ||!finite(origin)||!finite(start)||!finite(end))return false;
+    const float ca=std::cos(yaw),sa=std::sin(yaw);
+    const auto local=[&](ShipVolumePoint p){
+        const float dx=(p.x-origin.x)/scale,dz=(p.z-origin.z)/scale;
+        return std::array<float,3>{{dx*ca-dz*sa,(p.y-origin.y)/scale,
+                                    dx*sa+dz*ca}};
+    };
+    const auto a=local(start),b=local(end);
+    for(int z=0;z<kShipDepth;++z)
+    for(int y=0;y<kShipSize;++y)
+    for(int x=0;x<kShipSize;++x){
+        const Part part=ship.at(x,y,z);
+        if(part==Part::Empty)continue;
+        const float half=(part==Part::Wing?.38f:
+                          part==Part::Mount?.35f:.46f)+radius/scale;
+        const float centers[3]={static_cast<float>(x-3),
+                                static_cast<float>(3-y),
+                                static_cast<float>(z-2)};
+        float enter=0.f,leave=1.f;
+        bool overlaps=true;
+        for(int axis=0;axis<3;++axis){
+            const float low=centers[axis]-half,high=centers[axis]+half;
+            const float delta=b[axis]-a[axis];
+            if(std::fabs(delta)<1.e-7f){
+                if(a[axis]<low||a[axis]>high){overlaps=false;break;}
+            }else{
+                float t0=(low-a[axis])/delta,t1=(high-a[axis])/delta;
+                if(t0>t1)std::swap(t0,t1);
+                enter=std::max(enter,t0);leave=std::min(leave,t1);
+                if(enter>leave){overlaps=false;break;}
+            }
+        }
+        if(overlaps)return true;
+    }
+    return false;
+}
 inline void AppendAssemblyMesh(std::vector<float>& mesh,const ShipAssembly& ship,
                                float ox,float oy,float oz,float scale,float yaw,
                                float tint=1.f){
