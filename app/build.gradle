@@ -124,6 +124,36 @@ abstract class StageGumballRouteArtTask extends DefaultTask {
     }
 }
 
+// The Sitka geographic preview uses ONLY validated, archived NOAA ENC chart
+// polygons and USGS 3DEP heights. This task stages source-derived SITKA01
+// meshes into the existing ReverieVR APK; no separate native game package.
+// Production walking/boat geography remains gated by vetted water/datum data.
+abstract class StageSitkaGeographyTask extends DefaultTask {
+    @org.gradle.api.tasks.InputFiles
+    @org.gradle.api.tasks.PathSensitive(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+    abstract org.gradle.api.file.ConfigurableFileCollection getSourceFiles()
+
+    @org.gradle.api.tasks.OutputDirectory
+    abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
+
+    @org.gradle.api.tasks.TaskAction
+    void stage() {
+        File destination = outputDirectory.get().asFile
+        project.delete(destination)
+        File tool = project.rootProject.file("scripts/sitka/stage_native_land_assets.py")
+        def isWindows = System.getProperty("os.name").toLowerCase().contains("win")
+        String python = (project.findProperty("sitkaAssetPython")
+            ?: (isWindows ? "python" : "python3")).toString()
+        project.exec {
+            workingDir project.rootProject.projectDir
+            commandLine python, tool.absolutePath, "--output", destination.absolutePath
+        }
+        File manifest = new File(destination,"sitka/coast/index.txt")
+        if (!manifest.isFile() || manifest.length() < 512L)
+            throw new GradleException("Validated Sitka NOAA/USGS land index not staged")
+    }
+}
+
 def stageGumballRouteArt = tasks.register(
     "stageGumballRouteArt", StageGumballRouteArtTask
 ) {
@@ -134,6 +164,17 @@ def stageGumballRouteArt = tasks.register(
     lollySheet.set(rootProject.layout.projectDirectory.file(
         "art/gumball/source/lolly_wren_soft_landing.png"))
     outputDirectory.set(layout.buildDirectory.dir("generated/gumballRouteAssets"))
+}
+
+// All 16 actual NOAA/USGS SITKA01 tile bytes are a checked input. The Python
+// tool uses only the standard library; the on-device game still needs no Python.
+def stageSitkaGeographyAssets = tasks.register(
+    "stageSitkaGeographyAssets", StageSitkaGeographyTask
+) {
+    sourceFiles.from(rootProject.fileTree(
+        "data/sitka/geography/generated/noaa-enc-chart-land-v1"))
+    sourceFiles.from(rootProject.file("scripts/sitka/stage_native_land_assets.py"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/sitkaGeographyAssets"))
 }
 
 // Public-distribution guard: the Valve CC BY-NC-SA mesh must not silently
@@ -530,6 +571,9 @@ androidComponents {
         )
         variant.sources.assets?.addGeneratedSourceDirectory(
             stageGumballRouteArt, { task -> task.outputDirectory }
+        )
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageSitkaGeographyAssets, { task -> task.outputDirectory }
         )
     }
 }

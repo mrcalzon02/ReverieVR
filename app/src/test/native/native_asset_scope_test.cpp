@@ -11,6 +11,7 @@ int main(){
     constexpr uint32_t bathy_cap=56u+513u*513u*5u;
     const char* exact_sitka[]={
         "sitka/coast/terrain.sitkam",
+        "sitka/coast/index.txt",
         "sitka/lighting/sitka.properties",
         "sitka/weather/sitka.properties",
         "sitka/water/sitka.water",
@@ -28,6 +29,14 @@ int main(){
     }
     assert(MaximumBytes(sitka,"sitka/bathymetry/bathymetry-r00-c00.sitkab")==bathy_cap);
     assert(MaximumBytes(sitka,"sitka/bathymetry/bathymetry-r99-c99.sitkab")==bathy_cap);
+    const uint32_t geo_max=32u+16641u*15u+32768u*12u;
+    assert(MaximumBytes(sitka,
+        "sitka/coast/tiles/terrain-r00-c00.sitkam")==geo_max);
+    assert(MaximumBytes(sitka,
+        "sitka/coast/tiles/terrain-r07-c07.sitkam")==geo_max);
+    assert(MaximumBytes("omega-front",
+        "sitka/coast/tiles/terrain-r00-c00.sitkam")==0u);
+    assert(MaximumBytes("classic-chess","sitka/coast/index.txt")==0u);
     const char* invalid_sitka[]={
         "sitka/bathymetry/bathymetry-r0-c00.sitkab",
         "sitka/bathymetry/bathymetry-rXX-c00.sitkab",
@@ -42,6 +51,15 @@ int main(){
         "sitka/shore/../boat/launch.txt",
         "sitka/shore/unknown.sitkash",
         "sitka/coast/terrain.sitkam.bak",
+        "sitka/coast/tiles/terrain-r0-c00.sitkam",
+        "sitka/coast/tiles/terrain-r00-c0.sitkam",
+        "sitka/coast/tiles/terrain-r0X-c00.sitkam",
+        "sitka/coast/tiles/terrain-r00-cXX.sitkam",
+        "sitka/coast/tiles/terrain-r00-c00.sitkam/../other",
+        "sitka/coast/tiles/../terrain-r00-c00.sitkam",
+        "sitka/coast/tiles/terrain-r00-c00.sitkam.bak",
+        "sitka/coast/sub/tiles/terrain-r00-c00.sitkam",
+        "sitka/coast/index.txt.bak",
         "sitka/water/other.water",
         "sitka/boat/launch.txt/",
         "native/omega-front/terrain/ground.png",

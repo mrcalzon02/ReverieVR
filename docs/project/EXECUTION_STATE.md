@@ -1,3 +1,29 @@
+## Sitka NOAA/USGS actual geographic tile staging — 2026-11-13
+
+The existing ReverieVR Android variant now stages all sixteen strictly
+validated *real-source* NOAA ENC chart land / USGS 3DEP terrain meshes into
+the **same APK** using the build-time standard-library Python helper
+\`scripts/sitka/stage_native_land_assets.py\`. Generated package paths are
+\`sitka/coast/index.txt\` and exactly \`sitka/coast/tiles/terrain-rNN-cNN.sitkam\`.
+The stage refuses source-hash mismatches, altered geospatial origins, missing
+tiles, or files not backed by the archived NOAA polygon ledger; no external
+network is used at build or app runtime. The single shared module asset scope
+allows only this index and bounded tile filename pattern, for the Sitka
+module alone. The new pure C++ \`sitka_land_tile_stream.h\` validates index
+geometry/vertical reference, exact file size and CRC32, tile origins and
+source-derived triangle budgets. At most four tiles reside in CPU cache,
+with at most one checked asset read per game update, and an explicit GPU
+commit boundary after all needed tiles load; no tile IO occurs during
+individual stereo-eye rendering.
+
+**Status: admission/packaging and CPU runtime foundation, not geographic
+gameplay acceptance.** The normal Sitka test-range starts unchanged. The
+source-masked chart land archive is not an independently dated 2023 survey,
+contains NO surveyed bathymetry or validated harbor launch, and has an
+**unverified 3DEP vertical reference**. A geographic preview mode and its
+installed GLES proof are separate follow-up work. Never add a fabricated
+water rectangle or imply the actual Sitka coast is already a playable world.
+
 ## Verified 2026-11-13 real-source acquisition checkpoint
 
 - **Verified remote commit:** [6386f53](https://github.com/mrcalzon02/ReverieVR/commit/6386f53eeaf995768dd1959ebdb1944e98bf7b15). Acquisition workflow [#2](https://github.com/mrcalzon02/ReverieVR/actions/runs/43527649045) **SUCCESS**, including synthetic regression tests, real USGS service download, affine/CRS validation, 16 raster tiles, shared-edge checks, preview and source commit readback.

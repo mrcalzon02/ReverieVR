@@ -18,6 +18,7 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
     if(std::strcmp(id,"sitka")==0){
         const struct Entry {const char* path;uint32_t limit;} exact[]={
             {"sitka/coast/terrain.sitkam",10000000u},
+            {"sitka/coast/index.txt",16384u},
             {"sitka/lighting/sitka.properties",4096u},
             {"sitka/weather/sitka.properties",4096u},
             {"sitka/water/sitka.water",2000000u},
@@ -37,6 +38,22 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
         };
         for(const auto& item:exact)
             if(std::strcmp(path,item.path)==0)return item.limit;
+        // Only bounded, source-derived NOAA/USGS land tiles in the exact
+        // vetted rNN/cNN naming scheme. Nothing permits arbitrary assets,
+        // path traversal, another module's files or generic map downloads.
+        constexpr const char* geo="sitka/coast/tiles/";
+        const size_t geoPrefix=std::strlen(geo);
+        const size_t geoLength=strnlen(path,128u);
+        if(geoLength==geoPrefix+22u &&
+           std::strncmp(path,geo,geoPrefix)==0){
+            const char* f=path+geoPrefix;
+            if(std::strncmp(f,"terrain-r",9u)==0 &&
+               f[11]=='-'&&f[12]=='c'&&
+               std::strcmp(f+15,".sitkam")==0 &&
+               f[9]>='0'&&f[9]<='9'&&f[10]>='0'&&f[10]<='9'&&
+               f[13]>='0'&&f[13]<='9'&&f[14]>='0'&&f[14]<='9')
+                return 32u+16641u*15u+32768u*12u;
+        }
         constexpr const char* root="sitka/bathymetry/";
         const size_t prefix=std::strlen(root);
         const size_t n=strnlen(path,128u);

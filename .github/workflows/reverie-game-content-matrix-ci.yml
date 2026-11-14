@@ -103,6 +103,9 @@ on:
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeGamesGallery.java'
       - 'app/src/main/jni/native/sitka_terrain_module.cpp'
       - 'app/src/main/jni/native/sitka_integration_range.h'
+      - 'app/src/main/jni/native/sitka_land_tile_stream.h'
+      - 'app/src/test/native/sitka_land_tile_stream_test.cpp'
+      - 'data/sitka/geography/generated/noaa-enc-chart-land-v1/**'
       - 'app/src/test/native/sitka_starter_loop_test.cpp'
       - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
       - 'app/src/test/native/sitka_terrain_egl_test.cpp'
@@ -257,6 +260,22 @@ jobs:
               app/src/test/native/sitka_crab_work_cycle_test.cpp \
               -o "${RUNNER_TEMP}/sitka-crabbing-${compiler}"
             "${RUNNER_TEMP}/sitka-crabbing-${compiler}"
+          done
+      - name: Verify real NOAA+USGS land archive and bounded native tile CPU streaming
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s scripts/sitka \
+            -p 'test_stage_native_land_assets.py' -v
+          python3 scripts/sitka/stage_native_land_assets.py \
+            --output "${RUNNER_TEMP}/sitka-verified-land-assets"
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_land_tile_stream_test.cpp \
+              -lz -o "${RUNNER_TEMP}/sitka-real-land-${compiler}"
+            "${RUNNER_TEMP}/sitka-real-land-${compiler}" \
+              "${RUNNER_TEMP}/sitka-verified-land-assets"
           done
       - name: Retain exact-commit streaming transition diagnostics
         if: success()
