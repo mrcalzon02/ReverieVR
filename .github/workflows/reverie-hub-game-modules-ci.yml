@@ -8,6 +8,13 @@ on:
       - '.github/workflows/reverie-hub-game-modules-ci.yml'
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/HubGameModulesInstrumentedTest.java'
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
+      # A change to Gumball's actual 3D hull/collision/render code must also
+      # run the installed Android JNI/GLES2 suite, not only host C++ tests.
+      - 'app/src/main/jni/native/gumball_*.h'
+      - 'app/src/main/jni/native/gumball_*.cpp'
+      - 'app/src/test/native/gumball_*_test.cpp'
+      - 'scripts/verify-gumball-armada.sh'
+      - 'scripts/verify-gumball-native-module.sh'
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
       - 'app/src/main/jni/native/omega_front_png.h'
