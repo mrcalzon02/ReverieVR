@@ -1,0 +1,17 @@
+{
+  "assets": [
+    {
+      "bytes": 3786,
+      "file": "sitka-noaa-usgs-gles2-stereo.png",
+      "sha256": "e8a5d37a25e1a5148a6f48d68b253cbf5316898eb38d57f4d911f34b93fb7496",
+      "size": [
+        512,
+        256
+      ]
+    }
+  ],
+  "format": "reverievr-development-gallery-v1",
+  "license": "USGS US Government public domain numeric terrain; NOAA chart source with attribution; licensed Lato SIL OFL",
+  "source_commit": "0b3d7a48388ac1d75b0867471c39f26795bbf8d5",
+  "source_kind": "ACTUAL C++ module+Mesa GLES2 two-eye render of verified NOAA ENC chart land and USGS 3DEP meshes, not Google imagery"
+}

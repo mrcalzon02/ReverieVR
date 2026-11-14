@@ -6,3 +6,5 @@ Generated project artwork, screenshots, turntables and other visual review mater
 - [Breakwater coastal rebuild — actual native module captures](breakwater/coastal-rebuild/2026-11-06/README.md) — `breakwater/coastal-rebuild/2026-11-06`
 
 - [Breakwater visible trajectory and crisp horizon — actual native renderer](breakwater/coastal-rebuild/2026-11-06-clarity/README.md) — `breakwater/coastal-rebuild/2026-11-06-clarity`
+
+- [Sitka real USGS/NOAA native terrain GLES2 preview](sitka/geography/2026-11-13/README.md) — \`sitka/geography/2026-11-13\`
