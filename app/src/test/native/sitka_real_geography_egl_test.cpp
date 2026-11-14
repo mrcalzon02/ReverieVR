@@ -1,6 +1,9 @@
 // Actual native Sitka module: real archived NOAA ENC + USGS height meshes.
 // Tests physical GLES2 draw, two eyes, public ABI, reversible test-range toggle.
 // Render is a SOURCE-DERIVED GEOGRAPHY preview, not simulated chart navigation.
+// Match the real unified APK's Android.mk, including the safe optional
+// non-geographic fallback when no legacy single-terrain asset exists.
+#define REVERIE_SITKA_INTEGRATION_RANGE 1
 #include "../../main/jni/native/sitka_terrain_module.cpp"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
