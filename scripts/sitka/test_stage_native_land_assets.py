@@ -27,7 +27,7 @@ class StagedLandTest(unittest.TestCase):
                 key=(int(row),int(col))
                 self.assertNotIn(key,seen)
                 seen.add(key)
-                self.assertEqual((int(e),int(n)),(478720+key[1]*512,6324480-key[0]*512))
+                self.assertEqual((float(e),float(n)),(478720+key[1]*512,6324480-key[0]*512))
                 tile=output/"sitka/coast/tiles"/name
                 payload=tile.read_bytes()
                 self.assertEqual(len(payload),int(bytes_))
