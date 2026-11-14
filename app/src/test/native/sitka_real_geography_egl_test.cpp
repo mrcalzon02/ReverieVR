@@ -40,7 +40,8 @@ int32_t Asset(const char* name,void* bytes,uint32_t capacity,uint32_t* actual){
     return REVERIE_NATIVE_SAVE_OK;
 }
 int32_t ReadSave(const char*,void*,uint32_t,uint32_t* size){
-    if(size)*size=0;return REVERIE_NATIVE_SAVE_NOT_FOUND;
+    if(size)*size=0;
+    return REVERIE_NATIVE_SAVE_NOT_FOUND;
 }
 int32_t WriteSave(const char*,const void*,uint32_t){
     return REVERIE_NATIVE_SAVE_OK;

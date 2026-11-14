@@ -59,9 +59,9 @@ jobs:
         with:
           name: sitka-real-native-land-stereo-${{ github.run_id }}
           path: |
-            ${RUNNER_TEMP}/sitka-genuine-stereo.png
-            ${RUNNER_TEMP}/sitka-genuine-stereo.ppm
-            ${RUNNER_TEMP}/sitka-geographic-render.log
+            ${{ runner.temp }}/sitka-genuine-stereo.png
+            ${{ runner.temp }}/sitka-genuine-stereo.ppm
+            ${{ runner.temp }}/sitka-geographic-render.log
           if-no-files-found: warn
           retention-days: 21
       - name: Archive only a successful real geographic GLES image in project gallery
