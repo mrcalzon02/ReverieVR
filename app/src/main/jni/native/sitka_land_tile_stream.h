@@ -7,7 +7,8 @@
 // Geometry is rebased from each 512m UTM tile to one short-float local origin.
 // Tile I/O runs in native Update, never in either RenderEye stereo callback.
 #include "sitka_terrain_mesh.h"
-#include <zlib.h>
+// Local CRC32 table avoids a zlib header's legacy "far" macro leaking into
+// the separate Sitka shoreline shader/geometry headers on Android NDK.
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -31,11 +32,24 @@ struct LandTileRecord {
 };
 
 inline uint32_t LandTileCrc32(const std::string& bytes) {
-    if(bytes.size()>std::numeric_limits<uInt>::max())
-        throw std::invalid_argument("Sitka geo tile length exceeds CRC input limit");
-    return static_cast<uint32_t>(::crc32(0u,
-        reinterpret_cast<const Bytef*>(bytes.data()),
-        static_cast<uInt>(bytes.size())));
+    // Standard IEEE CRC-32, byte-identical to Python zlib.crc32 and APK pack
+    // receipt. No external C interface, runtime allocation, or macro leaks.
+    static constexpr std::array<uint32_t,256> table=[]() constexpr {
+        std::array<uint32_t,256> result{};
+        for(uint32_t i=0u;i<256u;++i){
+            uint32_t crc=i;
+            for(unsigned j=0;j<8u;++j)
+                crc=(crc&1u)?((crc>>1u)^0xedb88320u):(crc>>1u);
+            result[i]=crc;
+        }
+        return result;
+    }();
+    if(bytes.size()>32u+16641u*15u+32768u*12u)
+        throw std::invalid_argument("Sitka geographic tile exceeds CRC budget");
+    uint32_t crc=0xffffffffu;
+    for(const unsigned char ch:bytes)
+        crc=(crc>>8u)^table[(crc^uint32_t(ch))&255u];
+    return crc^0xffffffffu;
 }
 
 class LandTileStream {
