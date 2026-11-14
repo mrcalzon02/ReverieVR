@@ -1,0 +1,119 @@
+name: Sitka real NOAA USGS GLES2 geographic preview proof
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sitka-real-geography-preview.yml'
+      - 'app/src/main/jni/native/sitka_terrain_module.cpp'
+      - 'app/src/main/jni/native/sitka_land_tile_stream.h'
+      - 'app/src/test/native/sitka_real_geography_egl_test.cpp'
+      - 'scripts/sitka/encode_native_geography_capture.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sitka-native-geo-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  actual-native-land-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - name: Checkout main source and reviewed USGS NOAA terrain bytes
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup genuine Mesa EGL and GLES2 graphics
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
+      - name: Stage ONLY verified geographic assets from archive
+        run: |
+          python3 scripts/sitka/stage_native_land_assets.py \
+            --output "${RUNNER_TEMP}/sitka-geographic-assets"
+      - name: Exercise real native Sitka module with stereo Mesa GLES2
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -Iapp/src/main/jni/native \
+            app/src/test/native/sitka_real_geography_egl_test.cpp \
+            -lEGL -lGLESv2 -lz \
+            -o "${RUNNER_TEMP}/sitka-geo-native"
+          "${RUNNER_TEMP}/sitka-geo-native" \
+            "${RUNNER_TEMP}/sitka-geographic-assets" \
+            "${RUNNER_TEMP}/sitka-genuine-stereo.ppm" \
+            | tee "${RUNNER_TEMP}/sitka-geographic-render.log"
+          python3 scripts/sitka/encode_native_geography_capture.py \
+            "${RUNNER_TEMP}/sitka-genuine-stereo.ppm" \
+            "${RUNNER_TEMP}/sitka-genuine-stereo.png"
+      - name: Retain real renderer output and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitka-real-native-land-stereo-${{ github.run_id }}
+          path: |
+            ${RUNNER_TEMP}/sitka-genuine-stereo.png
+            ${RUNNER_TEMP}/sitka-genuine-stereo.ppm
+            ${RUNNER_TEMP}/sitka-geographic-render.log
+          if-no-files-found: warn
+          retention-days: 21
+      - name: Archive only a successful real geographic GLES image in project gallery
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          pic=Path(os.environ["RUNNER_TEMP"])/"sitka-genuine-stereo.png"
+          folder=Path("docs/gallery/sitka/geography/2026-11-13")
+          folder.mkdir(parents=True,exist_ok=True)
+          target=folder/"sitka-noaa-usgs-gles2-stereo.png"
+          target.write_bytes(pic.read_bytes())
+          name=target.name
+          manifest={
+            "format":"reverievr-development-gallery-v1",
+            "source_kind":"ACTUAL C++ module+Mesa GLES2 two-eye render of verified NOAA ENC chart land and USGS 3DEP meshes, not Google imagery",
+            "license":"USGS US Government public domain numeric terrain; NOAA chart source with attribution; licensed Lato SIL OFL",
+            "source_commit":os.environ["GITHUB_SHA"],
+            "assets":[{"file":name,"bytes":target.stat().st_size,
+                "sha256":hashlib.sha256(target.read_bytes()).hexdigest(),
+                "size":[512,256]}],
+          }
+          (folder/"gallery.json").write_text(
+              json.dumps(manifest,sort_keys=True,indent=2)+"\n")
+          readme=folder/"README.md"
+          current=readme.read_text() if readme.exists() else "# Sitka real geology visual proof\n\n"
+          current+="\n## Real NOAA/USGS native stereo render\n\n"
+          current+="![Actual source-backed Sitka native GLES2 two-eye coastline inspection]("+name+")\n\n"
+          current+="**Rendering proof:** Genuine C++ native Sitka renderer on Mesa EGL/GLES2, two different headset eyes. Real source-backed NOAA ENC chart-land geometry and USGS 3DEP elevations. It is a geometry-inspection mode inside the existing ReverieVR native game, not a separate APK, true camera footage, or verified marine sounding/2023 shoreline survey. Vertical datum unresolved; NOT FOR NAVIGATION. The original fishing/boat test range is preserved.\n"
+          readme.write_text(current)
+          index=Path("docs/gallery/README.md")
+          contents=index.read_text()
+          if "sitka/geography/2026-11-13" not in contents:
+              contents+="\n- [Sitka real USGS/NOAA native terrain GLES2 preview](sitka/geography/2026-11-13/README.md) — \`sitka/geography/2026-11-13\`\n"
+              index.write_text(contents)
+          PY
+          python3 scripts/gallery/verify_generated_gallery.py
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "Main advanced; exact image retained in run artifact. No force push."
+            exit 0
+          fi
+          git config user.name "Sitka Real Terrain Proof"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/gallery/README.md docs/gallery/sitka/geography/2026-11-13/
+          if git diff --cached --quiet; then
+            echo "Genuine renderer image already committed"
+            exit 0
+          fi
+          git commit -m 'Archive real NOAA/USGS Sitka native GLES2 geography capture'
+          git push origin HEAD:main
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          echo "VERIFIED actual native image commit $(git rev-parse HEAD)"

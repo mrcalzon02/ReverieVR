@@ -1,6 +1,7 @@
 // Integrated native Sitka gameplay. An explicitly labeled NON-GEOGRAPHIC
 // test range is used only when approved geographic assets are absent.
 #include "sitka_terrain_gl.h"
+#include "sitka_land_tile_stream.h"
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
@@ -37,11 +38,21 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <algorithm>
 
 namespace {
 struct State {
     const ReverieNativeHostV1* host = nullptr;
     bool integration_range = false;
+    // User-selected REAL geography inspection, not approved coastal gameplay.
+    // The test range and all its player state remain intact while previewing.
+    std::unique_ptr<reverie::sitka::LandTileStream> geo_tiles;
+    reverie::sitka::TerrainGl geo_gl;
+    reverie::nativetext::LatoLayer geo_text;
+    bool geo_view=false,geo_chord_held=false;
+    double geo_east=0.,geo_north=0.;
+    float geo_altitude=105.f;
+    unsigned geo_last_errors=0u;
     reverie::sitka::TerrainMesh terrain;
     reverie::sitka::Lighting lighting;
     reverie::sitka::TerrainGl gl;
@@ -147,8 +158,37 @@ void* Create(const ReverieNativeHostV1* host) {
     uint32_t size = 0u;
     const int32_t probe = host->read_asset(path, nullptr, 0u, &size);
 #if defined(REVERIE_SITKA_INTEGRATION_RANGE)
-    if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND)
-        return CreateIntegrationRange(host);
+    if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND){
+        State* state=static_cast<State*>(CreateIntegrationRange(host));
+        if(!state)return nullptr;
+        // The real NOAA/USGS archive is an OPTIONAL source-backed map view.
+        // No unknown marine water or false harbor spawn is inserted into play.
+        uint32_t index_size=0u;
+        const int32_t index_probe=host->read_asset(
+            "sitka/coast/index.txt",nullptr,0u,&index_size);
+        if((index_probe==REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+            index_probe==REVERIE_NATIVE_SAVE_OK) &&
+           index_size>0u && index_size<=16384u){
+            try{
+                state->geo_tiles.reset(new reverie::sitka::LandTileStream(
+                    ReadText(host,"sitka/coast/index.txt",16384u)));
+                state->geo_east=state->geo_tiles->origin_east()+
+                    512.*state->geo_tiles->columns()*.5;
+                state->geo_north=state->geo_tiles->origin_north()-
+                    512.*state->geo_tiles->rows()*.5;
+                state->geo_tiles->SetFocus(state->geo_east,state->geo_north);
+                ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_INFO,
+                    "SitkaTerrain",
+                    "NOAA chart land / USGS 3DEP geography available via APP+RIGHT. "
+                    "Source quality only; vertical datum/unverified water.");
+            }catch(const std::exception& e){
+                Log(host,e.what());state->geo_tiles.reset();
+            }
+        }else if(index_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+            Log(host,"Sitka geographic index invalid; gameplay range kept");
+        }
+        return state;
+    }
 #endif
     const size_t max_bytes = reverie::sitka::kTerrainHeaderBytes +
         size_t(reverie::sitka::kMaxTerrainVertices)*reverie::sitka::kTerrainVertexBytes +
@@ -473,6 +513,30 @@ int32_t OnGlCreated(void* instance) {
                                    state->lighting,&error)){
         Log(state->host,error.c_str());return 0;
     }
+    if(state->geo_tiles){
+        if(!state->geo_gl.CreateOverlay(state->lighting,&error)||
+           !state->geo_text.Create()){
+            Log(state->host,"Real Sitka geographic preview GLES unavailable; "
+                "existing fishing test range remains operational");
+            state->geo_text.Release();
+            state->geo_gl.Release();
+            state->geo_tiles.reset();
+            state->geo_view=false;
+        }else{
+            state->geo_tiles->AfterGlContextLoss();
+            // In-headset labels are actual Lato glyphs, NOT model textures.
+            state->geo_text.Clear();
+            state->geo_text.Fit(
+                "SITKA / USGS 3DEP + NOAA ENC CHART LAND",
+                -1.45f,.65f,2.90f,.043f,.98f,.94f,.68f);
+            state->geo_text.Fit(
+                "GEOGRAPHY PREVIEW / NOT FOR NAVIGATION",
+                -1.45f,.48f,2.90f,.037f,.96f,.78f,.58f);
+            state->geo_text.Fit(
+                "APP+RIGHT RETURN    TOUCH FLY    SELECT+UP ALT",
+                -1.45f,.31f,2.90f,.034f,.9f,.96f,.94f);
+        }
+    }
     if(!state->water_gl.Create(state->waters,state->weather,&error)){
         state->gl.Release();
         Log(state->host,error.c_str());
@@ -574,6 +638,10 @@ int32_t OnGlCreated(void* instance) {
 void ReleaseGl(void* instance) {
     if(instance){
         static_cast<State*>(instance)->horizon_gpu.Release();
+        static_cast<State*>(instance)->geo_text.Release();
+        static_cast<State*>(instance)->geo_gl.Release();
+        if(static_cast<State*>(instance)->geo_tiles)
+            static_cast<State*>(instance)->geo_tiles->AfterGlContextLoss();
         static_cast<State*>(instance)->boat_text.Release();
         static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->harbor_text.Release();
@@ -609,6 +677,55 @@ int32_t PrepareExit(void* instance) {
 void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
+    // APP/Back plus rightward touch is an explicit, reversible development
+    // map inspector action. It never launches an unauthorized boat or alters
+    // Sitka's fishing saves. A held chord can toggle only once.
+    const bool geo_chord=state->geo_tiles &&
+        input->secondary_down!=0u && input->primary_down==0u &&
+        input->move_x>.80f;
+    if(!geo_chord)state->geo_chord_held=false;
+    if(geo_chord){
+        if(!state->geo_chord_held){
+            state->geo_chord_held=true;
+            state->geo_view=!state->geo_view;
+            ReverieNativeRequestFeedbackV1(
+                state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+        return;
+    }
+    if(state->geo_view && state->geo_tiles){
+        const double dt=std::isfinite(input->delta_seconds)?
+            std::clamp(double(input->delta_seconds),0.,.05):0.;
+        if(input->primary_down!=0u){
+            // Select plus pad up/down adjusts the geographic observation
+            // altitude; the preview is aerial and not collision-grounded.
+            state->geo_altitude=std::clamp(
+                float(state->geo_altitude+double(input->move_y)*120.*dt),
+                65.f,300.f);
+        }else if(input->secondary_down==0u){
+            state->geo_east+=double(input->move_x)*80.*dt;
+            state->geo_north+=double(input->move_y)*80.*dt;
+        }
+        const double west=state->geo_tiles->origin_east();
+        const double north=state->geo_tiles->origin_north();
+        const double width=512.*state->geo_tiles->columns();
+        const double height=512.*state->geo_tiles->rows();
+        state->geo_east=std::clamp(state->geo_east,west+1.,west+width-1.);
+        state->geo_north=std::clamp(state->geo_north,north-height+1.,north-1.);
+        state->geo_tiles->SetFocus(state->geo_east,state->geo_north);
+        state->geo_tiles->Pump([&](const std::string& path,std::string& bytes){
+            try{
+                bytes=ReadText(state->host,path.c_str(),
+                    reverie::sitka::LandTileStream::kTileLimit);
+                return true;
+            }catch(const std::exception&){return false;}
+        });
+        if(state->geo_tiles->failed_reads()!=state->geo_last_errors){
+            state->geo_last_errors=state->geo_tiles->failed_reads();
+            Log(state->host,state->geo_tiles->last_error().c_str());
+        }
+        return; // No fishing/boat/harbor simulation while flying map.
+    }
     state->water_gl.Update(input->delta_seconds);
     const bool listener=input->struct_size>=
         REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE&&input->listener_valid;
@@ -906,6 +1023,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             reverie::sitka::ShoreGameplayPanel(state->fishing,aimed_shop>=0);
         if(state->integration_range)
             lines[0]="SITKA TEST RANGE / NOT REAL GEOGRAPHY";
+        if(state->integration_range && state->geo_tiles &&
+           !state->harbor_shop.open())
+            lines[5]="APP+RIGHT: REAL NOAA/USGS LAND PREVIEW";
         std::string signature;
         for(const auto& line:lines){signature+=line;signature+='\n';}
         if(signature!=state->harbor_last_text){
@@ -938,6 +1058,19 @@ bool WaterAt(const State* state,double east,double north){
 int32_t PrepareFrame(void* instance){
     State* state=static_cast<State*>(instance);
     if(!state||!state->gl.ready())return 0;
+    // A complete 2x2 sourced-land CPU batch is admitted to the GL context
+    // ONLY at the frame boundary, never from RenderEye or the input thread.
+    // The last valid GPU surface is retained on failed staging/replacement.
+    if(state->geo_tiles&&state->geo_gl.ready()&&
+       state->geo_tiles->PendingGpuSwap()){
+        std::string error;
+        if(state->geo_gl.ReplaceSeafloor(
+              state->geo_tiles->PendingWorldMeshes(),&error)){
+            state->geo_tiles->MarkGpuCommitted();
+        }else{
+            Log(state->host,error.c_str());
+        }
+    }
     // Collection changes are rebuilt ONCE between stereo eye frames,
     // never from RenderEye or during input simulation.
     if(state->boat_dirty&&state->skiff&&state->boat_gl.ready()){
@@ -1050,6 +1183,30 @@ int32_t PrepareFrame(void* instance){
 int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!instance)return 0;
     State* state=static_cast<State*>(instance);
+    if(state->geo_view && state->geo_tiles &&
+       state->geo_gl.ready() && state->geo_gl.batch_count()>0u){
+        if(!ReverieNativeEyeRenderableV1(eye))return 0;
+        ReverieNativeEyeV1 camera=*eye;
+        // Chart-land coordinates are rebased to the UTM northwest node.
+        // No headset tracking is interpreted as a GPS / surveyed viewpoint.
+        const float x=float(state->geo_east-state->geo_tiles->origin_east());
+        const float z=float(state->geo_north-state->geo_tiles->origin_north());
+        const float pitch=.70f,c=std::cos(pitch),s=std::sin(pitch);
+        const float tilt[16]={
+            1.f,0.f,0.f,0.f, 0.f,c,s,0.f,
+            0.f,-s,c,0.f, 0.f,0.f,0.f,1.f
+        };
+        const float shift[16]={
+            1.f,0.f,0.f,0.f, 0.f,1.f,0.f,0.f,
+            0.f,0.f,1.f,0.f, -x,-state->geo_altitude,-z,1.f
+        };
+        float angled[16];
+        ReverieNativeMat4Multiply(angled,tilt,shift);
+        ReverieNativeMat4Multiply(camera.view,eye->view,angled);
+        if(!state->geo_gl.RenderEye(&camera))return 0;
+        // Actual licensed Lato HUD: 'NOT FOR NAVIGATION' never disappears.
+        return state->geo_text.Draw(eye->projection,false)?1:0;
+    }
     ReverieNativeEyeV1 shifted{};
     const ReverieNativeEyeV1* world_eye=eye;
     if(state->walk_session){

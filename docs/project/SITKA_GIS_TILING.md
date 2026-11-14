@@ -1,3 +1,35 @@
+## Sitka source-derived live 3D geography inspector — 2026-11-13 (validation pending)
+
+Native Sitka now checks the **real** staged NOAA ENC chart land/USGS 3DEP
+asset index on Create and makes a separate, reversible geographic view
+available when all index metadata parse correctly. The normal native game
+continues to launch its existing fishing/harbor/skiff **test range**, with
+the real-data inspector accessed by **APP/Back held with touchpad RIGHT**
+and exited by the same chord. The sixth in-world Lato instruction line
+advertises the optional viewer. A held chord toggles at most once.
+
+Geographic preview updates at most **one integrity-verified 512 m source
+tile per simulation tick**, retains only a 2x2 CPU resident set, and
+only swaps complete map groups in PrepareFrame between stereo eyes.
+The exact source-derived mesh is rebased to one 2 km UTM-local vertex
+origin; no per-eye asset reads, no GL uploads from Update, and no GPS.
+The camera is an aerial **inspection camera**, not a real-world player
+spawn or certified walkable path. Move with the touchpad; Select+UP/DOWN
+changes inspection altitude. A persistent real licensed Lato HUD says
+"USGS 3DEP + NOAA ENC CHART LAND / NOT FOR NAVIGATION".
+Missing/corrupt geographic assets leave old playable test-range behavior
+available and never substitute a fictional public coastline. Save state
+and native host ABI are unchanged.
+
+**Evidence boundary:** source change and real offscreen stereo GLES
+verification workflow are now prepared; the result must not be called
+a successful visual integration until the actual native render test
+passes and a source-hashed true GL screenshot is in the GitHub gallery.
+No verified NOAA bathymetry, land/sea vertical datum conversion, real
+harbor offices/spawns, or physical Galaxy S9/Daydream acceptance yet.
+The numeric 3DEP ground DEM and chart polygon outlines are not a
+2023 surveyed mean-high-water line or a marine navigation product.
+
 ## Sitka NOAA/USGS actual geographic tile staging — 2026-11-13
 
 The existing ReverieVR Android variant now stages all sixteen strictly
