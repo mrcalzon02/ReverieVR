@@ -26,10 +26,11 @@ struct Enemy {
     WaveFormation formation=WaveFormation::Column;
     uint8_t formation_slot=0;
 };
-struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false,mine=false,zone=false; float warning=0.f; float z=0.f; bool volume=false; };
+struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false,mine=false,zone=false; float warning=0.f; };
 // The same world positions and yaw/scale are consumed by flight rendering and
 // the real damage path. A player bolt travels forward along a sloped 3D lane:
-// its Z changes continuously with its simulated forward Y position.
+// its Z changes continuously with simulated forward Y; deriving depth from
+// saved Y preserves the exact existing GUMFLY04 checkpoint/replay format.
 inline float PlayerShotDepth(float y){
     return -3.45f-std::max(0.f,y+1.3f)*.92f;
 }
@@ -186,7 +187,6 @@ public:
     uint32_t completion_bonus()const{return completion_bonus_;}
     uint32_t shots_fired()const{return shots_fired_;}
     uint32_t shots_hit()const{return shots_hit_;}
-    uint32_t volumetric_hits()const{return volumetric_hits_;}
     float elapsed()const{return elapsed_;}
     float hurt_flash()const{return hurt_flash_;}
     int level(Upgrade u)const{return levels_[static_cast<unsigned>(u)];}
@@ -253,7 +253,7 @@ public:
         hp_=90+levels_[1]*20+ship_profile_.hull;
         shield_=20+levels_[3]*18+ship_profile_.shield;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
-        escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;volumetric_hits_=0;elapsed_=0;hurt_flash_=0;invulnerable_=0;regen_delay_=0;regen_credit_=0;
+        escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;elapsed_=0;hurt_flash_=0;invulnerable_=0;regen_delay_=0;regen_credit_=0;
         spawned_=0;defeated_=0;bossKilled_=false;spawn_clock_=0;rng_=Mix(seed_^destination_.id^visited_);
         const uint32_t sector=destination_.id/1024u;
         target_=6+destination_.hazard*2+static_cast<int>(sector)*2;
@@ -310,7 +310,6 @@ public:
                         py_+.12f+ship_profile_.muzzle_y[mount],
                         weapon_==Weapon::RockCannon?2.55f:3.75f,
                         true,false,vx,damage};
-                    shot.z=PlayerShotDepth(shot.y);shot.volume=true;
                     ++shots_fired_;emitted=true;break;
                 }
             }
@@ -521,13 +520,12 @@ public:
             }
         }
         for(auto& s:shots_)if(s.active){
-            const ShipVolumePoint previous{s.x,s.y*.75f+.18f,s.z};
+            const ShipVolumePoint previous{s.x,s.y*.75f+.18f,PlayerShotDepth(s.y)};
             if(s.warning>0.f){
                 s.warning=std::max(0.f,s.warning-dt);
                 continue; // warning period is non-damaging and stationary
             }
             s.y+=s.vy*dt;s.x+=s.vx*dt;
-            if(s.volume)s.z=PlayerShotDepth(s.y);
             if(s.y>1.75f||s.y< -1.4f){s.active=false;continue;}
             if(s.hostile){
                 if(s.bomb||s.mine){
@@ -552,13 +550,13 @@ public:
             }else{
                 for(auto& e:enemies_)if(e.active){
                     bool hit=false;
-                    if(s.volume){
+                    if(!s.hostile&&!s.ally){
                         // Broadphase bounds only reject distant pairs. The
                         // fitted XYZ voxels, never this rectangle, decide HP.
                         if(std::fabs(s.x-e.x)>.55f
                            ||std::fabs(s.y-e.y)>.55f)continue;
                         hit=DamageEnemyVolume(e,node_,previous,
-                            {s.x,s.y*.75f+.18f,s.z},s.damage);
+                            {s.x,s.y*.75f+.18f,PlayerShotDepth(s.y)},s.damage);
                     }else if(std::fabs(s.x-e.x)<(e.boss?.32f:.19f)
                              &&std::fabs(s.y-e.y)<(e.boss?.25f:.16f)){
                         // NPC escort/contract shots retain their established
@@ -568,7 +566,6 @@ public:
                     if(!hit)continue;
                     s.active=false;
                     if(!s.ally)++shots_hit_;
-                    if(s.volume)++volumetric_hits_;
                     if(e.hp<=0){
                         if(e.boss)bossKilled_=true;
                         e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
@@ -707,7 +704,7 @@ private:
     int hp_=90,shield_=20,combo_=0,spawned_=0,defeated_=0,target_=0;
     bool bossKilled_=false;
     int escaped_=0,max_combo_=0;
-    uint32_t sortie_cash_=0,completion_bonus_=0,shots_fired_=0,shots_hit_=0,volumetric_hits_=0;
+    uint32_t sortie_cash_=0,completion_bonus_=0,shots_fired_=0,shots_hit_=0;
     float elapsed_=0,hurt_flash_=0,invulnerable_=0,regen_delay_=0,regen_credit_=0;
     float px_=0,py_=-.85f,spawn_clock_=0,cooldown_=0,combo_clock_=0;
     std::array<Enemy,kEnemySlots> enemies_{};

@@ -451,9 +451,11 @@ void Flight(Module* m){
     }
     for(const auto& shot:s.shots())if(shot.active){
         if(!shot.zone&&!shot.mine&&!shot.bomb){
-            const float depth=shot.volume?shot.z:
+            const bool playerBolt=!shot.hostile&&!shot.ally;
+            const float depth=playerBolt?
+                reverie::gumball::PlayerShotDepth(shot.y):
                 -3.25f-std::max(0.f,shot.y+.4f)*.35f;
-            const float drawY=shot.volume?shot.y*.75f+.18f:shot.y;
+            const float drawY=playerBolt?shot.y*.75f+.18f:shot.y;
             reverie::gumball::AppendSpaceBox(
                 m->mesh,shot.x,drawY,depth,
                 shot.damage>=4?.048f:.027f,
