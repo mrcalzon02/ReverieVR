@@ -46,7 +46,10 @@ int32_t ReadSave(const char*,void*,uint32_t,uint32_t* size){
 int32_t WriteSave(const char*,const void*,uint32_t){
     return REVERIE_NATIVE_SAVE_OK;
 }
-void LogLine(int32_t,const char*,const char*) {}
+void LogLine(int32_t level,const char* tag,const char* message) {
+    std::fprintf(stderr,"SITKA_NATIVE_LOG level=%d tag=%s msg=%s\n",
+        level,tag?tag:"(null)",message?message:"(null)");
+}
 }
 
 int main(int argc,char** argv){
@@ -81,7 +84,17 @@ int main(int argc,char** argv){
     host.read_save=ReadSave;
     host.write_save=WriteSave;
     auto* state=static_cast<State*>(Create(&host));
-    assert(state&&state->integration_range&&state->geo_tiles);
+    if(!state){
+        std::fprintf(stderr,"SITKA_TEST_CREATE_FAILED (no state)\n");
+        return 3;
+    }
+    if(!state->integration_range||!state->geo_tiles){
+        std::fprintf(stderr,
+            "SITKA_TEST_SOURCE_VIEW_MISSING range=%d geo=%d\n",
+            int(state->integration_range),int(bool(state->geo_tiles)));
+        Destroy(state);
+        return 4;
+    }
     assert(state->geo_tiles->registered_count()==16u);
     assert(!state->geo_view);
     assert(OnGlCreated(state));
