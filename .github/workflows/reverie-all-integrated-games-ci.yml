@@ -52,20 +52,28 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p validation/breakwater
+          # Full native module lifecycle requires GLES2 headers even though
+          # its deterministic input/save test never creates a GL context.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgles2-mesa-dev
           # Capture exact host compiler/assertion failures as an artifact,
           # not only ephemeral Actions step text.
           exec > >(tee validation/breakwater/functional.log) 2>&1
           for cc in g++ clang++; do
-            for game_test in breakwater_campaign breakwater_defense_points breakwater_aircraft_mesh breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
+            for game_test in breakwater_campaign breakwater_persistence breakwater_defense_points breakwater_aircraft_mesh breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
               extra=()
-              if [[ "$game_test" == breakwater_campaign ]]; then
+              if [[ "$game_test" == breakwater_campaign || "$game_test" == breakwater_persistence ]]; then
                 extra=(app/src/main/jni/native/breakwater_campaign.cpp)
+              fi
+              link=()
+              if [[ "$game_test" == breakwater_persistence ]]; then
+                link=(-lGLESv2) # Actual module lifecycle uses GLES2 symbols, no GL context
               fi
               "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
                 -Iapp/src/main/jni/native \
                 "app/src/test/native/${game_test}_test.cpp" "${extra[@]}" \
-                -o "${RUNNER_TEMP}/${cc}-${game_test}" -lz
+                -o "${RUNNER_TEMP}/${cc}-${game_test}" -lz "${link[@]}"
               "${RUNNER_TEMP}/${cc}-${game_test}"
             done
           done

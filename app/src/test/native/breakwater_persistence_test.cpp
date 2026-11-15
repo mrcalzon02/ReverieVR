@@ -162,6 +162,82 @@ int main() {
     assert(state->campaign.wave_index()==2u&&state->campaign.phase()==Phase::Shop);
     Destroy(state);
 
+    // True module-level left-rack continuation: purchase on the actual
+    // armory card, equip by the physical controller ray, end a wave, reopen.
+    // Direct Campaign weapon tests cannot exercise this input/save boundary.
+    saved.clear();unreadable.clear();fail_write=false;apply_then_fail=false;
+    fail_next_writes=0;writes=0;last_feedback=0;
+    state=static_cast<State*>(Create(&host));assert(state);
+    SelectSlot(state,0);assert(state->campaign.phase()==Phase::Briefing);
+    Interact(state,At(menu::DifficultyCard(0)),true);
+    assert(state->campaign.phase()==Phase::Shop && !state->save_dirty);
+    const int32_t starting_credits=state->campaign.credits();
+    Interact(state,At(menu::ShopAction(9)),true);
+    assert(state->armory_page);
+    Interact(state,At(menu::ShopCard(1)),true);
+    assert(state->campaign.owns_weapon(WeaponKind::HeavyGun));
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(state->campaign.credits()==starting_credits-
+           WeaponFor(WeaponKind::HeavyGun).purchase_cost);
+    assert(Stored(0).selected_weapon()==WeaponKind::HeavyGun);
+    const int32_t after_buy=state->campaign.credits();
+    Interact(state,At(menu::ShopCard(1)),true); // owned, not another charge
+    assert(state->campaign.credits()==after_buy && !state->save_dirty);
+    assert(BeginActiveWave(state,false));
+
+    const auto rack_input=[](uint8_t id) {
+        ReverieNativeInputV1 aim{};
+        aim.struct_size=sizeof(aim);
+        aim.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+        const gunmesh::RackSlot shelf=gunmesh::RackLocation(id);
+        const float length=std::sqrt(shelf.x*shelf.x+shelf.y*shelf.y+
+                                     shelf.z*shelf.z);
+        aim.pointer_direction[0]=shelf.x/length;
+        aim.pointer_direction[1]=shelf.y/length;
+        aim.pointer_direction[2]=shelf.z/length;
+        return aim;
+    };
+    const auto locked=rack_input(2);
+    assert(gunmesh::HitRack(locked.pointer_origin,
+                            locked.pointer_direction)==2);
+    Interact(state,locked,true); // unpurchased Flak must not be armed
+    assert(last_feedback==REVERIE_NATIVE_FEEDBACK_FAILURE);
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(state->campaign.credits()==after_buy);
+    state->combat_input.Release();
+    const auto machine=rack_input(0);
+    assert(gunmesh::HitRack(machine.pointer_origin,
+                            machine.pointer_direction)==0);
+    Interact(state,machine,true);
+    assert(state->campaign.selected_weapon()==WeaponKind::MachineGun);
+    state->combat_input.Release();
+    const auto heavy=rack_input(1);
+    assert(gunmesh::HitRack(heavy.pointer_origin,
+                            heavy.pointer_direction)==1);
+    Interact(state,heavy,true);
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    state->combat_input.Release();
+    Interact(state,machine,true); // final combat loadout before earned save
+    assert(state->campaign.selected_weapon()==WeaponKind::MachineGun);
+    FinishWave(state);
+    assert(state->campaign.phase()==Phase::Shop && state->round_summary);
+    assert(Stored(0).selected_weapon()==WeaponKind::MachineGun);
+    assert(Stored(0).owns_weapon(WeaponKind::HeavyGun));
+    Destroy(state);
+    state=static_cast<State*>(Create(&host));SelectSlot(state,0);
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.selected_weapon()==WeaponKind::MachineGun);
+    assert(state->campaign.owns_weapon(WeaponKind::HeavyGun));
+    assert(!state->campaign.owns_weapon(WeaponKind::Flak));
+    assert(state->campaign.credits()==Stored(0).credits());
+    Interact(state,At(menu::ShopAction(9)),true);
+    const int32_t restart_credits=state->campaign.credits();
+    Interact(state,At(menu::ShopCard(1)),true);
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(state->campaign.credits()==restart_credits);
+    assert(Stored(0).selected_weapon()==WeaponKind::HeavyGun);
+    Destroy(state);
+
     // Forge only a valid pre-final shop fixture using the public legacy format.
     std::vector<uint8_t> final_shop(Campaign::kSerializedSize);
     assert(original.SerializeShop(final_shop.data(),final_shop.size()));
