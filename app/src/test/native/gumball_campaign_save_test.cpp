@@ -39,6 +39,51 @@ int main(){
     const auto cash=starter.cash();Continue(starter,ship,100);
     assert(starter.cash()==cash); // Result reload cannot award again.
     assert(starter.recover());Continue(starter,ship,0);
+    // An actual pilot-shot volume hit must survive a full flight checkpoint,
+    // not merely a flat XY test or a pre-combat save round trip.
+    Simulation volumeHit(4);
+    auto trained=volumeHit.snapshot();
+    for(auto& level:trained.levels)level=12;
+    trained.checksum=SnapshotChecksum(trained);
+    assert(volumeHit.restore(trained));
+    assert(volumeHit.configure_ship_profile(ship.profile(),ship.ready()));
+    assert(volumeHit.launch(0));
+    volumeHit.update(.025f,0.f,0.f,false);
+    // Negative control: same XY sweep beside a live generated enemy, but
+    // 0.8 world units away in Z, must not reduce that physical hull's HP.
+    const Enemy liveEnemy=volumeHit.enemies()[0];
+    assert(liveEnemy.active);
+    Enemy wrongDepth=liveEnemy;
+    const ShipVolumePoint at=EnemyWorldPoint(wrongDepth);
+    assert(!DamageEnemyVolume(wrongDepth,volumeHit.node(),
+        {at.x,at.y-.30f,at.z+.80f},
+        {at.x,at.y+.30f,at.z+.80f},2));
+    assert(wrongDepth.hp==liveEnemy.hp);
+    const uint32_t hitsBefore=volumeHit.shots_hit();
+    for(unsigned tick=0;tick<12000&&volumeHit.phase()==Phase::Flight
+        &&volumeHit.shots_hit()==hitsBefore;++tick){
+        float nearest=100.f,targetX=volumeHit.player_x();
+        for(const auto& enemy:volumeHit.enemies())if(enemy.active){
+            const float distance=std::fabs(enemy.y-volumeHit.player_y());
+            if(distance<nearest){nearest=distance;targetX=enemy.x;}
+        }
+        const float steering=targetX>volumeHit.player_x()+.025f?1.f:
+            (targetX<volumeHit.player_x()-.025f?-1.f:0.f);
+        volumeHit.update(.025f,steering,0.f,true);
+    }
+    assert(volumeHit.phase()==Phase::Flight);
+    assert(volumeHit.shots_hit()>hitsBefore);
+    assert(volumeHit.shots_fired()>=volumeHit.shots_hit());
+    const auto hitCheckpoint=Bytes(volumeHit,ship);
+    Simulation loadedHit;ShipAssembly loadedHull;
+    assert(CampaignSave::Decode(&loadedHit,&loadedHull,
+                                hitCheckpoint.data(),hitCheckpoint.size()));
+    assert(loadedHit.shots_hit()==volumeHit.shots_hit());
+    assert(loadedHit.defeated()==volumeHit.defeated());
+    assert(loadedHit.kills()==volumeHit.kills());
+    assert(loadedHit.cash()==volumeHit.cash());
+    assert(Bytes(loadedHit,loadedHull)==hitCheckpoint);
+    Continue(volumeHit,ship,120); // subsequent physical combat stays bit-exact
     // Repeated snapshots include all named guest and mission cases, varied
     // RNG, salvage, shots and timers; identical future input must stay exact.
     unsigned guests=0;
