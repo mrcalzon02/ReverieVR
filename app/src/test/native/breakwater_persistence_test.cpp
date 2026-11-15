@@ -200,7 +200,12 @@ int main() {
     const auto locked=rack_input(2);
     assert(gunmesh::HitRack(locked.pointer_origin,
                             locked.pointer_direction)==2);
+    // The test calls Interact directly; normally Update begins and
+    // flushes its sound/feedback frame around this action.
+    state->audio_frame.Begin();
+    last_feedback=0;
     Interact(state,locked,true); // unpurchased Flak must not be armed
+    state->audio_frame.Flush(&host);
     assert(last_feedback==REVERIE_NATIVE_FEEDBACK_FAILURE);
     assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
     assert(state->campaign.credits()==after_buy);
