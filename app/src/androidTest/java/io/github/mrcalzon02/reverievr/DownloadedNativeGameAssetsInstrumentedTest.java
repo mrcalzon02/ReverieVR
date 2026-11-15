@@ -1031,6 +1031,36 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 }finally{otherFrame.recycle();againFrame.recycle();}
                 assertTrue("No durable native stock selection",saved.isFile()
                     &&saved.length()>100L);
+                // A real 505 wholesale action must persist its six-unit lot
+                // independently of the neighboring 606 supplier inventory.
+                byte[] beforePurchase=Files.readAllBytes(saved.toPath());
+                final int snack505Offset=16+160+(2+19+4)*4;
+                final int snack606Offset=snack505Offset+4;
+                assertTrue("Checked Red Ledger trade save is incomplete",
+                    beforePurchase.length>=snack606Offset+4);
+                assertEquals("505 snack starter lot changed",1,
+                    ByteBuffer.wrap(beforePurchase)
+                        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                        .getInt(snack505Offset));
+                assertTrue("505 wholesale purchase did not activate",
+                    (redLedgerSelect(game,controls,.40f,-.48f)
+                     &NativeModuleRuntime.FEEDBACK_ACTIVATION)!=0);
+                byte[] afterPurchase=Files.readAllBytes(saved.toPath());
+                assertEquals("505 purchase changed checkpoint length",
+                    beforePurchase.length,afterPurchase.length);
+                assertFalse("505 purchase left saved economy unchanged",
+                    Arrays.equals(beforePurchase,afterPurchase));
+                assertEquals("505 purchase failed to persist six snack units",
+                    7,ByteBuffer.wrap(afterPurchase)
+                        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                        .getInt(snack505Offset));
+                assertEquals("505 purchase changed 606 supplier inventory",
+                    ByteBuffer.wrap(beforePurchase)
+                        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                        .getInt(snack606Offset),
+                    ByteBuffer.wrap(afterPurchase)
+                        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                        .getInt(snack606Offset));
                 Log.i(TAG,"PASS Red Ledger original 505 selected/reselected "
                     +"native GLES2 realFrames=true saveBytes="+saved.length()
                     +" selectedCRC="+selectedCrc+" otherCRC="+otherCrc
