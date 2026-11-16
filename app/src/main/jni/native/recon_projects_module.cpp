@@ -77,7 +77,8 @@ void DrawBoard(State *s){
     Rect(s,0,0,5.0f,3.45f,-3.03f,.028f,.050f,.076f);
     Rect(s,0,1.43f,4.75f,.44f,-2.99f,.13f,.21f,.22f);
     Text(s,kHeader,1.39f,.053f,.93f,.94f,.83f);
-    Text(s,"ROCKER NEXT  SELECT ACTION  MENU EXIT",-1.54f,.027f,.65f,.83f,.78f);
+    Text(s,Choices(s)>1 && !s->loadBlocked ? "PAD PREV / NEXT   SELECT ACTION   MENU EXIT" :
+         "SELECT ACTION   MENU EXIT",-1.54f,.027f,.65f,.83f,.78f);
     if(s->loadBlocked){
         Text(s,"CHECKPOINT UNAVAILABLE",.68f,.044f,1.f,.68f,.48f);
         Text(s,"YOUR SAVE HAS NOT BEEN CHANGED",.15f,.032f,.88f,.91f,.88f);
@@ -114,7 +115,19 @@ void DrawBoard(State *s){
             std::snprintf(text,sizeof(text),"TOTAL TRUST %+d / EFFECT %+d",
                 s->simulation.credibility(),s->simulation.operational_effect());
             Text(s,text,.99f,.034f,.79f,.91f,.96f);
-        }else Text(s,"PHOTOGRAPH - INTERPRET EVIDENCE",.99f,.029f,.79f,.91f,.96f);
+        }else{
+            const char *sectors[]={"RAIL APPROACH","ORCHARD","RIVER CROSSING"};
+            std::snprintf(text,sizeof(text),"%s / PHOTO CLARITY %u%%",
+                sectors[static_cast<unsigned>(s->photo.sector)],static_cast<unsigned>(s->photo.clarity));
+            Text(s,text,.99f,.029f,.79f,.91f,.96f);
+            // The field reference is identical on all assignments. It describes
+            // image features without identifying the current photograph.
+            s->font.Fit("FIELD GUIDE",-1.52f,.57f,1.28f,.030f,.79f,.91f,.96f,-2.87f);
+            s->font.Fit("COLUMN",-1.52f,.26f,1.28f,.028f,.92f,.82f,.59f,-2.87f);
+            s->font.Fit("PAIRED PROFILES",-1.52f,.05f,1.35f,.025f,.83f,.90f,.87f,-2.87f);
+            s->font.Fit("BRIDGE DAMAGE",1.52f,.26f,1.35f,.028f,.92f,.82f,.59f,-2.87f);
+            s->font.Fit("GAP IN DECK",1.52f,.05f,1.28f,.025f,.83f,.90f,.87f,-2.87f);
+        }
         if(s->hasPhoto){
             Rect(s,0,.16f,1.5f,1.5f,-2.96f,.14f,.17f,.14f);
             for(int y=0;y<16;y++)for(int x=0;x<16;x++)
@@ -157,7 +170,11 @@ void DrawBoard(State *s){
             }else{
                 const auto route=static_cast<sim::Route>(s->choice);
                 std::snprintf(text,sizeof(text),"ROUND TRIP: %d FUEL",sim::Simulation::RoundTripFuel(route));
-                Text(s,text,-.61f,.033f,.88f,.89f,.75f);
+                Text(s,text,-.51f,.033f,.88f,.89f,.75f);
+                const auto intel=s->simulation.LastRouteIntel(route);
+                if(intel)std::snprintf(text,sizeof(text),"LAST FILED INTEL %+d",intel);
+                else std::snprintf(text,sizeof(text),"NO FILED REPORT");
+                Text(s,text,-.78f,.030f,.78f,.87f,.90f);
                 Text(s,s->simulation.CanBeginPatrol(route)?"SELECT TO DEPLOY":
                     s->simulation.vehicle_condition()<=0?"VEHICLE DISABLED - USE BASE SERVICE":
                     "LOW FUEL - CHOOSE BASE SERVICE",-1.02f,.032f,.92f,.80f,.57f);
@@ -376,8 +393,14 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         s->retrySeconds-=dt;
         if(s->retrySeconds<=0.f){Save(s);DrawBoard(s);}
     }
-    if((second&&!s->secondary)||(axis&&!s->axis)){
-        s->choice=(s->choice+1)%Choices(s);
+    const int choices=Choices(s);
+    if(choices>1 && ((second&&!s->secondary)||(axis&&!s->axis))){
+        // The secondary button always advances. Left/up goes back, right/down
+        // goes forward; a held rocker still moves exactly one selection.
+        const bool horizontal=std::fabs(in->move_x)>=std::fabs(in->move_y);
+        const bool previous=horizontal ? in->move_x<0.f : in->move_y<0.f;
+        const int step=second&&!s->secondary ? 1 : previous ? -1 : 1;
+        s->choice=(s->choice+choices+step)%choices;
         Save(s);DrawBoard(s);
         ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
     }

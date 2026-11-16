@@ -27,7 +27,7 @@ enum class MazeRead { Fresh, Loaded, Invalid, IoError, Unavailable };
 struct State {
     const ReverieNativeHostV1* host=nullptr;
     Game game;
-    bool held=false,axisHeld=false,upload=true,hasPointer=false,rockerSelection=false;
+    bool held=false,axisHeld=false,upload=true,rockerSelection=false;
     int choice=0,doorGaze=-1,leverGaze=-1;
     float gazeSeconds=0.f;
     MazeRead save_read=MazeRead::Fresh;
@@ -467,7 +467,7 @@ void Update(void* v,const ReverieNativeInputV1* in){
     ReverieNativeInputV1 input{};
     std::memcpy(&input,in,std::min(size_t(in->struct_size),sizeof(input)));
     ReverieNativeSanitizeBaseInputV1(&input);
-    ReverieNativeSanitizePointerV1(&input);
+    const bool hasPointer=ReverieNativeSanitizePointerV1(&input)!=0;
     const float dt=input.delta_seconds;
     bool primary=input.primary_down!=0u;
     const bool axis=std::fabs(input.move_x)>.55f;
@@ -485,9 +485,8 @@ void Update(void* v,const ReverieNativeInputV1* in){
             s->rockerSelection=true;
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
         }
-        int target=s->choice;
-        if(ReverieNativeInputHasPointerV1(&input) &&
-           input.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+        int target=!hasPointer||s->rockerSelection?s->choice:-1;
+        if(hasPointer &&
            input.pointer_direction[2]<-.02f) {
             const float t=(-2.10f-input.pointer_origin[2])/input.pointer_direction[2];
             const float x=input.pointer_origin[0]+input.pointer_direction[0]*t;
@@ -535,15 +534,13 @@ void Update(void* v,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
         }
         const int previousDoor=s->doorGaze,previousLever=s->leverGaze;
-        s->hasPointer=false;s->leverGaze=s->doorGaze=-1;
-        if(ReverieNativeInputHasPointerV1(&input)&&
-            input.pointer_kind!=REVERIE_NATIVE_POINTER_NONE&&
+        s->leverGaze=s->doorGaze=-1;
+        if(hasPointer&&
             input.pointer_direction[2]<-.02f){
             const float t=(-3.43f-input.pointer_origin[2])/input.pointer_direction[2];
             if(t>.05f&&t<30.f){
                 const float x=input.pointer_origin[0]+input.pointer_direction[0]*t;
                 const float y=input.pointer_origin[1]+input.pointer_direction[1]*t;
-                s->hasPointer=true;
                 if(y>-.95f&&y<1.16f&&std::fabs(x)<1.75f)
                     s->doorGaze=x<0.f?0:1;
                 if(y>-.68f&&y<.46f){
@@ -562,7 +559,7 @@ void Update(void* v,const ReverieNativeInputV1* in){
         else s->gazeSeconds=0.f;
         if(primary&&!s->held){
             const int target=s->rockerSelection?s->choice:
-                (s->hasPointer?s->leverGaze:s->choice);
+                (hasPointer?s->leverGaze:s->choice);
             if(s->game.Pull(target)){
                 ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             }else{

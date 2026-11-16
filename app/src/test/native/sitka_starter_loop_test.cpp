@@ -42,8 +42,9 @@ int main(){
     assert(world.fishing.Flush(Store(&world)));
     ReverieNativeInputV1 in{};
     in.struct_size=sizeof(in);in.delta_seconds=.05f;
-    in.listener_valid=1u;in.listener_position[1]=1.4f;in.listener_right[0]=1.f;
-    in.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;in.pointer_origin[1]=1.25f;in.pointer_direction[0]=1.f;
+    in.listener_valid=1u;in.listener_right[0]=1.f;
+    // VrShellRenderer supplies resting head Y=0 and hand Y=-0.34 m.
+    in.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;in.pointer_origin[1]=-.34f;in.pointer_direction[0]=1.f;
     // Out of reach cannot open the office or consume the stock fish.
     in.primary_down=1u;Update(&world,&in);assert(!world.harbor_shop.open());
     in.primary_down=0u;in.move_x=1.f;
@@ -115,10 +116,10 @@ int main(){
     assert(haul.credits==90u&&haul.shellfish_inventory==0u);
     ReverieNativeInputV1 hand{};
     hand.struct_size=sizeof(hand);hand.delta_seconds=.05f;
-    hand.listener_valid=1u;hand.listener_position[1]=1.4f;
+    hand.listener_valid=1u;
     hand.listener_right[0]=1.f;
     hand.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
-    hand.pointer_origin[1]=1.25f;
+    hand.pointer_origin[1]=-.34f;
     hand.pointer_direction[0]=.637f;hand.pointer_direction[1]=-.771f;
     hand.primary_down=1u;Update(&harvest,&hand);
     assert(haul.shellfish_inventory==1u);
@@ -236,6 +237,34 @@ int main(){
     assert(range->terrain.indices.size()==18u);
     assert(range->fishing_spots.size()==1u&&range->harbor_sites.size()==1u);
     assert(range->fishing.fishing.journal.fish_inventory[1]==1u);
+    ReverieNativeInputV1 player{};
+    player.struct_size=sizeof(player);player.delta_seconds=.05f;
+    player.listener_valid=1u;player.listener_right[0]=1.f;
+    player.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    player.pointer_origin[1]=-.34f;
+    player.move_x=1.f;
+    for(int n=0;n<35;++n)Update(range,&player);
+    player.move_x=0.f;
+    const auto onshore=range->walk_session->pose();
+    assert(range->harbor_last_text.find("BOARD HERE")!=std::string::npos);
+    // Real host hand height and a downward-pointed ray must reach the cove.
+    player.pointer_direction[0]=1.f;player.pointer_direction[1]=-.12f;
+    player.primary_down=1u;Update(range,&player);
+    assert(range->fishing.fishing.phase==FishingPhase::Waiting);
+    player.primary_down=0u;player.secondary_down=1u;Update(range,&player);
+    assert(range->fishing.fishing.phase==FishingPhase::Ready);
+    player.primary_down=1u;Update(range,&player);
+    assert(range->skiff->Active());
+    player.primary_down=player.secondary_down=0u;player.move_y=-1.f;
+    for(int n=0;n<52;++n)Update(range,&player);
+    assert(range->skiff->Pose().east>range->skiff->LaunchPoint().east+1.);
+    assert(range->skiff->Pose().heading==range->skiff->LaunchPoint().heading);
+    assert(range->walk_session->pose().x==onshore.x);
+    player.move_y=0.f;
+    for(int n=0;n<40;++n)Update(range,&player);
+    player.primary_down=player.secondary_down=1u;Update(range,&player);
+    assert(!range->skiff->Active());
+    assert(range->walk_session->pose().x==onshore.x);
     assert(PrepareExit(range)==1);
     Destroy(range);
     assert(!saved.empty());

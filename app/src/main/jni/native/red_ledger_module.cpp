@@ -205,7 +205,8 @@ struct ModuleState {
 
     float elapsed_seconds = 0.0f;
     float flicker = 0.90f;
-    bool primary_was_down = false;
+    // A press already held on entry must be released before a bar action.
+    bool primary_was_down = true;
 
     bool pointer_active = false;
     float pointer_origin[3] = {};
@@ -2785,6 +2786,7 @@ void Resume(void *instance) {
     if(!state)return;
     if(state->load_blocked)LoadState(state);
     else if(state->save_dirty)SaveState(state);
+    state->primary_was_down=true;
     Log(state,REVERIE_NATIVE_LOG_INFO,"Red Ledger module resumed.");
 }
 
@@ -2792,7 +2794,7 @@ void Pause(void *instance) {
     auto *state=static_cast<ModuleState *>(instance);
     if(!state)return;
     if(state->save_dirty&&!state->load_blocked)SaveState(state);
-    state->primary_was_down=false;
+    state->primary_was_down=true;
     Log(state,REVERIE_NATIVE_LOG_INFO,"Red Ledger module paused.");
 }
 
@@ -2819,7 +2821,8 @@ void Update(
         return;
     }
 
-    ReverieNativeInputV1 effective_input = *input;
+    ReverieNativeInputV1 effective_input{};
+    std::memcpy(&effective_input,input,std::min<size_t>(input->struct_size,sizeof(effective_input)));
     // Validate a writable copy even with an alternate ABI-compatible host.
     ReverieNativeSanitizeBaseInputV1(&effective_input);
     ReverieNativeSanitizePointerV1(&effective_input);

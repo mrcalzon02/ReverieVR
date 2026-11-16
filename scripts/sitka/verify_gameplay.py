@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shlex
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,8 +22,12 @@ checks = [p for p in sorted(TESTS.glob('sitka_*_test.cpp'))
           if 'egl' not in p.stem and 'starter_loop' not in p.stem]
 if args.render:
     checks += [TESTS / (name + '.cpp') for name in
-               ['sitka_starter_loop_test', 'sitka_starter_loop_egl_test', 'sitka_terrain_egl_test']]
+               ['sitka_starter_loop_test', 'sitka_starter_loop_egl_test', 'sitka_terrain_egl_test',
+                'sitka_real_geography_egl_test']]
 with tempfile.TemporaryDirectory(prefix='sitka-gameplay-') as tmp:
+    asset_root = Path(tmp) / 'geography'
+    subprocess.run([sys.executable, str(ROOT / 'scripts/sitka/stage_native_land_assets.py'),
+                    '--output', str(asset_root)], check=True)
     for test in checks:
         target = str(Path(tmp) / test.stem)
         links = []
@@ -31,6 +36,11 @@ with tempfile.TemporaryDirectory(prefix='sitka-gameplay-') as tmp:
             if 'egl' in test.stem:
                 links += ['-lEGL']
         subprocess.run(compiler + flags + [str(test), '-o', target] + links, check=True)
-        subprocess.run([target], check=True)
+        arguments = []
+        if test.stem == 'sitka_land_tile_stream_test':
+            arguments = [str(asset_root)]
+        elif test.stem == 'sitka_real_geography_egl_test':
+            arguments = [str(asset_root), str(Path(tmp) / 'geography.ppm')]
+        subprocess.run([target, *arguments], check=True)
         print('PASS ' + test.stem, flush=True)
 print(f'PASS {len(checks)} Sitka checks; render={args.render}')

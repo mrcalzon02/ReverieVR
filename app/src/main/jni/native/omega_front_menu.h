@@ -10,7 +10,7 @@ namespace reverie { namespace omega {
 // Menus are deliberately not part of the campaign checkpoint: reopening the
 // module must reach a safe title screen, never fire an order on load.
 enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Gallery, Playing };
-enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode, CommitTurn, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon };
+enum class MenuCommand : uint8_t { None, Resume, RetryLoad, StartNew, SetFieldAction, SetCommandMode, CommitTurn, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon };
 
 // A menu's release/idle ray must not overwrite the restored tactical cursor.
 // A fresh click, deliberate pointer movement, or pointer loss re-arms aiming.
@@ -59,10 +59,10 @@ public:
             if(std::fabs(y-ButtonY(i,count>4))<=(count>4?.072f:.095f))return i;
         return -1;
     }
-    int Count(bool has_campaign) const {
+    int Count(bool has_campaign,bool load_failed=false) const {
         switch(screen) {
         case MenuScreen::Title: return 3;
-        case MenuScreen::Campaign: return has_campaign?4:3;
+        case MenuScreen::Campaign: return (has_campaign||load_failed)?4:3;
         case MenuScreen::Controls: return 1;
         case MenuScreen::ConfirmNew: return 2;
         case MenuScreen::Pause: return 5;
@@ -73,7 +73,7 @@ public:
         }
         return 0;
     }
-    const char *Label(int index,bool has_campaign) const {
+    const char *Label(int index,bool has_campaign,bool load_failed=false) const {
         switch(screen) {
         case MenuScreen::Title: {
             const char *v[]={"CAMPAIGN","FACTION GALLERY","CONTROLS"};
@@ -82,8 +82,9 @@ public:
         case MenuScreen::Campaign: {
             const char *saved[]={"CONTINUE CAMPAIGN","NEW CAMPAIGN","CONTROLS","BACK"};
             const char *fresh[]={"BEGIN CAMPAIGN","CONTROLS","BACK"};
-            return index>=0&&index<Count(has_campaign)?
-                (has_campaign?saved[index]:fresh[index]):"";
+            if(load_failed && index==0)return "RETRY LOADING CAMPAIGN";
+            return index>=0&&index<Count(has_campaign,load_failed)?
+                ((has_campaign||load_failed)?saved[index]:fresh[index]):"";
         }
         case MenuScreen::Controls: return index==0?"BACK":"";
         case MenuScreen::ConfirmNew: {
@@ -129,7 +130,7 @@ public:
     }
     MenuCommand Input(float dt,float axis_y,bool primary,bool secondary,
                       bool pointing=false,float pointer_x=0,float pointer_y=0,
-                      bool has_campaign=false) {
+                      bool has_campaign=false,bool load_failed=false) {
         if(screen==MenuScreen::Playing) {
             SyncButtons(primary,secondary);
             return MenuCommand::None;
@@ -138,7 +139,7 @@ public:
         const bool back=secondary&&!secondary_down_;
         primary_down_=primary;secondary_down_=secondary;
         if(back) { Back();return MenuCommand::None; }
-        const int count=Count(has_campaign);
+        const int count=Count(has_campaign,load_failed);
         const int direction=axis_y>.55f?-1:axis_y<-.55f?1:0;
         if(direction==0){axis_direction_=0;repeat_=0;}
         else {
@@ -172,9 +173,10 @@ public:
             }else {return_to=MenuScreen::Title;Enter(MenuScreen::Controls);}
             break;
         case MenuScreen::Campaign:
+            if(selected==0 && load_failed)return MenuCommand::RetryLoad;
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::Resume;}
-            if(has_campaign && selected==1){Enter(MenuScreen::ConfirmNew);break;}
-            if(selected==(has_campaign?2:1)){
+            if((has_campaign||load_failed) && selected==1){Enter(MenuScreen::ConfirmNew);break;}
+            if(selected==((has_campaign||load_failed)?2:1)){
                 return_to=MenuScreen::Campaign;Enter(MenuScreen::Controls);
             }else Enter(MenuScreen::Title);
             break;

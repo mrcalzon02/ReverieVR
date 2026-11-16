@@ -134,6 +134,9 @@ public:
         return Active()?std::cos(Pose().heading)*Pose().speed_mps:0.;
     }
     const SkiffLaunch& LaunchPoint()const{return launch_;}
+    bool AtBerth(double east,double north)const{
+        return std::hypot(east-launch_.east,north-launch_.north)<=launch_.radius_m;
+    }
     // Primary+secondary chord is provisional source-only mode action.
     // Rising edge only: holding buttons must never relaunch/dock twice.
     // The guest must suppress these held buttons from fishing controls.
@@ -157,18 +160,12 @@ public:
         MixedSeabed<BathyStreamCache> bottom(sourced,procedural);
         if(toggle){
             if(Active()){
-                const double e=Pose().east-launch_.east;
-                const double n=Pose().north-launch_.north;
-                if(e*e+n*n>launch_.radius_m*launch_.radius_m||
-                   Pose().speed_mps>.4)
+                if(!AtBerth(Pose().east,Pose().north)||Pose().speed_mps>.4)
                     return SkiffSessionEvent::Rejected;
                 navigation_.Dock();
                 return SkiffSessionEvent::Docked;
             }
-            const double e=listener_east-launch_.east;
-            const double n=listener_north-launch_.north;
-            if(!std::isfinite(e)||!std::isfinite(n)||
-               e*e+n*n>launch_.radius_m*launch_.radius_m)
+            if(!AtBerth(listener_east,listener_north))
                 return SkiffSessionEvent::Rejected;
             const Water* berth=SitkaNamedWorldWater(waters,launch_.water_id,
                 terrain_origin_east,terrain_origin_north,

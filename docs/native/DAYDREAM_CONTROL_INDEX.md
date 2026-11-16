@@ -25,6 +25,10 @@ The double-tap, long-press and acceleration shake recognizer is **Daydream-provi
 | Sharp head yaw impulse | HEAD_SHARP_LEFT/RIGHT | Normalized pulse and ghost log, no automatic recenter | No automatic guest action | Unmapped unless opted in |
 | Head roll above ~17° | HEAD_ROLL_POSITIVE/NEGATIVE | Normalized pulse at ±0.29 radians; rearms below ±0.17; signed until calibrated | No automatic guest action | Unmapped unless opted in |
 
+In Chess, Checkers, Go and Reversi, a pad direction moves the board cursor from the pointed square. Select uses that highlighted square while a stationary ray remains over the board. Moving the ray more than half a cell after releasing the pad returns control to pointing. Chess uses the player's board orientation for both inputs.
+
+In Pong, the vertical pad axis moves the paddle. Breakout uses the horizontal axis. Releasing the pad holds the paddle position until the ray moves along the paddle's travel axis. In Guess the Door, Select without a rocker choice requires a ray hit on a lever or a save-recovery button when a tracked pointer is present.
+
 The **ghost-grey control feed** is an eye-locked, middle-left, six-line rolling readout. It shows **recognized events**, not raw 60Hz pose packets. Lines have no background, fade over 12 seconds, and are not clickable. It has independent GLES texture/geometry from battery power arcs.
 
 Actions remain distinct from detection. Guest mappings must not silently turn system Menu/Home into fire/exit controls; accidental shake and extreme-look actions are observation-only until a game opts in. The primary SELECT callback is immediate, so no delayed gesture classification can strand menu activation. Gesture meanings and thresholds are documented engineering defaults until reference-controller testing verifies reliability.

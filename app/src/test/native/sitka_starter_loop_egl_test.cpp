@@ -1,10 +1,74 @@
 // Actual module stereo rendering with synthetic terrain; no geographic claim.
+#define REVERIE_SITKA_INTEGRATION_RANGE 1
 #include "../../main/jni/native/sitka_terrain_module.cpp"
 #include <EGL/egl.h>
 #include <cassert>
 #include <iostream>
+#include <fstream>
 using namespace reverie::sitka;
-int main(){
+// Point the headset toward the helm in the integration berth (east), with
+// a downward look. Track the brass compass in actual stereo framebuffer pixels.
+static std::vector<unsigned char> HelmFrame(State* range){
+    glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int side=0;side<2;++side){
+        glViewport(side*256,0,256,256);
+        ReverieNativeEyeV1 eye{};eye.struct_size=sizeof(eye);eye.eye_index=side;
+        const float c=std::cos(.72f),s=std::sin(.72f);
+        const float view[16]={0,s,-c,0, 0,c,s,0, 1,0,0,0,
+            side==0?.032f:-.032f,0,0,1};
+        std::copy(view,view+16,eye.view);
+        eye.projection[0]=eye.projection[5]=1.f;
+        eye.projection[10]=-1.002f;eye.projection[11]=-1.f;eye.projection[14]=-.12f;
+        assert(RenderEye(range,&eye));
+    }
+    std::vector<unsigned char> pixels(512*256*4);
+    glReadPixels(0,0,512,256,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+    assert(glGetError()==GL_NO_ERROR);
+    return pixels;
+}
+static void TestMovingHelm(ReverieNativeHostV1& host,const char* capture){
+    host.abi_version=REVERIE_NATIVE_MODULE_ABI_VERSION;
+    host.log=+[](int32_t,const char*,const char*){};
+    host.read_asset=host.read_save=+[](const char*,void*,uint32_t,uint32_t* size)->int32_t{
+        *size=0;return REVERIE_NATIVE_SAVE_NOT_FOUND;
+    };
+    auto* range=static_cast<State*>(Create(&host));
+    assert(range&&OnGlCreated(range));
+    ReverieNativeInputV1 in{};
+    in.struct_size=sizeof(in);in.delta_seconds=.05f;
+    in.listener_valid=1u;in.listener_right[0]=1.f;in.move_x=1.f;
+    for(int i=0;i<35;++i)Update(range,&in);
+    in.move_x=0.f;in.primary_down=in.secondary_down=1u;Update(range,&in);
+    assert(range->skiff->Active()&&PrepareFrame(range));
+    const auto boarded=HelmFrame(range);
+    const double at_berth=range->skiff->Pose().east;
+    in.primary_down=in.secondary_down=0u;in.move_y=-1.f;
+    for(int i=0;i<52;++i)Update(range,&in);
+    assert(range->skiff->Pose().east>at_berth+1.);
+    assert(PrepareFrame(range));
+    const auto underway=HelmFrame(range);
+    unsigned brass_pixels[2]={},stable[2]={};
+    for(unsigned i=0;i<512u*256u;++i){
+        const size_t p=i*4;const unsigned eye=(i%512)/256;
+        if(boarded[p]!=kBrassColor.r||boarded[p+1]!=kBrassColor.g||
+           boarded[p+2]!=kBrassColor.b)continue;
+        ++brass_pixels[eye];
+        if(std::equal(boarded.data()+p,boarded.data()+p+3,underway.data()+p))
+            ++stable[eye];
+    }
+    for(unsigned eye=0;eye<2;++eye)
+        assert(brass_pixels[eye]>40 && stable[eye]*100>=brass_pixels[eye]*95);
+    if(capture){
+        std::ofstream out(capture,std::ios::binary);
+        out<<"P6\n512 256\n255\n";
+        for(int y=255;y>=0;--y)for(int x=0;x<512;++x)
+            out.write(reinterpret_cast<const char*>(&underway[(y*512+x)*4]),3);
+        out.close();assert(out.good());
+    }
+    ReleaseGl(range);Destroy(range);
+}
+int main(int argc,char** argv){
+    assert(argc==1||argc==2);
     const EGLDisplay display=eglGetDisplay(EGL_DEFAULT_DISPLAY);
     EGLint major=0,minor=0;assert(eglInitialize(display,&major,&minor));
     assert(eglBindAPI(EGL_OPENGL_ES_API));
@@ -34,9 +98,9 @@ int main(){
     world.fishing.fishing.journal=StarterJournal();
     assert(OnGlCreated(&world));
     ReverieNativeInputV1 in{};in.struct_size=sizeof(in);in.delta_seconds=.016f;
-    in.listener_valid=1u;in.listener_position[1]=1.4f;in.listener_right[0]=1.f;
+    in.listener_valid=1u;in.listener_right[0]=1.f;
     in.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
-    in.pointer_origin[1]=1.25f;in.pointer_direction[0]=1.f;
+    in.pointer_origin[1]=-.34f;in.pointer_direction[0]=1.f;
     Update(&world,&in);
     auto render=[&]{
         const auto before=SaveJournal(world.fishing.fishing.journal);
@@ -45,7 +109,7 @@ int main(){
             glViewport(eye_index*256,0,256,256);
             ReverieNativeEyeV1 eye{};eye.struct_size=sizeof(eye);eye.eye_index=eye_index;
             for(int axis=0;axis<4;++axis){eye.view[axis*5]=1.f;eye.projection[axis*5]=1.f;}
-            eye.view[12]=eye_index==0?.03f:-.03f;eye.view[13]=-1.4f;
+            eye.view[12]=eye_index==0?.03f:-.03f;
             eye.projection[0]=.5f;eye.projection[5]=.8f;eye.projection[10]=-.05f;
             assert(RenderEye(&world,&eye));
         }
@@ -78,8 +142,9 @@ int main(){
     State terrain_only;terrain_only.host=&host;
     terrain_only.terrain=world.terrain;terrain_only.waters=world.waters;
     assert(OnGlCreated(&terrain_only));ReleaseGl(&terrain_only);
+    TestMovingHelm(host,argc==2?argv[1]:nullptr);
     assert(eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT));
     assert(eglDestroyContext(display,context));assert(eglDestroySurface(display,surface));
     assert(eglTerminate(display));
-    std::cout<<"PASS actual Sitka stereo shore prompts/office/sale text/context recreation\n";
+    std::cout<<"PASS actual Sitka stereo shore prompts/office/sale text/context recreation and moving helm\n";
 }

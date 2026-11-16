@@ -1,4 +1,5 @@
 #include "recon_projects_save.h"
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 using reverie::recon::Checkpoint;
@@ -39,6 +40,28 @@ int main(){
         assert(!ministry.simulation.evidence_photo()&&!ministry.simulation.last_report());
         ministry=Restore(ministry);
     }
+    // Visit all sectors once before returning to each. Only completed sorties
+    // advance their sector; saving the photo or reopening Filed never advances it.
+    LanternState tour;
+    const lantern::Assessment first[]={lantern::Assessment::VehicleColumn,lantern::Assessment::NoContact,lantern::Assessment::BridgeDamage};
+    const lantern::Assessment second[]={lantern::Assessment::NoContact,lantern::Assessment::VehicleColumn,lantern::Assessment::NoContact};
+    std::array<lantern::Photograph,3> first_images;
+    for(unsigned visit=0;visit<3;++visit)for(unsigned i=0;i<3;++i){
+        assert(tour.simulation.AssignRecon(static_cast<lantern::Sector>(i)));
+        tour=Restore(tour);assert(tour.simulation.CompleteRecon());tour=Restore(tour);
+        const auto photo=*tour.simulation.photo();
+        if(visit==0)first_images[i]=photo;
+        else assert((photo.pixels==first_images[i].pixels)==(visit==2));
+        lantern::ReportResult grade;
+        if(visit==1){
+            auto old_answer=tour;
+            assert(old_answer.simulation.SubmitReport(first[i],&grade));
+            assert(grade.credibility_delta<0);
+        }
+        assert(tour.simulation.SubmitReport(visit==1?second[i]:first[i],&grade));
+        assert(grade.credibility_delta>0);
+        tour=Restore(tour);assert(tour.simulation.NextSortie());tour=Restore(tour);
+    }
     LanternState good;
     assert(good.simulation.AssignRecon(lantern::Sector::RailApproach)&&good.simulation.CompleteRecon());
     lantern::ReportResult result;
@@ -50,6 +73,16 @@ int main(){
     assert(good.simulation.credibility()==6&&good.simulation.operational_effect()==4);
     good=Restore(good);assert(good.simulation.last_report()->credibility_delta==3);
     const auto lanternBytes=Bytes(good);
+    // V1 used the same photographed scenes and a zero reserved tail.
+    auto oldPhoto=lanternBytes;oldPhoto[8]=1;oldPhoto[65]=0;Rehash(oldPhoto);
+    LanternState migrated;
+    assert(Checkpoint::Decode(&migrated,oldPhoto.data(),oldPhoto.size()));
+    assert(migrated.simulation.credibility()==6 && migrated.simulation.operational_effect()==4);
+    assert(migrated.simulation.evidence_photo()->pixels==good.simulation.evidence_photo()->pixels);
+    assert(migrated.simulation.NextSortie() && migrated.simulation.AssignRecon(lantern::Sector::RiverCrossing));
+    assert(migrated.simulation.CompleteRecon() && migrated.simulation.photo()->pixels!=good.simulation.evidence_photo()->pixels);
+    auto badMask=lanternBytes;badMask[65]=8;Rehash(badMask);
+    assert(!Checkpoint::Decode(&migrated,badMask.data(),badMask.size()));
     for(unsigned route=0;route<2;++route)for(unsigned decision=0;decision<3;++decision){
         ForwardState patrol;patrol.choice=static_cast<uint8_t>(route);patrol=Restore(patrol);
         assert(patrol.simulation.BeginPatrol(static_cast<forward::Route>(route)));
@@ -61,6 +94,15 @@ int main(){
         patrol.choice=0;patrol=Restore(patrol);assert(patrol.simulation.ReturnToBase());patrol=Restore(patrol);
         forward::Debrief debrief;assert(patrol.simulation.FileDebrief(&debrief));patrol=Restore(patrol);
         assert(!patrol.simulation.FileDebrief(&debrief));
+        const auto taken=static_cast<forward::Route>(route);
+        const auto other=static_cast<forward::Route>(1-route);
+        assert(patrol.simulation.LastRouteIntel(taken)==debrief.information_value);
+        assert(patrol.simulation.LastRouteIntel(other)==0);
+        auto legacy=Bytes(patrol);legacy[8]=1;
+        std::fill(legacy.begin()+30,legacy.begin()+38,0);Rehash(legacy);
+        ForwardState migratedPatrol;
+        assert(Checkpoint::Decode(&migratedPatrol,legacy.data(),legacy.size()));
+        assert(Bytes(migratedPatrol)==Bytes(patrol));
         const auto condition=patrol.simulation.vehicle_condition(),fuel=patrol.simulation.fuel_remaining();
         assert(patrol.simulation.NextPatrol());
         assert(patrol.simulation.vehicle_condition()==condition&&patrol.simulation.fuel_remaining()==fuel);
@@ -70,6 +112,14 @@ int main(){
         assert(patrol.simulation.RefitAtBase());patrol.confirm_refit=false;patrol.choice=0;
         assert(patrol.simulation.vehicle_condition()==100&&patrol.simulation.fuel_remaining()==20);
         patrol=Restore(patrol);
+        assert(patrol.simulation.LastRouteIntel(taken)==debrief.information_value);
+        assert(patrol.simulation.BeginPatrol(other) && patrol.simulation.ReachContact());
+        assert(patrol.simulation.ResolveContact(forward::Decision::Avoid) && patrol.simulation.ReturnToBase());
+        forward::Debrief new_debrief;
+        assert(patrol.simulation.FileDebrief(&new_debrief));
+        patrol=Restore(patrol);
+        assert(patrol.simulation.LastRouteIntel(taken)==debrief.information_value);
+        assert(patrol.simulation.LastRouteIntel(other)==new_debrief.information_value);
     }
     ForwardState empty;
     for(int i=0;i<2;++i){

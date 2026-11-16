@@ -2337,14 +2337,18 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         Feedback(s,saved?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
                          REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
-    if(!pending_save_at_frame_start && down && !started_reload)
+    // A shot pressed on the last combat tick still belongs to combat. It
+    // cannot acknowledge a result or arm the terminal campaign reset.
+    if(!pending_save_at_frame_start && down && !started_reload &&
+       s->campaign.phase()==phase_before)
         Interact(s,copy,!s->held);
     // A double-click can change the station inside Interact itself.
     const ReverieNativeInputV1 worldPointer=WorldPointer(s,copy);
-    if(!pending_save_at_frame_start && !s->save_dirty && secondary&&!s->secondary_held &&
-       s->campaign.phase()==Phase::Shop &&
-       !s->round_summary) {
-        if(!BeginActiveWave(s,down))Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+    // The shop shortcut requires its own press, independent of Select.
+    if(!pending_save_at_frame_start && !s->save_dirty && !down &&
+       secondary && !s->secondary_held && phase_before==Phase::Shop &&
+       s->campaign.phase()==Phase::Shop && !s->slot_picker && !s->round_summary) {
+        if(!BeginActiveWave(s,false))Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
     // The phantom sight follows the controller rather than a barrel that
     // can no longer physically elevate to the target.

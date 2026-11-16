@@ -181,7 +181,9 @@ void MenuControls() {
     auto held=Menu(menu::DifficultyCard(0));held.primary_down=1u;
     Check(f.Step(held).cues.empty(),"held slot press cannot choose difficulty");
     Check(f.Hover(Menu(menu::DifficultyCard(2)))==1u,"difficulty focus");
-    r=f.Press(Menu(menu::DifficultyCard(2)));
+    auto difficulty=Menu(menu::DifficultyCard(2));
+    difficulty.secondary_down=1u; // Simultaneous App cannot skip the shop.
+    r=f.Press(difficulty);
     Check(r.Count(REVERIE_NATIVE_SOUND_BREAKWATER_DIFFICULTY_SELECT)==1u &&
           r.feedback==0u,"one contextual difficulty sound without duplicate click");
     Check(f.state.campaign.difficulty()==Difficulty::Veteran &&
@@ -588,8 +590,18 @@ void OutcomesAndLifecycle() {
     Fixture defeat;defeat.Shop();defeat.Word(9u,1u);
     Check(defeat.state.campaign.BeginWave(),"fixture fragile battery");
     auto &armor=defeat.Armor()[0];armor.active=true;armor.hp=95;armor.z=-.8f;
-    for(int i=0;i<30 && defeat.state.campaign.phase()==Phase::Combat;++i)
-        r=defeat.Step(Ray(0.f,.2f,-1.f,.1f));
+    for(int i=0;i<30 && defeat.state.campaign.phase()==Phase::Combat;++i){
+        auto in=Ray(0.f,.2f,-1.f,.1f);
+        Campaign next=defeat.state.campaign;
+        next.Tick(in.delta_seconds);
+        in.primary_down=next.phase()==Phase::Defeat; // Fire exactly as the armor salvo lands.
+        r=defeat.Step(in);
+    }
+    Check(!defeat.state.reset_armed && !r.Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN),
+          "last combat press cannot arm deletion of the previous wave checkpoint");
+    Check(defeat.Press(Ray()).Has(REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN) &&
+          defeat.state.reset_armed && defeat.state.campaign.phase()==Phase::Defeat,
+          "first deliberate result press only arms the restart confirmation");
     Check(defeat.state.campaign.phase()==Phase::Defeat &&
           r.Count(REVERIE_NATIVE_SOUND_BATTERY_LOST)==1u &&
           r.cues.front()==REVERIE_NATIVE_SOUND_BATTERY_LOST,"defeat precedes its incoming damage cue");

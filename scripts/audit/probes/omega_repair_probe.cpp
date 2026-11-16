@@ -35,6 +35,7 @@ int32_t FaultRead(const char* slot,void* data,uint32_t capacity,uint32_t* size){
 int main(int argc,char** argv){
     const int prior=OmegaPositiveLifecycle(argc,argv);
     if(prior)return prior;
+    audit::GL context;
     auto host=audit::Host();host.read_save=FaultRead;
     auto* state=static_cast<State*>(Create(&host));
     audit::Check(state&&state->has_campaign,"actual continued campaign");
@@ -54,12 +55,45 @@ int main(int argc,char** argv){
     audit::Check(state&&state->load_failed,"corrupt save rejected");
     audit::Check(PrepareExit(state)==0&&audit::writes==writes&&
         audit::saves[kSaveSlot]==corrupt,"exit cannot overwrite unreadable old save");
+    Tap(state,0.f,.42f); // Title -> Campaign
+    Tap(state,0.f,.42f); // First campaign action must only retry the read.
+    audit::Check(state->load_failed && !state->has_campaign &&
+        state->menu.screen==game::MenuScreen::Campaign &&
+        audit::writes==writes && audit::saves[kSaveSlot]==corrupt,
+        "ordinary campaign selection must preserve an unreadable slot");
+    audit::Check(GlStart(state)==1,"unreadable campaign recovery GL");
+    audit::Capture(Render,state,"omega-campaign-read-recovery");
+    Tap(state,0.f,game::Menu::ButtonY(1)); // New campaign
+    audit::Check(state->menu.screen==game::MenuScreen::ConfirmNew &&
+        audit::writes==writes,"new campaign cannot erase until confirmation");
+    Tap(state,0.f,game::Menu::ButtonY(1)); // Cancel
+    audit::Check(state->menu.screen==game::MenuScreen::Campaign &&
+        audit::saves[kSaveSlot]==corrupt,"cancel keeps original bytes");
+    Tap(state,0.f,game::Menu::ButtonY(1)); // New campaign
+    Tap(state,0.f,game::Menu::ButtonY(0)); // Confirm erase and start
+    audit::Check(state->menu.screen==game::MenuScreen::Playing &&
+        state->has_campaign && !state->load_failed && audit::writes==writes+1 &&
+        audit::saves[kSaveSlot]!=corrupt,"only confirmed replacement starts fresh");
+    GlEnd(state);
     Destroy(state);
     audit::saves[kSaveSlot]=good;read_error=true;
     state=static_cast<State*>(Create(&host));
     audit::Check(state&&state->load_failed&&PrepareExit(state)==0,
         "transient read failure blocks ordinary exit");
+    Tap(state,0.f,.42f);
+    const auto writes_before_retry=audit::writes;
+    Tap(state,0.f,.42f);
+    audit::Check(state->load_failed && audit::writes==writes_before_retry,
+        "transient I/O error cannot turn a retry into a fresh campaign");
     read_error=false;
+    Tap(state,0.f,.42f); // Retry with the original bytes now readable.
+    audit::Check(state->has_campaign && !state->load_failed &&
+        state->menu.screen==game::MenuScreen::Campaign &&
+        state->session.Checksum()==checksum && audit::writes==writes_before_retry,
+        "menu retry restores the original session without writing the slot");
+    Tap(state,0.f,.42f);
+    audit::Check(state->menu.screen==game::MenuScreen::Playing &&
+        state->session.Checksum()==checksum,"continue resumes the recovered campaign");
     audit::Check(PrepareExit(state)==1&&!state->load_failed&&
         state->has_campaign&&state->session.Checksum()==checksum,
         "recovered read restores exact existing campaign before exit");

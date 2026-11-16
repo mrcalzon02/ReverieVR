@@ -131,6 +131,58 @@ static void Lifecycle(){
     std::cout<<kId<<" lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS\n";
 }
 #if (CLASSIC_GAME_KIND>=3 && CLASSIC_GAME_KIND<=5) || CLASSIC_GAME_KIND==7
+static void DirectionalSelectWithLiveRay(){
+    slots.clear();const auto host=Host();
+    auto *m=static_cast<Module *>(Create(&host));
+    const int n=m->board.Size();
+#if CLASSIC_GAME_KIND==5
+    m->board.StartChessGame(-1);
+    Check(m->board.ChessMove(52,36),"establish Black to move");
+    const int target=11; // d7, on the player's side of the rotated board
+#elif CLASSIC_GAME_KIND==3
+    const int target=42;
+#elif CLASSIC_GAME_KIND==4
+    const int target=180;
+#else
+    const int target=19;
+#endif
+    const float gap=BoardSpacing(m->board);
+    const float x=BoardX(m->board,target%n),y=BoardY(m->board,target/n);
+    auto input=Input(.02f);
+    Ray(input,x-gap,y,-2.91f);Update(m,&input);
+    input.move_x=1.f;Update(m,&input);input.move_x=0.f;
+    // A little headset drift must not steal Select from the highlighted cell.
+    Ray(input,x-.9f*gap,y,-2.91f);Update(m,&input);
+    input.primary_down=1;Update(m,&input);
+#if CLASSIC_GAME_KIND==3 || CLASSIC_GAME_KIND==5
+    Check(m->board.selected==target,"pad click selects highlighted piece with live ray");
+#else
+    Check(m->board.cells[target]==1,"pad click places stone at highlighted cell with live ray");
+#endif
+    // Read the actual cursor outline vertices emitted for this position.
+    RebuildBoard(m,false);
+    size_t count=0;float sumX=0.f,sumY=0.f;
+    for(size_t i=0;i+5<m->vertices.size();i+=6){
+        const auto &v=m->vertices;
+        if(v[i+3]!=.93f||v[i+4]!=.98f||v[i+5]!=.99f)continue;
+        ++count;sumX+=v[i];sumY+=v[i+1];
+    }
+    Check(count==24 && std::abs(sumX/count-x)<.001f &&
+          std::abs(sumY/count-y)<.001f,"visible cursor outlines the selected board cell");
+    input.primary_down=0;Ray(input,x+gap,y,-2.91f);Update(m,&input);
+    RebuildBoard(m,false);
+    bool stillOutlined=false;
+    for(size_t i=0;i+5<m->vertices.size();i+=6){
+        const auto &v=m->vertices;
+        if(v[i+3]==.93f&&v[i+4]==.98f&&v[i+5]==.99f)stillOutlined=true;
+    }
+    Check(!stillOutlined,"deliberate pointing releases visual pad cursor");
+#if CLASSIC_GAME_KIND==5
+    Check(m->chessHoverSquare==10,"Black pointer previews c7 after releasing pad");
+#endif
+    Destroy(m);
+    std::cout<<kId<<" mixed pointer and touchpad select, outline and handoff PASS\n";
+}
 static void PendingCpuRebuild(){
     slots.clear();const auto host=Host();Module *m=static_cast<Module *>(Create(&host));
     // Use one production legal move to establish an exact pending CPU turn,
@@ -198,8 +250,44 @@ static void SnakeVisibleButtons(){
     Check(m->game.desired==1,"old invisible UP region no longer changes direction");Destroy(m);
 }
 #endif
+#if CLASSIC_GAME_KIND==0 || CLASSIC_GAME_KIND==6
+static void PaddleWithLiveRay(){
+    slots.clear();const auto host=Host();
+    auto *m=static_cast<Module *>(Create(&host));
+    auto input=Input(.1f);
+#if CLASSIC_GAME_KIND==6
+    auto &axis=input.move_x;
+    const auto &position=m->breakout.paddle;
+#else
+    auto &axis=input.move_y;
+    const auto &position=m->game.paddle;
+#endif
+    Ray(input,0.f,0.f,-2.91f);Update(m,&input);axis=1.f;
+    for(int i=0;i<4;++i)Update(m,&input);
+    Check(position>.60f,"pad steers continuously despite stationary valid ray");
+    const float heldPosition=position;axis=0.f;Update(m,&input);
+    Check(position==heldPosition,"paddle stays at chosen position on pad release");
+    Ray(input,-.5f,-.5f,-2.91f);Update(m,&input);
+    Check(position<-.4f,"moving the ray takes control of paddle");
+    Destroy(m);
+    std::cout<<kId<<" sustained touchpad movement and pointer handoff PASS\n";
+}
+#endif
 int main(){Lifecycle();
+#if CLASSIC_GAME_KIND==4
+    // A partially present optional pointer tail must behave like a base input.
+    slots.clear();const auto host=Host();auto *m=static_cast<Module *>(Create(&host));
+    auto legacy=Input();
+    legacy.struct_size=offsetof(ReverieNativeInputV1,pointer_direction);
+    legacy.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;legacy.primary_down=1;
+    Update(m,&legacy);Check(m->board.cells[0]==1,"partial ray prefix retains cursor selection");
+    Destroy(m);
+#endif
+#if CLASSIC_GAME_KIND==0 || CLASSIC_GAME_KIND==6
+    PaddleWithLiveRay();
+#endif
 #if (CLASSIC_GAME_KIND>=3 && CLASSIC_GAME_KIND<=5) || CLASSIC_GAME_KIND==7
+    DirectionalSelectWithLiveRay();
     PendingCpuRebuild();
 #endif
 #if CLASSIC_GAME_KIND==1

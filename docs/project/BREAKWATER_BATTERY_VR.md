@@ -19,7 +19,10 @@ the optional `prepare_exit` callback refuses ordinary exit while a save or
 selected-slot read remains unresolved. Missing, invalid and I/O-failed
 slots are distinct; ordinary selection never replaces unreadable data.
 
-Shop and terminal restart both require two presses. A failed clear keeps
+Shop and terminal restart both require two presses. The result screen accepts
+its first restart press after the final combat update. Pressing Select and App
+together on a shop control or difficulty card performs the selected action;
+a separate App press in the shop starts the wave. A failed clear keeps
 the reset pending. Even if the host renamed new bytes and then reported
 an error while acknowledging directory durability, retries continue the
 clear and cannot restore the old in-memory campaign over the reset slot.

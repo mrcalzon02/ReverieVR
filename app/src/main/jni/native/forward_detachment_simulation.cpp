@@ -65,6 +65,7 @@ bool Simulation::ReturnToBase() {
 bool Simulation::FileDebrief(Debrief *out) {
     if (phase_ != Phase::Returned || out == nullptr) return false;
     *out = {information_value_, vehicle_condition_, fuel_remaining_, unnecessary_force_};
+    route_intel_[static_cast<unsigned>(route_)] = information_value_;
     phase_ = Phase::Debriefed;
     return true;
 }
@@ -78,6 +79,10 @@ bool Simulation::RefitAtBase() {
     if(phase_!=Phase::Briefing)return false;
     vehicle_condition_=100;fuel_remaining_=20;
     return true;
+}
+int32_t Simulation::LastRouteIntel(Route route) const {
+    const auto index = static_cast<unsigned>(route);
+    return index < route_intel_.size() ? route_intel_[index] : 0;
 }
 bool Simulation::LastDebrief(Debrief *out) const {
     if(phase_!=Phase::Debriefed||!out)return false;

@@ -40,6 +40,8 @@ private:
     friend class reverie::recon::Checkpoint;
     Phase phase_ = Phase::Briefing;
     Sector selected_ = Sector::RailApproach;
+    // A filed sortie advances only its own sector when the next sortie opens.
+    uint8_t follow_up_sectors_ = 0;
     Photograph photo_{};
     ReportResult last_report_{};
     int32_t credibility_ = 0;

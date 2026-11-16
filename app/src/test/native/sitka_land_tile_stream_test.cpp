@@ -91,6 +91,19 @@ int main(int argc,char** argv){
     assert(source.PendingGpuSwap()); // GPU recreated from intact CPU meshes
     source.MarkGpuCommitted();
 
+    LandTileStream centered(index);
+    assert(centered.SetFocus(478720.+1024.,6324480.-1024.));
+    std::vector<std::string> requested;
+    for(unsigned i=0;i<4;++i)
+        assert(centered.Pump([&](const std::string& path,std::string& out){
+            requested.push_back(path);return reader(path,out);
+        }));
+    for(unsigned r=1;r<=2;++r)for(unsigned c=1;c<=2;++c){
+        const std::string tile="sitka/coast/tiles/terrain-r0"+std::to_string(r)+
+            "-c0"+std::to_string(c)+".sitkam";
+        assert(std::find(requested.begin(),requested.end(),tile)!=requested.end());
+    }
+
     LandTileStream corrupt(index);
     assert(corrupt.SetFocus(478750.,6324450.));
     const bool loadedCorrupt=corrupt.Pump([&](const std::string& path,std::string& out){

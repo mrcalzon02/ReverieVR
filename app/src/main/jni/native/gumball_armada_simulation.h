@@ -38,7 +38,9 @@ inline float PlayerShotDepth(float y){
 // enemy volume to the player's rendered hull plane. Derive Z from the
 // already checkpointed Y: GUMFLY04 needs no new live-shot fields.
 inline float HostileShotDepth(float y){
-    return -2.55f-std::max(0.f,y+.85f)*1.48f;
+    // Ordinary bolts enter the pilot's plane at its forward edge and travel
+    // across every reachable row. At y=1.65 they are still 3.7 units aft.
+    return -2.55f-std::max(0.f,y-kFlightTop)*3.7f;
 }
 inline bool HostileShotHitsPlayerVolume(const ShipAssembly& hull,
         float px,float py,ShipVolumePoint from,ShipVolumePoint to){
@@ -322,7 +324,7 @@ public:
         const float speed=move_speed()*
             (pointerGuided?kFlightPointerSpeedFactor:1.f);
         px_=std::max(-1.9f,std::min(1.9f,px_+sx*dt*speed));
-        py_=std::max(-1.15f,std::min(.65f,py_-sy*dt*speed));
+        py_=std::max(-1.15f,std::min(kFlightTop,py_-sy*dt*speed));
         cooldown_-=dt;combo_clock_-=dt;
         if(combo_clock_<=0.f)combo_=0;
         if(fire&&cooldown_<=0.f){

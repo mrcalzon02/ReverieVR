@@ -54,6 +54,14 @@ int main() {
     ReverieNativeHostV1 host{};host.struct_size=sizeof(host);host.abi_version=1u;
     host.log=Log;host.read_save=Read;host.write_save=Write;host.request_feedback=Feedback;
     auto* s=New(host);assert(!Recovering(s)&&!s->save_dirty && writes==1u);
+    // A tracked ray parallel to or facing away from the maze must miss.
+    for(int axis:{0,2}){
+        ReverieNativeInputV1 away{};away.struct_size=sizeof(away);
+        away.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+        away.pointer_direction[axis]=1.f;away.primary_down=1u;
+        Update(s,&away);assert(s->game.phase==Phase::Ready && writes==1u);
+        away.primary_down=0u;Update(s,&away);
+    }
     const auto seed=s->game.seed;
     s->choice=static_cast<int>(s->game.current.safeSide);Click(s);
     assert(s->game.phase==Phase::Pulling && Stored().room==1u);
@@ -95,6 +103,11 @@ int main() {
     const std::vector<uint8_t> invalid={1u,2u,3u,4u,5u};
     disk[reverie::doors::kMazeSaveSlot]=invalid;s=New(host);
     assert(s->save_read==MazeRead::Invalid && kApi.prepare_exit(s)==0);
+    s->choice=1;input={};input.struct_size=sizeof(input);
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[2]=1.f;input.primary_down=1u;
+    Update(s,&input);assert(!s->reset_confirm && disk.at(reverie::doors::kMazeSaveSlot)==invalid);
+    input.primary_down=0u;Update(s,&input);
     input={};input.struct_size=sizeof(input);input.primary_down=1u;input.move_x=1.f;
     input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;input.pointer_direction[2]=-1.f;
     Update(s,&input); // Active centre ray misses both buttons; rocker still selects New Maze.
@@ -119,6 +132,11 @@ int main() {
     input.pointer_direction[2]=-1.f;input.move_x=1.f;input.primary_down=1u;Update(s,&input);
     assert(s->game.side==1 && s->game.phase==Phase::Pulling);Destroy(s);
     disk.erase(reverie::doors::kMazeSaveSlot);s=New(host);
+    // Older hosts with only part of the pointer prefix retain pointerless Select.
+    input={};input.struct_size=offsetof(ReverieNativeInputV1,pointer_direction);
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.primary_down=1u;Update(s,&input);
+    assert(s->game.phase==Phase::Pulling && s->game.side==0);
     for(uint64_t seedCase=1u;seedCase<=64u;++seedCase) {
         s->game.Reset(seedCase);InForwardView(s);
         s->doorGaze=0;s->gazeSeconds=1.f;InForwardView(s);

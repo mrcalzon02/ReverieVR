@@ -1,5 +1,9 @@
 ## 2026-11-08 — Native-game repairs, source and local execution
 
+## 2026-11-16 native lineup development
+
+The registry and native build definitions agree on 17 titles. Host module interaction and persistence checks cover classic board and paddle input, Guess the Door targeting, Red Ledger press rearming, Breakwater modal transitions, Gumball projectile interception, Omega campaign recovery, Sitka eye and controller placement, and both reconnaissance boards. Lantern now varies the photograph and correct assessment on repeat visits. Forward Detachment keeps the last filed result for each route. Test Chamber's existing workshop and storage paths were exercised. Reference-device control, legibility and sustained frame pacing are open.
+
 **Accepted at the demonstrated source/host layer:** code checkpoint
 `9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c`; 21/21 final groups passed with
 one shared source fingerprint. All eight classics preserve exact snapshots;

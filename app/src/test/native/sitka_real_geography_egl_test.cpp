@@ -109,6 +109,11 @@ int main(int argc,char** argv){
     input.move_x=1.f;
     Update(state,&input);
     assert(state->geo_view);
+    const float initial_altitude=state->geo_altitude;
+    input.move_x=0.f;input.move_y=-1.f;Update(state,&input);
+    assert(state->geo_altitude>initial_altitude);
+    input.move_y=1.f;Update(state,&input);
+    assert(std::abs(state->geo_altitude-initial_altitude)<.01f);
     input.secondary_down=0u;
     input.move_x=input.move_y=0.f;
     for(int n=0;n<8;++n)Update(state,&input);
@@ -123,9 +128,10 @@ int main(int argc,char** argv){
     float projection[16]={};
     const float tanHalf=std::tan(.698131700797732f);
     projection[0]=projection[5]=1.f/tanHalf;
-    projection[10]=-(150.f+.08f)/(150.f-.08f);
+    // Same near/far planes VrShellRenderer supplies for Sitka on Android.
+    projection[10]=-(30.f+.10f)/(30.f-.10f);
     projection[11]=-1.f;
-    projection[14]=-(2.f*150.f*.08f)/(150.f-.08f);
+    projection[14]=-(2.f*30.f*.10f)/(30.f-.10f);
     std::vector<uint8_t> rgba(512u*256u*4u);
     glEnable(GL_SCISSOR_TEST);
     for(int i=0;i<2;i++){
@@ -139,6 +145,7 @@ int main(int argc,char** argv){
         eye.eye_index=static_cast<uint32_t>(i);
         for(int k=0;k<4;k++)eye.view[k*5]=1.f;
         std::copy(projection,projection+16,eye.projection);
+        eye.projection[8]=i==0?.025f:-.025f;
         eye.view[12]=i==0?.025f:-.025f;
         assert(RenderEye(state,&eye));
     }
@@ -148,13 +155,19 @@ int main(int argc,char** argv){
     glReadPixels(0,0,512,256,GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
     assert(glGetError()==GL_NO_ERROR);
     std::array<size_t,2> colored{{0u,0u}};
+    std::array<std::array<bool,256>,2> red_levels{};
     for(unsigned y=0;y<256u;++y)for(unsigned x=0;x<512u;++x){
         const size_t at=(size_t(y)*512u+x)*4u;
         const unsigned red=rgba[at],green=rgba[at+1u],blue=rgba[at+2u];
-        // Count actual nonblack world pixels, not clear-color or alpha.
-        if((red+green+blue)>36u)++colored[x/256u];
+        // Labels occupy the top of the view. Check the lower half for
+        // real land so a clipped map with a working HUD cannot pass.
+        if(y<128u&&(red+green+blue)>36u){
+            ++colored[x/256u];red_levels[x/256u][red]=true;
+        }
     }
     assert(colored[0]>100u&&colored[1]>100u);
+    for(const auto& levels:red_levels)
+        assert(std::count(levels.begin(),levels.end(),true)>8);
     std::ofstream ppm(capture,std::ios::binary);
     assert(ppm.good());
     ppm<<"P6\n512 256\n255\n";

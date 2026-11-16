@@ -592,23 +592,21 @@ The host still caps each slot at 65,536 bytes. This provides an acknowledged
 filesystem checkpoint, not a guarantee against faulty hardware or storage
 that violates its flush contract.
 
-### Integrated game checkpoints — 2026-11-08 repair
+### Integrated game checkpoints — 2026-11-16
 
 This table supersedes earlier dated descriptions of the games' save payloads.
-All sixteen registered modules now participate in `prepare_exit`; the eight
-classics share one implementation compiled for each game. Admission and the
-single host APK remain unchanged. These are source/local diagnostic results,
-not an Android or reference-headset acceptance claim.
+All 17 registered modules participate in `prepare_exit`. The eight classics share one implementation compiled for each game.
 
 | Module family | Current durable state | Recovery boundary |
 | --- | --- | --- |
 | Chess, Go, Checkers, Reversi, Chutes & Ladders, Pong, Snake, Breakout | Exact game state, history, SAN where applicable, RNG and pending CPU intent; checked manifests select alternating banks of up to 64 bounded pages, with a 4 MiB snapshot limit | Complete acknowledged snapshot; overflow refuses save rather than truncating history; invalid prior data remains protected |
-| Red Ledger | 396-byte `RLSTATE5` envelope in `state-v4.bin`, with full composite integrity; supported 332/372-byte imports | Latest acknowledged economy/session; dirty writes retry; corruption in an old unchecked base cannot be detected retroactively |
+| Red Ledger | 396-byte `RLSTATE5` envelope in `state-v4.bin`, with full composite integrity; supported 332/372-byte imports | Latest acknowledged economy/session. Dirty writes retry. Entry and resume require a released Select before another bar action. Old unchecked base data has limited integrity protection. |
 | Gumball Armada | 4,096-byte `GUMFLY04` flight, campaign, shipyard, entity/RNG and paid-support state in `campaign.v1` | Exact active flight behind a release/Continue gate; supported legacy campaign and shipyard import |
-| Omega Front | Existing checked 2,048-byte campaign/session | Existing complete session; encode/read failures now participate in exit refusal and retry |
+| Omega Front | Checked 2,048-byte campaign/session | An unreadable slot offers Retry Loading Campaign. A successful retry restores the session for Continue. Replacing it requires New Campaign and explicit erase confirmation. Failed saves retain the existing exit retry. |
 | Breakwater | Checked 88-byte schema-3 Shop/Victory record; valid 80-byte legacy records accepted | Last Shop/wave start, including earned wave rewards and final victory; live combat is not serialized; ambiguous reset keeps clear-only intent |
 | Guess the Door | Checked 36-byte seed/progress record | Deterministic completed outcome of a choice; animation remains transient; corrupt originals require successful backup before replacement |
-| Lantern Desk / Forward Detachment | Kind-tagged checked 128-byte exact phase/menu/evidence/result records | Exact board session; Lantern totals survive Next Sortie; Forward condition/fuel survive Next Patrol and change to full values only after explicit base service |
+| Lantern Desk / Forward Detachment | Kind-tagged 128-byte schema-2 checkpoints with schema-1 import | Lantern restores the photograph, score and independent sector rotations. Forward restores fuel, condition and each route’s most recently filed intelligence. A schema-1 Forward debrief recovers the one report actually present in that save. |
+| Sitka | Starter journal with per-domain progress | The module retries a pending checkpoint and can refuse ordinary exit while the journal cannot be saved. |
 | Test Chamber | Existing bounded project slots and dirty project model | Prefer valid alternative projects on startup; all-invalid recovery is read-only; unresolved edits block switching, Play Test and ordinary exit |
 
 Every title retains pending state after an unacknowledged write and distinguishes

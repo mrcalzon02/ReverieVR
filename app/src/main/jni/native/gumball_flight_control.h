@@ -8,6 +8,7 @@ namespace reverie { namespace gumball {
 struct FlightAim {float x=0.f,y=0.f;bool valid=false;};
 struct FlightAxes {float x=0.f,y=0.f;};
 constexpr float kFlightPointerSpeedFactor=2.2f;
+constexpr float kFlightTop=.65f;
 inline FlightAim FlightAimFromRay(const float origin[3],const float direction[3]){
     if(!origin||!direction)return {};
     for(int i=0;i<3;++i)
@@ -20,7 +21,7 @@ inline FlightAim FlightAimFromRay(const float origin[3],const float direction[3]
     const float y=origin[1]+distance*direction[1];
     if(!std::isfinite(x)||!std::isfinite(y))return {};
     return {std::max(-1.9f,std::min(1.9f,x)),
-            std::max(-1.15f,std::min(.65f,y)),true};
+            std::max(-1.15f,std::min(kFlightTop,y)),true};
 }
 // Follow the ray without teleporting: thrusters and installed engines cap
 // the ship's per-frame travel. The game convention has positive Y axis

@@ -21,6 +21,13 @@ int main(int argc,char** argv){
     audit::GL context;auto host=audit::Host();auto* s=static_cast<State*>(Create(&host));
     audit::Check(s&&!s->loadBlocked&&GlStart(s)==1,"actual recon GL");
     audit::Check(api.prepare_exit==PrepareExit,"published guarded-exit callback");
+    auto pad=audit::Input();
+    Update(s,&pad);
+    pad.move_x=-1.f;Update(s,&pad);Update(s,&pad);
+    audit::Check(s->choice==2,"left wraps to previous choice once while held");
+    pad.move_x=0.f;Update(s,&pad);pad.move_y=1.f;Update(s,&pad);
+    audit::Check(s->choice==0,"down returns to next choice");
+    pad.move_y=0.f;Update(s,&pad);
 #if RECON_PROJECT_KIND == 0
     const std::string prefix="lantern";
     Cycle(s,2);s=Recreate(s,&host,"lantern-briefing");
@@ -47,6 +54,13 @@ int main(int argc,char** argv){
     audit::Check(audit::saves==visible&&Bytes(s)==current&&!s->saveDirty,"unacknowledged report retry cannot double-apply effect");
     s=Recreate(s,&host,"lantern-second-report");
     Click(s);audit::Check(s->simulation.credibility()==5&&s->simulation.operational_effect()==3,"recreated filed report not awarded again");
+    Cycle(s,2);Click(s);
+    const unsigned before_writes=audit::writes;
+    Cycle(s);audit::Check(audit::writes==before_writes,"rocker leaves single-action screen and storage alone");
+    Click(s);s=Recreate(s,&host,"lantern-river-revisit");
+    audit::Check(s->photo.pixels!=photo.pixels,"the revisited river has a different deck");
+    Click(s);audit::Check(s->simulation.credibility()==7 && s->result.operational_effect==1,
+        "filing no contact on the intact crossing produces a favorable report");
     std::puts("PASS_LANTERN cumulative trust=5 effect=3; all four phases/evidence/choice/results recreated exactly");
 #else
     const std::string prefix="forward";
@@ -80,6 +94,8 @@ int main(int argc,char** argv){
     audit::Capture(Render,s,"forward-refit-save-warning");audit::ambiguous_writes=false;Resume(s);
     audit::Check(!s->saveDirty&&Bytes(s)==current&&audit::saves==visible,"refit retries identical latest state");
     s=Recreate(s,&host,"forward-confirmed-refit");
+    audit::Check(s->simulation.LastRouteIntel(sim::Route::MainRoad)==1 &&
+        s->simulation.LastRouteIntel(sim::Route::RidgeBypass)==0,"last filed road intelligence survived refit and recreation");
     std::puts("PASS_FORWARD normal continuation retains75/10, safe second patrol75/0, Cancel unchanged, explicit confirmed refit100/20");
 #endif
     const auto valid=audit::saves;const auto lastState=Bytes(s);GlEnd(s);Destroy(s);

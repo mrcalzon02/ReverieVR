@@ -13,6 +13,7 @@
 
 namespace reverie { namespace sitka {
 struct BoatTint { uint8_t r,g,b; };
+inline constexpr float kBoatDeckY=-.59f;
 inline constexpr BoatTint kHullColor={155,164,157};
 inline constexpr BoatTint kDeckColor={165,139,103};
 inline constexpr BoatTint kRailColor={212,207,180};
@@ -76,8 +77,8 @@ public:
             const float a=z[i],b=z[i+1u];
             // A shaped, walkable deck connects to the safety rail, leaving
             // permanent boat-local walking coordinates across hull tiers.
-            Quad({-p,-.59f,a},{p,-.59f,a},
-                 {q,-.59f,b},{-q,-.59f,b},kDeckColor);
+            Quad({-p,kBoatDeckY,a},{p,kBoatDeckY,a},
+                 {q,kBoatDeckY,b},{-q,kBoatDeckY,b},kDeckColor);
             for(int side:{-1,1}){
                 const float x0=float(side)*p,x1=float(side)*q;
                 Quad({x0,-.56f,a},{x1,-.56f,b},
@@ -190,7 +191,7 @@ inline std::array<float,16> BoatModelMatrix(const BoatPose& pose,
              0.f,1.f,0.f,0.f,
              s,0.f,c,0.f,
              static_cast<float>(pose.east-origin_east),
-             static_cast<float>(water_surface_y+.40),
+             static_cast<float>(water_surface_y+.12-kBoatDeckY),
              static_cast<float>(pose.north-origin_north),1.f}};
 }
 }} // namespace reverie::sitka

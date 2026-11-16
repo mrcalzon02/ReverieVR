@@ -52,6 +52,16 @@ inline uint32_t LandTileCrc32(const std::string& bytes) {
     return crc^0xffffffffu;
 }
 
+// Hypsometric tint for the inspection view only. Apply after source validation
+// to cached vertices. Equal elevations on neighboring tile edges stay identical.
+inline void TintLandByElevation(TerrainVertex& point){
+    const float low=std::clamp((point.y+2.f)/16.f,0.f,1.f);
+    const float high=std::clamp((point.y-14.f)/50.f,0.f,1.f);
+    point.r=uint8_t(std::lround(39.f+66.f*low+116.f*high));
+    point.g=uint8_t(std::lround(89.f+60.f*low+37.f*high));
+    point.b=uint8_t(std::lround(79.f+8.f*low+43.f*high));
+}
+
 class LandTileStream {
 public:
     static constexpr unsigned kMaxRows=8u,kMaxColumns=8u;
@@ -155,12 +165,12 @@ public:
            east<west_||east>west_+cols_*size_||
            north>north_||north<north_-rows_*size_)
             return false;
-        const unsigned c=std::min(cols_-1,
-            static_cast<unsigned>(std::floor((east-west_)/size_)));
-        const unsigned r=std::min(rows_-1,
-            static_cast<unsigned>(std::floor((north_-north)/size_)));
-        const unsigned c0=std::min(cols_-2,c);
-        const unsigned r0=std::min(rows_-2,r);
+        // Center the 2x2 group around the closest grid crossing. At an
+        // interior tile corner all four surrounding quadrants are visible.
+        const unsigned c0=unsigned(std::clamp(int(std::floor(
+            (east-west_)/size_-.5)),0,int(cols_)-2));
+        const unsigned r0=unsigned(std::clamp(int(std::floor(
+            (north_-north)/size_-.5)),0,int(rows_)-2));
         const std::array<int,kResidentTiles> desired={{
             int(r0*cols_+c0),int(r0*cols_+c0+1),
             int((r0+1)*cols_+c0),int((r0+1)*cols_+c0+1)}};
@@ -203,6 +213,7 @@ public:
                        p.z < -float(size_)-.01f||p.z > .01f||
                        p.y < -150.f||p.y > 6000.f)
                         throw std::invalid_argument("tile vertex outside sourced geographic bounds");
+                    TintLandByElevation(p);
                     p.x+=dx;p.z+=dz;
                 }
                 mesh.origin_east=west_;

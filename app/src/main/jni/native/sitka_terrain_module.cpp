@@ -51,7 +51,7 @@ struct State {
     reverie::nativetext::LatoLayer geo_text;
     bool geo_view=false,geo_chord_held=false;
     double geo_east=0.,geo_north=0.;
-    float geo_altitude=105.f;
+    float geo_altitude=210.f;
     unsigned geo_last_errors=0u;
     reverie::sitka::TerrainMesh terrain;
     reverie::sitka::Lighting lighting;
@@ -174,12 +174,14 @@ void* Create(const ReverieNativeHostV1* host) {
                     ReadText(host,"sitka/coast/index.txt",16384u)));
                 state->geo_east=state->geo_tiles->origin_east()+
                     512.*state->geo_tiles->columns()*.5;
+                // Start over the waterfront portion of the archived chart.
+                // This frames the land mask for inspection, not a player spawn.
                 state->geo_north=state->geo_tiles->origin_north()-
-                    512.*state->geo_tiles->rows()*.5;
+                    512.*state->geo_tiles->rows()*.625;
                 state->geo_tiles->SetFocus(state->geo_east,state->geo_north);
                 ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_INFO,
                     "SitkaTerrain",
-                    "NOAA chart land / USGS 3DEP geography available via APP+RIGHT. "
+                    "NOAA chart land / USGS 3DEP geography available via VOL UP + PAD RIGHT. "
                     "Source quality only; vertical datum/unverified water.");
             }catch(const std::exception& e){
                 Log(host,e.what());state->geo_tiles.reset();
@@ -528,13 +530,16 @@ int32_t OnGlCreated(void* instance) {
             state->geo_text.Clear();
             state->geo_text.Fit(
                 "SITKA / USGS 3DEP + NOAA ENC CHART LAND",
-                -1.45f,.65f,2.90f,.043f,.98f,.94f,.68f);
+                0.f,.85f,2.90f,.043f,.98f,.94f,.68f);
             state->geo_text.Fit(
                 "GEOGRAPHY PREVIEW / NOT FOR NAVIGATION",
-                -1.45f,.48f,2.90f,.037f,.96f,.78f,.58f);
+                0.f,.66f,2.90f,.037f,.96f,.78f,.58f);
             state->geo_text.Fit(
-                "APP+RIGHT RETURN    TOUCH FLY    SELECT+UP ALT",
-                -1.45f,.31f,2.90f,.034f,.9f,.96f,.94f);
+                "ELEVATION: LOW GREEN TO HIGH TAN",
+                0.f,.47f,2.90f,.035f,.89f,.98f,.88f);
+            state->geo_text.Fit(
+                "VOL UP + RIGHT: EXIT / + UP OR DOWN: ALT",
+                0.f,.28f,2.90f,.034f,.9f,.96f,.94f);
         }
     }
     if(!state->water_gl.Create(state->waters,state->weather,&error)){
@@ -677,8 +682,8 @@ int32_t PrepareExit(void* instance) {
 void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
-    // APP/Back plus rightward touch is an explicit, reversible development
-    // map inspector action. It never launches an unauthorized boat or alters
+    // The default secondary action (Volume Up) plus rightward touch toggles
+    // the map inspector. It never launches an unauthorized boat or alters
     // Sitka's fishing saves. A held chord can toggle only once.
     const bool geo_chord=state->geo_tiles &&
         input->secondary_down!=0u && input->primary_down==0u &&
@@ -696,13 +701,14 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(state->geo_view && state->geo_tiles){
         const double dt=std::isfinite(input->delta_seconds)?
             std::clamp(double(input->delta_seconds),0.,.05):0.;
-        if(input->primary_down!=0u){
-            // Select plus pad up/down adjusts the geographic observation
+        if(input->secondary_down!=0u || input->primary_down!=0u){
+            // The secondary button leaves Daydream touch axes live. Gamepads
+            // can also hold Select to adjust the geographic observation
             // altitude; the preview is aerial and not collision-grounded.
             state->geo_altitude=std::clamp(
-                float(state->geo_altitude+double(input->move_y)*120.*dt),
+                float(state->geo_altitude-double(input->move_y)*120.*dt),
                 65.f,300.f);
-        }else if(input->secondary_down==0u){
+        }else{
             state->geo_east+=double(input->move_x)*80.*dt;
             state->geo_north+=double(input->move_y)*80.*dt;
         }
@@ -784,7 +790,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         if(ReverieNativeSanitizePointerV1(&ray)){
             const float source[3]={
                 ray.pointer_origin[0]+foot.x,
-                ray.pointer_origin[1]+foot.ground_y,
+                ray.pointer_origin[1]+foot.EyeY(),
                 ray.pointer_origin[2]+foot.z};
             aimed_shop=reverie::sitka::HarborShopTarget(
                 state->harbor_sites,*state->walk_session,
@@ -841,9 +847,10 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         // Release immediately drops throttle to zero; 30 Hz hull inertia
         // still governs the deceleration of the vessel itself.
         const double throttle=reverie::sitka::SkiffForwardThrottle(input->move_y);
+        const double rudder=state->skiff->Active()?
+            state->helm_rudder.Advance(input->delta_seconds,input->move_x):0.;
         const auto event=state->skiff->Update(
-            input->delta_seconds,throttle,
-            state->helm_rudder.Advance(input->delta_seconds,input->move_x),
+            input->delta_seconds,throttle,rudder,
             boat_chord,listener_east,listener_north,
             *state->stream,*state->generated,state->waters,
             state->terrain.origin_east,state->terrain.origin_north);
@@ -946,7 +953,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         if(ReverieNativeSanitizePointerV1(&ray_input)){
             const float source[3]={
                 ray_input.pointer_origin[0]+foot.x,
-                ray_input.pointer_origin[1]+foot.ground_y,
+                ray_input.pointer_origin[1]+foot.EyeY(),
                 ray_input.pointer_origin[2]+foot.z
             };
             const auto found=reverie::sitka::FindBeachTarget(
@@ -985,7 +992,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             const float* d=normalized.pointer_direction;
             target=reverie::sitka::FindFishingTarget(
                 reverie::sitka::FishingRay{
-                    p[0]+foot.x,p[1]+foot.ground_y,p[2]+foot.z,
+                    p[0]+foot.x,p[1]+foot.EyeY(),p[2]+foot.z,
                     d[0],d[1],d[2]},
                 state->fishing_spots,state->waters);
         }
@@ -1016,27 +1023,34 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(listener && !(state->skiff&&state->skiff->Active())){
         state->shop_rx=input->listener_right[0];
         state->shop_rz=input->listener_right[2];
-        state->shop_y=foot.ground_y+
-            std::clamp(input->listener_position[1],.8f,2.f);
+        state->shop_y=foot.EyeY()+input->listener_position[1];
         auto lines=state->harbor_shop.open()?
             reverie::sitka::HarborShopPanel(state->harbor_shop,state->fishing):
             reverie::sitka::ShoreGameplayPanel(state->fishing,aimed_shop>=0);
         if(state->integration_range)
             lines[0]="SITKA TEST RANGE / NOT REAL GEOGRAPHY";
-        if(state->integration_range && state->geo_tiles &&
-           !state->harbor_shop.open())
-            lines[5]="APP+RIGHT: REAL NOAA/USGS LAND PREVIEW";
+        if(state->skiff && !state->harbor_shop.open() && aimed_shop<0 &&
+           state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready &&
+           state->skiff->AtBerth(listener_east,listener_north))
+            lines[2]="SELECT + VOL UP: BOARD HERE / DOCK WHEN SLOW";
+        const bool show_map_hint=state->integration_range && state->geo_tiles &&
+            !state->harbor_shop.open();
+        const char* map_hint="VOL UP + PAD RIGHT: NOAA/USGS LAND MAP";
         std::string signature;
         for(const auto& line:lines){signature+=line;signature+='\n';}
+        if(show_map_hint)signature+=map_hint;
         if(signature!=state->harbor_last_text){
             state->harbor_text.Clear();
             for(size_t i=0;i<lines.size();++i)
                 state->harbor_text.Fit(
-                    lines[i].c_str(),-.69f,.37f-float(i)*.135f,
+                    lines[i].c_str(),0.f,.37f-float(i)*.135f,
                     1.40f,.019f,
                     i==3u?1.f:.84f,
                     i==4u?.90f:.94f,
                     i==4u?.58f:.91f,.015f);
+            if(show_map_hint)
+                state->harbor_text.Fit(map_hint,0.f,-.44f,1.40f,.019f,
+                    .84f,.94f,.91f,.015f);
             state->harbor_last_text=signature;
         }
     }else if(!state->harbor_last_text.empty()){
@@ -1187,6 +1201,17 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
        state->geo_gl.ready() && state->geo_gl.batch_count()>0u){
         if(!ReverieNativeEyeRenderableV1(eye))return 0;
         ReverieNativeEyeV1 camera=*eye;
+        // The hub's room-scale far plane is 30 m. Extend only the map's
+        // perspective depth interval; keep the Cardboard eye's asymmetric
+        // frustum, stereo view and original projection for the near HUD.
+        if(camera.projection[11]==-1.f && camera.projection[15]==0.f){
+            const float near_plane=camera.projection[14]/(camera.projection[10]-1.f);
+            constexpr float far_plane=2048.f;
+            if(near_plane>0.f && near_plane<far_plane){
+                camera.projection[10]=-(far_plane+near_plane)/(far_plane-near_plane);
+                camera.projection[14]=-2.f*far_plane*near_plane/(far_plane-near_plane);
+            }
+        }
         // Chart-land coordinates are rebased to the UTM northwest node.
         // No headset tracking is interpreted as a GPS / surveyed viewpoint.
         const float x=float(state->geo_east-state->geo_tiles->origin_east());
@@ -1209,7 +1234,27 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     }
     ReverieNativeEyeV1 shifted{};
     const ReverieNativeEyeV1* world_eye=eye;
-    if(state->walk_session){
+    const bool aboard=state->skiff && state->skiff->Active();
+    std::array<float,16> boat_model{};
+    if(aboard){
+        const auto& pose=state->skiff->Pose();
+        const auto* water=reverie::sitka::SitkaWorldWater(state->waters,
+            state->terrain.origin_east,state->terrain.origin_north,pose.east,pose.north);
+        if(!water)return 0;
+        try{
+            boat_model=reverie::sitka::BoatModelMatrix(pose,state->terrain.origin_east,
+                state->terrain.origin_north,water->y);
+        }catch(const std::invalid_argument&){return 0;}
+        // The helm carries the seat. Only its position follows the vessel;
+        // the shell retains head orientation, lean and per-eye separation.
+        const auto seat=state->passenger.World(pose);
+        constexpr float seated_eye_above_deck=1.22f;
+        if(!reverie::sitka::PlaceTrackingEye(eye,shifted,
+            float(seat[0]-state->terrain.origin_east),
+            boat_model[13]+reverie::sitka::kBoatDeckY+seated_eye_above_deck,
+            float(seat[1]-state->terrain.origin_north)))return 0;
+        world_eye=&shifted;
+    }else if(state->walk_session){
         if(!state->walk_session->ShiftEye(eye,shifted))return 0;
         world_eye=&shifted;
     }
@@ -1256,22 +1301,12 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
             if(!state->harbor_text.Draw(mvp,true))return 0;
         }
     }
-    if(!state->skiff||!state->skiff->Active())return 1;
-    const auto& pose=state->skiff->Pose();
-    const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(
-        state->waters,state->terrain.origin_east,state->terrain.origin_north,
-        pose.east,pose.north);
-    if(!water)return 1; // never invent a surface for an unapproved footprint
-    try{
-        const auto model=reverie::sitka::BoatModelMatrix(
-            pose,state->terrain.origin_east,state->terrain.origin_north,
-            water->y);
-        if(!state->boat_gl.RenderEye(world_eye,model.data()))return 0;
-        float vp[16],mvp[16];
-        ReverieNativeMat4Multiply(vp,world_eye->projection,world_eye->view);
-        ReverieNativeMat4Multiply(mvp,vp,model.data());
-        return state->boat_text.Draw(mvp,true)?1:0;
-    }catch(const std::exception&){return 0;}
+    if(!aboard)return 1;
+    if(!state->boat_gl.RenderEye(world_eye,boat_model.data()))return 0;
+    float vp[16],mvp[16];
+    ReverieNativeMat4Multiply(vp,world_eye->projection,world_eye->view);
+    ReverieNativeMat4Multiply(mvp,vp,boat_model.data());
+    return state->boat_text.Draw(mvp,true)?1:0;
 }
 const ReverieNativeModuleApiV1 kApi = {
     sizeof(ReverieNativeModuleApiV1), REVERIE_NATIVE_MODULE_ABI_VERSION,

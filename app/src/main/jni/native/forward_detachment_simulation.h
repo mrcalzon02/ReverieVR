@@ -1,6 +1,7 @@
 #ifndef REVERIE_FORWARD_DETACHMENT_SIMULATION_H
 #define REVERIE_FORWARD_DETACHMENT_SIMULATION_H
 
+#include <array>
 #include <cstdint>
 
 namespace reverie { namespace recon { class Checkpoint; } }
@@ -35,6 +36,8 @@ public:
     bool NextPatrol();
     bool RefitAtBase();
     bool LastDebrief(Debrief *out) const;
+    // Every filed route result is nonzero. Zero means this route has no entry.
+    int32_t LastRouteIntel(Route route) const;
     Phase phase() const { return phase_; }
     int32_t vehicle_condition() const { return vehicle_condition_; }
     int32_t fuel_remaining() const { return fuel_remaining_; }
@@ -47,6 +50,7 @@ private:
     int32_t fuel_remaining_ = 20;
     int32_t information_value_ = 0;
     bool unnecessary_force_ = false;
+    std::array<int32_t, 2> route_intel_{};
 };
 }}  // namespace reverie::forward
 #endif

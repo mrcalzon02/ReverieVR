@@ -16,6 +16,18 @@ int main(int argc,char** argv){
     auto* state=static_cast<ModuleState*>(Create(&host));audit::Check(state&&!state->load_blocked,"fresh game");
     audit::Check(OnGlContextCreated(state)==1,"Red Ledger real GL");
     audit::Capture(RenderEye,state,"red-ledger-after-bar",1.2f,-.12f);
+    const auto cup=std::find_if(std::begin(kWorkTargets),std::end(kWorkTargets),
+        [](const TargetBounds& target){return target.target==WorkTarget::CupStack;});
+    audit::Check(cup!=std::end(kWorkTargets),"cup stack exists");
+    auto held=audit::Pointer(cup->center[0],cup->center[1],cup->center[2]);
+    const int cups=state->simulation.clean_cups();
+    Update(state,&held);held.primary_down=1;Update(state,&held);
+    audit::Check(state->simulation.clean_cups()==cups-1,"first press takes one cup");
+    Pause(state);Resume(state);Update(state,&held);
+    audit::Check(state->simulation.clean_cups()==cups-1,"held Select across Pause/Resume cannot trigger a second bar action");
+    held.primary_down=0;Update(state,&held);
+    Tap(state,WorkTarget::CupStack);
+    audit::Check(state->simulation.clean_cups()==cups,"fresh press can return the held cup");
     const int cash=state->simulation.cash_cents();Service(state);
     const int payment=state->simulation.pending_payment_cents();const auto prior=audit::saves;
     audit::reject_writes=true;Tap(state,WorkTarget::Payment);

@@ -128,7 +128,7 @@ void DrawMenu(State *s) {
         screen==game::MenuScreen::TacticalOrders?"TACTICAL ORDERS  /  CHOOSE MODE":
         "COMMAND PAUSED  /  OPTIONS";
     Text(s,caption,.837f,.011f,.62f,.80f,.86f);
-    const int count=s->menu.Count(s->has_campaign);
+    const int count=s->menu.Count(s->has_campaign,s->load_failed);
     const bool compact=count>4;
     Rect(s,0,-.015f,1.72f,compact?1.74f:1.38f,kBoardZ-.064f,
          .034f,.061f,.087f);
@@ -139,11 +139,15 @@ void DrawMenu(State *s) {
              focus?.20f:.074f,focus?.31f:.125f,focus?.38f:.17f);
         Rect(s,-.745f,y,.035f,compact?.13f:.152f,kBoardZ-.039f,
              focus?.94f:.26f,focus?.75f:.43f,focus?.37f:.51f);
-        Text(s,s->menu.Label(i,s->has_campaign),y,.012f,
+        Text(s,s->menu.Label(i,s->has_campaign,s->load_failed),y,.012f,
              focus?1.f:.80f,focus?.92f:.88f,focus?.73f:.88f);
     }
     char line[128];
-    if(screen==game::MenuScreen::Campaign){
+    if(screen==game::MenuScreen::Campaign && s->load_failed){
+        Text(s,"RETRY TO RECOVER YOUR CAMPAIGN",-.57f,.011f,.85f,.91f,.78f);
+        Text(s,"NEW CAMPAIGN ASKS BEFORE REPLACING THE SAVE",
+             -.71f,.010f,.71f,.84f,.87f);
+    }else if(screen==game::MenuScreen::Campaign){
         if(f.operation()<game::kHearthfallOperations)
             std::snprintf(line,sizeof(line),"OP %02d/%02d  %s",
                           f.operation()+1,game::kHearthfallOperations,
@@ -192,7 +196,7 @@ void DrawMenu(State *s) {
     }
     if(s->save_failed || s->load_failed)
         Text(s,s->save_failed?"SAVE FAILED  PROGRESS NOT STORED":
-             "CHECKPOINT UNREADABLE  START A NEW CAMPAIGN",
+             "CHECKPOINT UNREADABLE  /  ORIGINAL SAVE KEPT",
              -.977f,.011f,1.f,.46f,.43f);
     else Text(s,"TOUCHPAD SELECT   CLICK CONFIRM   MINUS BACK",
               -.991f,.010f,.62f,.75f,.79f);
@@ -921,7 +925,7 @@ void Draw(State *s){
 }
 constexpr char kSaveSlot[]="frontier.v1";
 bool SaveState(State *s){
-    if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return false;
+    if(!s || s->load_failed || !ReverieNativeHostSupportsSaveV1(s->host))return false;
     game::CampaignSave::Bytes bytes{};
     if(!game::CampaignSave::Encode(s->session,&bytes)){
         s->save_failed=true;return false;
@@ -953,7 +957,7 @@ void LoadState(State *s){
     if(code!=REVERIE_NATIVE_SAVE_OK || size!=bytes.size() ||
        !game::CampaignSave::Decode(&s->session,bytes.data(),size)){
         ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
-                           "Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept");
+                           "Invalid or unreadable Hearthwell checkpoint; original retained for retry");
         s->load_failed=true;
     }else{
         s->has_campaign=true;
@@ -1074,7 +1078,14 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         const bool had_campaign=s->has_campaign;
         const game::MenuCommand command=s->menu.Input(action.dt,action.y,
             action.primary,action.secondary,pointing,pointer_x,pointer_y,
-            s->has_campaign);
+            s->has_campaign,s->load_failed);
+        if(command==game::MenuCommand::RetryLoad){
+            LoadState(s);
+            Draw(s);
+            ReverieNativeRequestFeedbackV1(s->host,s->load_failed?
+                REVERIE_NATIVE_FEEDBACK_FAILURE:REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            return;
+        }
         if(command==game::MenuCommand::SetFieldAction)
             s->session.action=static_cast<game::FieldAction>(s->menu.field_choice);
         if(command==game::MenuCommand::SetCommandMode)

@@ -379,7 +379,7 @@ inline std::array<std::string,6> HarborShopPanel(
         (offer.available?(offer.affordable?"SELECT: CONFIRM":"WALLET FULL"):
                          "NOTHING TO HAND IN"):HarborOfferStatus(offer);
     if(fishing.write_failed)lines[4]="SAVE FAILED - RETRY ON PAUSE/EXIT";
-    lines[5]="STICK: BROWSE  SELECT: CONFIRM  BACK: CLOSE";
+    lines[5]="STICK: BROWSE  SELECT: CONFIRM  VOL UP: CLOSE";
     return lines;
 }
 // Compact live instructions use the same cached panel/font as the office.
@@ -397,7 +397,7 @@ inline std::array<std::string,6> ShoreGameplayPanel(const FishingSession& sessio
     }};
     switch(f.phase){
         case FishingPhase::Ready:lines[3]="POINT AT WATER: SELECT TO CAST";break;
-        case FishingPhase::Waiting:lines[3]="WAITING FOR A BITE / BACK: CANCEL";break;
+        case FishingPhase::Waiting:lines[3]="WAITING FOR A BITE / VOL UP: CANCEL";break;
         case FishingPhase::Bite:lines[3]="BITE! SELECT TO HOOK";break;
         case FishingPhase::Reeling:
             lines[3]="HOLD: REEL "+std::to_string(unsigned(f.reel*100.f))+"%";

@@ -24,17 +24,17 @@ public:
         for(size_t i=0;i<16;++i)Put16(&b[16+2*i],s.photo_.pixels[i]);
         PutI(&b[48],s.credibility_);PutI(&b[52],s.operational_effect_);
         PutI(&b[56],s.last_report_.credibility_delta);PutI(&b[60],s.last_report_.operational_effect);
-        b[64]=state.choice;Finish(b);*output=b;return true;
+        b[64]=state.choice;b[65]=s.follow_up_sectors_;Finish(b);*output=b;return true;
     }
     static bool Decode(LanternState* output,const uint8_t* b,size_t size){
-        if(!output||!Header(b,size,0)||!Padding(b,65))return false;
+        if(!output||!Header(b,size,0)||!Padding(b,b[8]==1?65:66))return false;
         LanternState next;auto& s=next.simulation;
         s.phase_=static_cast<lantern::Phase>(b[12]);s.selected_=static_cast<lantern::Sector>(b[13]);
         s.photo_.sector=static_cast<lantern::Sector>(b[14]);s.photo_.clarity=b[15];
         for(size_t i=0;i<16;++i)s.photo_.pixels[i]=Get16(&b[16+2*i]);
         s.credibility_=GetI(&b[48]);s.operational_effect_=GetI(&b[52]);
         s.last_report_.credibility_delta=GetI(&b[56]);s.last_report_.operational_effect=GetI(&b[60]);
-        next.choice=b[64];
+        next.choice=b[64];s.follow_up_sectors_=b[65];
         if(!Valid(next))return false;
         *output=next;return true;
     }
@@ -45,15 +45,19 @@ public:
         b[14]=static_cast<uint8_t>(s.decision_);b[15]=s.unnecessary_force_?1:0;
         PutI(&b[16],s.vehicle_condition_);PutI(&b[20],s.fuel_remaining_);PutI(&b[24],s.information_value_);
         b[28]=state.choice;b[29]=state.confirm_refit?1:0;
+        PutI(&b[30],s.route_intel_[0]);PutI(&b[34],s.route_intel_[1]);
         Finish(b);*output=b;return true;
     }
     static bool Decode(ForwardState* output,const uint8_t* b,size_t size){
-        if(!output||!Header(b,size,1)||!Padding(b,30)||b[15]>1||b[29]>1)return false;
+        if(!output||!Header(b,size,1)||!Padding(b,b[8]==1?30:38)||b[15]>1||b[29]>1)return false;
         ForwardState next;auto& s=next.simulation;
         s.phase_=static_cast<forward::Phase>(b[12]);s.route_=static_cast<forward::Route>(b[13]);
         s.decision_=static_cast<forward::Decision>(b[14]);s.unnecessary_force_=b[15]!=0;
         s.vehicle_condition_=GetI(&b[16]);s.fuel_remaining_=GetI(&b[20]);s.information_value_=GetI(&b[24]);
         next.choice=b[28];next.confirm_refit=b[29]!=0;
+        s.route_intel_ = {GetI(&b[30]),GetI(&b[34])};
+        if(b[8]==1 && s.phase_==forward::Phase::Debriefed && b[13]<2)
+            s.route_intel_[b[13]]=s.information_value_;
         if(!Valid(next))return false;
         *output=next;return true;
     }
@@ -63,7 +67,7 @@ private:
     }
     static bool Valid(const LanternState& state){
         const auto& s=state.simulation;
-        if(static_cast<unsigned>(s.phase_)>3||static_cast<unsigned>(s.selected_)>2)return false;
+        if(s.follow_up_sectors_>7||static_cast<unsigned>(s.phase_)>3||static_cast<unsigned>(s.selected_)>2)return false;
         const int choices=s.phase_==lantern::Phase::Briefing?3:s.phase_==lantern::Phase::PhotoReady?4:1;
         if(state.choice>=choices)return false;
         if(s.phase_==lantern::Phase::Briefing||s.phase_==lantern::Phase::InFlight){
@@ -72,6 +76,7 @@ private:
             return s.phase_!=lantern::Phase::Briefing||s.selected_==lantern::Sector::RailApproach;
         }
         lantern::Simulation expected;
+        expected.follow_up_sectors_=s.follow_up_sectors_;
         if(!expected.AssignRecon(s.selected_)||!expected.CompleteRecon()
             ||!SamePhoto(s.photo_,*expected.photo()))return false;
         if(s.phase_==lantern::Phase::PhotoReady)
@@ -91,6 +96,10 @@ private:
         if(static_cast<unsigned>(s.phase_)>5||static_cast<unsigned>(s.route_)>1
             ||static_cast<unsigned>(s.decision_)>2||s.vehicle_condition_<0||s.vehicle_condition_>100
             ||s.fuel_remaining_<0||s.fuel_remaining_>20)return false;
+        const auto road=s.route_intel_[0], ridge=s.route_intel_[1];
+        if(road!=0 && road!=3 && road!=1 && road!=-3)return false;
+        if(ridge!=0 && ridge!=-1 && ridge!=2 && ridge!=-5)return false;
+        if(s.phase_==forward::Phase::Debriefed && s.LastRouteIntel(s.route_)!=s.information_value_)return false;
         const bool briefing=s.phase_==forward::Phase::Briefing;
         if(state.confirm_refit&&!briefing)return false;
         const int choices=state.confirm_refit?2:briefing?3:s.phase_==forward::Phase::Contact?3:1;
@@ -115,7 +124,7 @@ private:
             &&(s.vehicle_condition_>0||s.unnecessary_force_);
     }
     static Bytes Start(uint8_t kind){
-        Bytes b{};std::memcpy(b.data(),"RECON001",8);b[8]=1;b[9]=kind;return b;
+        Bytes b{};std::memcpy(b.data(),"RECON001",8);b[8]=2;b[9]=kind;return b;
     }
     static uint64_t Hash(const uint8_t* b){
         uint64_t hash=14695981039346656037ull;
@@ -127,7 +136,7 @@ private:
         for(size_t i=kBytes-8;i<kBytes;++i){b[i]=static_cast<uint8_t>(hash);hash>>=8;}
     }
     static bool Header(const uint8_t* b,size_t size,uint8_t kind){
-        if(!b||size!=kBytes||std::memcmp(b,"RECON001",8)||b[8]!=1||b[9]!=kind||b[10]||b[11])return false;
+        if(!b||size!=kBytes||std::memcmp(b,"RECON001",8)||(b[8]!=1 && b[8]!=2)||b[9]!=kind||b[10]||b[11])return false;
         uint64_t hash=Hash(b);
         for(size_t i=kBytes-8;i<kBytes;++i){if(b[i]!=static_cast<uint8_t>(hash))return false;hash>>=8;}
         return true;

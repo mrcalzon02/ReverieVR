@@ -47,7 +47,7 @@ int main(){
     pose.launched=true;pose.east=430010.;pose.north=6379990.;
     pose.heading=1.5707963267948966;
     const auto model=BoatModelMatrix(pose,430000.,6380000.,0.);
-    assert(near(model[12],10.)&&near(model[13],.4)&&near(model[14],-10.));
+    assert(near(model[12],10.)&&near(model[13]+kBoatDeckY,.12)&&near(model[14],-10.));
     assert(near(model[0],0.)&&near(model[8],1.)&&near(model[2],-1.));
     const float x=2.f,z=3.f;
     const float moved_x=model[0]*x+model[8]*z+model[12];

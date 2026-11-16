@@ -3,6 +3,10 @@
 **Target:** ReverieVR, one phone-resident APK, Galaxy S9 / Daydream.  
 **Prior baseline (2026-10-16):** Development-only S01/S02 combat, S03 starter weapons, S08/S09 objectives/salvage, **partial S06 connected shipyard**, and **partial source-integrated named lane rivals plus purchasable companion support contracts** with checked V3 campaign saves. Complete integrated game/Android/Daydream acceptance remains open. The standalone shipyard component and tests were byte-verified against the commit and passed strict GCC/Clang and Clang ASan/UBSan. The integrated Android/NDK APK and physical S9 headset playthrough remain unverified; authored textures, deep voiced announcer and full campaigns remain unimplemented.
 
+## Ordinary enemy fire across the flight area — 2026-11-16
+
+Standard enemy bolts approach from depth above the top of the flight area, then traverse the pilot's plane. Rendering and swept voxel contact use the same path. Previously, steering to the middle or top kept the pilot out of reach of these bolts even on a direct intercept. The GCC simulation regression intercepts and dodges an enemy-fired bolt at four heights using the live steering controls. Bombs, mines and warning zones retain their existing behavior.
+
 ## Strategic map: highlighted route planning, delayed confirmation — 2026-10-26
 
 **Design correction requested by owner:** selecting or focusing a lane must not immediately launch a sortie; the chart should visually read as a **map with highlighted connecting paths**, allowing the player to inspect their destination before a deliberate commitment. Retain the same three actual `Simulation::lane(0..2)` targets, seeded hazard/reward/rival predictions and independent Chart → Loadout, Shipyard and Allies controls. Do not invent permanent path nodes, increase the 4096-lane graph, or change the campaign/save format as part of this UI fix.

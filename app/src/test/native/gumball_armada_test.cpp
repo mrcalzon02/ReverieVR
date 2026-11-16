@@ -3,6 +3,39 @@
 #include <cmath>
 #include <iostream>
 using namespace reverie::gumball;
+// Intercept the first ordinary bolt that starts above this row. The pilot uses
+// the same steering and real enemy spawns as the hosted game.
+static void CheckBoltCrossing(float row,float offset) {
+    Simulation game(1);
+    assert(game.launch(0));
+    constexpr float dt=.01f;
+    float targetX=0.f;
+    const Shot* tracked=nullptr;
+    for(int tick=0;tick<600;++tick){
+        if(!tracked){
+            for(const Shot& shot:game.shots()){
+                if(!shot.active || !shot.hostile || shot.mine || shot.bomb ||
+                   shot.zone || shot.y<=row+.07f)continue;
+                const float arrival=(row-shot.y)/shot.vy;
+                targetX=shot.x+arrival*shot.vx+offset;
+                tracked=&shot;
+                break;
+            }
+        }
+        const auto axes=FlightAxesToTarget(game.player_x(),game.player_y(),
+            {targetX,row,true},dt,game.pointer_move_speed());
+        const int shield=game.shield();
+        game.update(dt,axes.x,axes.y,false,true);
+        if(tracked && !tracked->active){
+            assert(std::fabs(game.player_y()-row)<.01f);
+            if(offset==0.f)assert(game.shield()<shield);
+            else assert(game.shield()==shield);
+            return;
+        }
+    }
+    assert(false && "the tracked bolt must exit or hit during the sortie");
+}
+
 int main(){
     // Combat formations cover all eight deterministic doctrines.
     bool doctrines[8]={};
@@ -172,6 +205,10 @@ int main(){
            &&hostileVictim.hp()==beforeHull-(35-beforeShield));
     assert(std::fabs(HostileShotDepth(-.85f)+2.55f)<.0001f);
     assert(HostileShotDepth(1.f)<HostileShotDepth(-.85f));
+    for(float row:{-1.15f,-.85f,0.f,.65f}){
+        CheckBoltCrossing(row,0.f);
+        CheckBoltCrossing(row,-.55f);
+    }
     // Lethal hostile XYZ contact must finish the sortie immediately, once.
     // XY-identical but depth-separated misses must not start the loss path.
     Simulation fatalHostile(81);

@@ -21,7 +21,22 @@
 
 namespace reverie { namespace sitka {
 
-struct RoamPose {float x=0.f,ground_y=0.f,z=0.f;};
+// Android's reference tracking origin is the head at rest. The eye matrices,
+// listener offsets and controller ray are all expressed in that same space.
+struct RoamPose {
+    float x=0.f,ground_y=0.f,z=0.f;
+    float EyeY()const{return ground_y+1.59f;}
+};
+inline bool PlaceTrackingEye(const ReverieNativeEyeV1* eye,ReverieNativeEyeV1& out,
+                             float x,float y,float z){
+    if(!ReverieNativeEyeRenderableV1(eye))return false;
+    out=*eye;
+    const float transform[16]={
+        1,0,0,0, 0,1,0,0, 0,0,1,0, -x,-y,-z,1};
+    ReverieNativeMat4Multiply(out.view,eye->view,transform);
+    for(float value:out.view)if(!std::isfinite(value))return false;
+    return true;
+}
 struct GroundHit {bool valid=false;float y=0.f;};
 
 class RoamTerrainIndex {
@@ -205,14 +220,7 @@ public:
         return moved;
     }
     bool ShiftEye(const ReverieNativeEyeV1* eye,ReverieNativeEyeV1& out)const{
-        if(!ReverieNativeEyeRenderableV1(eye))return false;
-        out=*eye;
-        const float transform[16]={
-            1,0,0,0, 0,1,0,0, 0,0,1,0,
-            -pose_.x,-pose_.ground_y,-pose_.z,1};
-        ReverieNativeMat4Multiply(out.view,eye->view,transform);
-        for(float value:out.view)if(!std::isfinite(value))return false;
-        return true;
+        return PlaceTrackingEye(eye,out,pose_.x,pose_.EyeY(),pose_.z);
     }
 private:
     static bool WithinPolygon(const std::vector<ShorePoint>& polygon,

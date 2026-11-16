@@ -63,6 +63,21 @@ constexpr char kTitle[]="REVERSI 8X8";
 #else
 #error "Unknown classic game"
 #endif
+// A Daydream head ray stays live while the touchpad or a gamepad is in use.
+// Keep the pad in control until the player deliberately points elsewhere.
+struct PadFocus {
+    bool active=false,hasAnchor=false;
+    float anchorX=0.f,anchorY=0.f;
+
+    void Update(bool deflected,bool hasRay,float x,float y,float tolerance){
+        if(deflected){
+            active=true;hasAnchor=hasRay;anchorX=x;anchorY=y;
+        }else if(active&&hasRay&&(!hasAnchor||
+            std::abs(x-anchorX)>tolerance||std::abs(y-anchorY)>tolerance)){
+            active=false;
+        }
+    }
+};
 struct Module {
     const ReverieNativeHostV1 *host=nullptr;
     State game;
@@ -77,8 +92,8 @@ struct Module {
     int boardControlHover=0;
     Breakout breakout;
     int boardCursorX=0,boardCursorY=0;
-    bool boardCursorActive=false;
-    float cursorRepeat=0.f;
+    PadFocus padFocus;
+    float cursorRepeat=.17f;
     bool previousSecondary=false;
 #if CLASSIC_GAME_KIND == 5
     reverie::chessbook::Analysis chessAnalysis;
@@ -185,7 +200,7 @@ void ApplySaved(Module *m,save::Snapshot &&snapshot){
     m->game=std::move(snapshot.game);m->breakout=std::move(snapshot.breakout);
     m->board=std::move(snapshot.board);m->cpuFailed=false;
     m->restorePrompt=true;m->releaseToArm=true;m->dirty=true;
-    m->down=m->previousSecondary=true;m->boardCursorActive=false;
+    m->down=m->previousSecondary=true;m->padFocus.active=false;
 #if CLASSIC_GAME_KIND == 5
     m->chessTween=reverie::chesstween::Move{};
     m->chessAnalyzedPly=-1;m->chessPreviewPly=-1;
@@ -271,6 +286,49 @@ float BoardY(const reverie::boardgames::State &s,int y){
 #endif
     return ((s.Size()-1)*.5f-y)*BoardSpacing(s);
 }
+// Both the touchpad cursor and the pointer produce display coordinates.
+int BoardCell(const Module *m,int screenX,int screenY){
+    const int n=m->board.Size();
+    if(screenX<0||screenY<0||screenX>=n||screenY>=n)return -1;
+#if CLASSIC_GAME_KIND == 5
+    return reverie::chessui::ScreenIndex(screenX,screenY,m->board.chessHumanColor);
+#else
+    return screenY*n+screenX;
+#endif
+}
+
+#if (CLASSIC_GAME_KIND >= 3 && CLASSIC_GAME_KIND <= 5) || CLASSIC_GAME_KIND == 7
+int UpdateBoardTarget(Module *m,const ReverieNativeInputV1 &input,
+                         bool aim,float hx,float hy){
+    const int n=m->board.Size();
+    const float gap=BoardSpacing(m->board),half=n*.5f*gap;
+    const bool overBoard=aim&&hx>=-half&&hx<half&&hy<=half&&hy>-half;
+    const int x=overBoard?std::min(n-1,static_cast<int>((hx+half)/gap)):-1;
+    const int y=overBoard?std::min(n-1,static_cast<int>((half-hy)/gap)):-1;
+    const float ax=input.move_x,ay=input.move_y;
+    const bool wasActive=m->padFocus.active;
+    const bool deflected=std::abs(ax)>.55f||std::abs(ay)>.55f;
+    m->padFocus.Update(deflected,aim,hx,hy,gap*.5f);
+    if(m->padFocus.active!=wasActive)m->dirty=true;
+    if(deflected){
+        if(!wasActive&&overBoard){
+            m->boardCursorX=x;m->boardCursorY=y;
+        }
+        m->cursorRepeat+=input.delta_seconds;
+        if(m->cursorRepeat>=.17f){
+            m->cursorRepeat=0.f;
+            if(std::abs(ax)>std::abs(ay))
+                m->boardCursorX=std::clamp(m->boardCursorX+(ax>0?1:-1),0,n-1);
+            else
+                m->boardCursorY=std::clamp(m->boardCursorY+(ay>0?1:-1),0,n-1);
+            m->dirty=true;
+        }
+    }else m->cursorRepeat=.17f;
+    if(m->padFocus.active||input.pointer_kind==REVERIE_NATIVE_POINTER_NONE)
+        return BoardCell(m,m->boardCursorX,m->boardCursorY);
+    return BoardCell(m,x,y);
+}
+#endif
 void BoardOutline(Module *m,float x,float y,float length,
                   float r,float g,float b){
     const float half=length*.5f;
@@ -618,6 +676,7 @@ void RebuildBoard(Module *m,bool fixed){
 #endif
     const reverie::boardgames::State &s=m->board;
     const int size=s.Size();
+    const int cursorCell=m->padFocus.active?BoardCell(m,m->boardCursorX,m->boardCursorY):-1;
     const float gap=BoardSpacing(s);
     if(fixed){
 #if CLASSIC_GAME_KIND == 5
@@ -761,8 +820,7 @@ void RebuildBoard(Module *m,bool fixed){
         if(s.kind==reverie::boardgames::Kind::Go && s.goReview &&
            s.goDead[cell])
             BoardOutline(m,px,py,gap*.92f,.98f,.30f,.24f);
-        if(m->boardCursorActive && m->boardCursorX==x &&
-           m->boardCursorY==y)
+        if(cursorCell==cell)
             BoardOutline(m,px,py,gap*.76f,.93f,.98f,.99f);
         }
     }
@@ -833,8 +891,8 @@ void RebuildBoard(Module *m,bool fixed){
         const std::string cpu=reverie::chessui::CapturedLine(
             s,s.ChessCpuColor(),
             moving==s.ChessCpuColor()?victim:0);
-        Text(m,mine.c_str(),0.f,-1.46f,.026f,.73f,.96f,.90f);
-        Text(m,cpu.c_str(),0.f,-1.64f,.026f,.98f,.77f,.66f);
+        Text(m,mine.c_str(),0.f,-1.61f,.026f,.73f,.96f,.90f);
+        Text(m,cpu.c_str(),0.f,-1.83f,.026f,.98f,.77f,.66f);
     }
 #endif
     if(!fixed && s.kind==reverie::boardgames::Kind::Go &&
@@ -953,17 +1011,18 @@ void RebuildBoard(Module *m,bool fixed){
     }
 #if CLASSIC_GAME_KIND == 5
     if(!fixed && s.kind==reverie::boardgames::Kind::Chess){
-        const int focus=m->chessHoverSquare>=0?m->chessHoverSquare:s.selected;
+        const int focus=m->chessPreviewSquare;
         if(focus>=0&&focus<64){
             const int piece=s.cells[focus];
-            const std::string identity=reverie::chessref::PieceName(piece)+
+            std::string status=reverie::chessref::PieceName(piece)+
                 " "+reverie::chessref::Square(focus);
-            Text(m,identity.c_str(),0.f,1.14f,.030f,.96f,.94f,.68f);
             if(piece){
-                const std::string count="VALID DESTINATIONS: "+
-                    std::to_string(reverie::chessref::Destinations(s,focus).size());
-                Text(m,count.c_str(),0.f,-1.36f,.024f,.74f,.98f,.77f);
+                const auto moves=m->chessLegalDestinations.size();
+                status+="   "+std::to_string(moves)+(moves==1?" LEGAL MOVE":" LEGAL MOVES");
             }
+            Text(m,status.c_str(),0.f,-1.39f,
+                 reverie::breakwater::font::FittedScale(status.c_str(),2.92f,.026f),
+                 .96f,.94f,.68f);
         }
     }
     if(!fixed){
@@ -1487,7 +1546,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     ReverieNativeInputV1 copy{};
     std::memcpy(&copy,input,std::min<size_t>(input->struct_size,sizeof(copy)));
     ReverieNativeSanitizeBaseInputV1(&copy);
-    ReverieNativeSanitizePointerV1(&copy);
+    if(!ReverieNativeSanitizePointerV1(&copy))
+        copy.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
     if(m->releaseToArm){
         // Storage recovery must not depend on a controller becoming neutral.
         // Keep gameplay disarmed while still retrying a failed checkpoint.
@@ -1546,10 +1606,11 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const float oldBallY=game.ballY;
     const int oldLives=game.lives,oldScore=game.score;
     const bool oldMoving=game.moving,oldFinished=game.finished;
-    if(aim&&!game.finished)
+    m->padFocus.Update(std::abs(copy.move_x)>.12f,aim,hx,0.f,.06f);
+    if(aim&&!m->padFocus.active&&!game.finished)
         game.SetPaddle(hx/1.08f);
     if(edge)game.Press();
-    game.Step(copy.delta_seconds,aim?0.f:copy.move_x);
+    game.Step(copy.delta_seconds,copy.move_x);
     if(game.paddle!=oldPaddle||game.ballX!=oldBallX||
        game.ballY!=oldBallY||game.lives!=oldLives||
        game.score!=oldScore||game.moving!=oldMoving||
@@ -1570,6 +1631,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         m->dirty=true;
     }
 #endif
+    int boardTarget=-1;
+#if CLASSIC_GAME_KIND == 5
+    if(!m->chessWikiOpen&&!m->chessNewGameOpen)
+#endif
+    {
+        boardTarget=UpdateBoardTarget(m,copy,aim,hx,hy);
+        if(m->padFocus.active){aim=false;copy.pointer_kind=REVERIE_NATIVE_POINTER_NONE;}
+    }
     const bool second=copy.secondary_down!=0;
     const bool secondaryEdge=second&&!m->previousSecondary;
     m->previousSecondary=second;
@@ -1641,21 +1710,6 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         if(controlHover)ReverieNativeRequestFeedbackV1(m->host,
                                       REVERIE_NATIVE_FEEDBACK_FOCUS);
     }
-    const int n=m->board.Size();
-    const float gap=BoardSpacing(m->board);
-    const float ax=copy.move_x,ay=copy.move_y;
-    if(std::abs(ax)>.55f||std::abs(ay)>.55f){
-        m->boardCursorActive=true;
-        m->cursorRepeat+=copy.delta_seconds;
-        if(m->cursorRepeat>=.17f){
-            m->cursorRepeat=0.f;
-            if(std::abs(ax)>std::abs(ay))
-                m->boardCursorX=std::clamp(m->boardCursorX+(ax>0?1:-1),0,n-1);
-            else
-                m->boardCursorY=std::clamp(m->boardCursorY+(ay>0?1:-1),0,n-1);
-            m->dirty=true;
-        }
-    }else m->cursorRepeat=.17f;
 #if CLASSIC_GAME_KIND == 5
     if(secondaryEdge&&m->chessNewGameOpen) {
         m->chessNewGameOpen=false;m->dirty=true;
@@ -1709,7 +1763,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                 m->chessLegalDestinations.clear();
                 m->chessNewGameOpen=false;
                 m->cpuFailed=false;
-                m->boardCursorActive=false;
+                m->padFocus.active=false;
                 m->boardCursorX=m->boardCursorY=0;
                 m->dirty=true;
                 ReverieNativeRequestFeedbackV1(m->host,
@@ -1756,7 +1810,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         if(m->board.finished||m->cpuFailed) {
             m->cpuFailed=false;
             m->board.Reset(m->board.kind);
-            m->boardCursorActive=false;
+            m->padFocus.active=false;
             m->boardCursorX=m->boardCursorY=0;
         }else if(m->board.kind==reverie::boardgames::Kind::Chess?
                   m->board.ChessHumanTurn():m->board.side==1) {
@@ -1796,23 +1850,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                     m->board.CheckerDrawClaimable() &&
                     hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
                 m->board.ClaimCheckerDraw();
-            else {
-                int x=m->boardCursorX,y=m->boardCursorY;
-                if(aim){
-                    m->boardCursorActive=false;
-                    x=static_cast<int>(std::floor((hx+n*.5f*gap)/gap));
-                    y=static_cast<int>(std::floor((n*.5f*gap-hy)/gap));
-                }
-                if(x>=0&&x<n&&y>=0&&y<n){
-#if CLASSIC_GAME_KIND == 5
-                    if(m->board.kind==reverie::boardgames::Kind::Chess)
-                        m->board.Select(reverie::chessui::ScreenIndex(
-                            x,y,m->board.chessHumanColor));
-                    else
-#endif
-                        m->board.Select(y*n+x);
-                }
-            }
+            else if(boardTarget>=0)m->board.Select(boardTarget);
         }
     }
     try {
@@ -1847,17 +1885,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     // Each pointer/cursor hover names the actual board piece and previews
     // exactly those king-safe destinations the chess engine would accept.
     // Opponent inspection uses hypothetical next-turn rules, never executes.
-    int hover=-1;
-    if(aim){
-        const int x=static_cast<int>(std::floor((hx+4.f*gap)/gap));
-        const int y=static_cast<int>(std::floor((4.f*gap-hy)/gap));
-        if(x>=0&&x<8&&y>=0&&y<8)
-            hover=reverie::chessui::ScreenIndex(
-                x,y,m->board.chessHumanColor);
-    }else if(m->boardCursorActive){
-        hover=reverie::chessui::ScreenIndex(
-            m->boardCursorX,m->boardCursorY,m->board.chessHumanColor);
-    }
+    int hover=(aim||m->padFocus.active)?boardTarget:-1;
     if(m->chessWikiOpen||m->chessNewGameOpen)hover=-1;
     if(hover!=m->chessHoverSquare){
         m->chessHoverSquare=hover;
@@ -1909,8 +1937,11 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const int oldPosition=m->game.position,oldRival=m->game.rival;
     const float oldPaddle=m->game.paddle,oldAi=m->game.ai;
     const float oldBallX=m->game.ball_x,oldBallY=m->game.ball_y;
-    if(m->game.game==Game::Pong && aim && !m->game.finished)
-        m->game.paddle=std::clamp(hy/1.19f,-.78f,.78f);
+    if(m->game.game==Game::Pong){
+        m->padFocus.Update(std::abs(copy.move_y)>.12f,aim,0.f,hy,.06f);
+        if(aim&&!m->padFocus.active&&!m->game.finished)
+            m->game.paddle=std::clamp(hy/1.19f,-.78f,.78f);
+    }
     if(m->game.game==Game::Snake){
         if(std::abs(copy.move_x)>.4f||std::abs(copy.move_y)>.4f){
             const float x=copy.move_x,y=copy.move_y;
