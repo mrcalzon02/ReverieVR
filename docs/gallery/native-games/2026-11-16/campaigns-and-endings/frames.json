@@ -1,0 +1,154 @@
+[
+  {
+    "game": "Gumball Armada",
+    "file": "gumball-rescue.webp",
+    "source_capture": "gumball-convoy-tow-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "8aa7474906ed1f64a2765e4a9cd44953120471053acf3dfead8786467c85a353"
+  },
+  {
+    "game": "Gumball Armada",
+    "file": "gumball-homecoming.webp",
+    "source_capture": "gumball-king-home-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "878b2ab3bdd8dcf69f8d1834ed7812dfa63f5972cdc6e6046edaae6b7b50d7af"
+  },
+  {
+    "game": "Sitka",
+    "file": "sitka-survey.webp",
+    "source_capture": "crescent-harbor-survey.png",
+    "width": 512,
+    "height": 256,
+    "rgb_sha256": "7604b1f00a0ecb79670d04ef0ea41a4c6ab5e7b53b53bd636751c8ac4a37b0fe"
+  },
+  {
+    "game": "Sitka",
+    "file": "sitka-shore.webp",
+    "source_capture": "practice-shore-shell.png",
+    "width": 512,
+    "height": 256,
+    "rgb_sha256": "32661ca554b6707033c70f49b90a5b85e26785b73bc4aa79733f1df396d9ca47"
+  },
+  {
+    "game": "Omega Front",
+    "file": "omega-clinic.webp",
+    "source_capture": "omega-pilgrim-clinic-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "e53b79f54054d530b3bdc49c1d18dafeadea3e607999c6402ec7b592d80dc6c0"
+  },
+  {
+    "game": "Lantern Desk",
+    "file": "lantern-loupe.webp",
+    "source_capture": "lantern-bridge-loupe-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "9e05d80092bd082dbc1045ace1e2a4f9a7aa43206769c21e8957084d9b426548"
+  },
+  {
+    "game": "Forward Detachment",
+    "file": "forward-trail.webp",
+    "source_capture": "forward-ridge-shelter-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "5fd6821e1d95527d34d9fe93ab3635b64e84cf67ce7f6b9b6bfd5819d9b5b8bb"
+  },
+  {
+    "game": "Red Ledger",
+    "file": "red-ledger-accounts.webp",
+    "source_capture": "red-ledger-closed-shift-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "031fad97699c4fdc21aad87b26284fa580c84d8e6c0a3bc7c532dec9dd5b9ea0"
+  },
+  {
+    "game": "Test Chamber",
+    "file": "test-chamber-scene.webp",
+    "source_capture": "chamber-authored-editor-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "7aa939e0ca609082947dd5e9775323e12b0451614289ac1a8dbd7f90c08bbaf3"
+  },
+  {
+    "game": "Breakwater Battery",
+    "file": "breakwater.webp",
+    "source_capture": "breakwater-shore.ppm",
+    "width": 1280,
+    "height": 800,
+    "rgb_sha256": "a925abe993bbc15ed277b172b473ea888f6a1154739c5d6b19bce0f731230362"
+  },
+  {
+    "game": "Guess the Door",
+    "file": "guess-the-door.webp",
+    "source_capture": "guess-the-door-victory-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "8ac776140325621536389b4ab2f3d3e9e377542b2fbfcd41091a46562199ce67"
+  },
+  {
+    "game": "Chess",
+    "file": "chess.webp",
+    "source_capture": "classic-chess-finish-black-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "fb089af427b199de06c8c1db8ad0f1aaf10126249af296cd059971bb4e32a74a"
+  },
+  {
+    "game": "Go",
+    "file": "go.webp",
+    "source_capture": "classic-go-review-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "341ed270f172378ef83d91d81f95d84e08b96b6529ea5859535bf380d44336cf"
+  },
+  {
+    "game": "Reversi",
+    "file": "reversi.webp",
+    "source_capture": "classic-reversi-pass-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "11cdf76e828ad497c32ed0570975ab0c34eb2232f0741113c61194d78f9f8686"
+  },
+  {
+    "game": "Checkers",
+    "file": "checkers.webp",
+    "source_capture": "classic-checkers-finish-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "ca7f454d57031e9f7d8291f3258ff85ee6bc60e78f1d6d0cd61e8be8a3744699"
+  },
+  {
+    "game": "Pong",
+    "file": "pong.webp",
+    "source_capture": "classic-pong-finish-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "6ddc842442efa46508a5d2eb96ed5106be6c5c1eabc34d65e4d97746e056b8b1"
+  },
+  {
+    "game": "Snake",
+    "file": "snake.webp",
+    "source_capture": "classic-snake-finish-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "2227d283cbe755f75f53136c23419efce55d75c1659ad3e989231ff913dbd3e3"
+  },
+  {
+    "game": "Breakout",
+    "file": "breakout.webp",
+    "source_capture": "classic-breakout-finish-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "a1643a9c9e10f8606bdf0eded5f1d96dd8cb741cc3c4de297c3f1c142832519e"
+  },
+  {
+    "game": "Chutes & Ladders",
+    "file": "chutes-ladders.webp",
+    "source_capture": "classic-chutes-ladders-overshoot-left.ppm",
+    "width": 960,
+    "height": 720,
+    "rgb_sha256": "18210523d3e8a19be5966eeefe5e82c45445c387dff8c49eb4d09785b185919f"
+  }
+]

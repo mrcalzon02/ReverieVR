@@ -1,5 +1,7 @@
 # Daydream native games · November 16, 2026
 
+[Continue to the later campaign, fieldwork and match-ending audit for all 17 games.](campaigns-and-endings/README.md)
+
 All 17 registered games were exercised in the unified ReverieVR codebase. Eight entries use Development mode in the launcher. The other nine appear in Standard mode. The registry check matched every Java entry to its native ID, content namespace and Android build target. DOOM runs in the DOS host and has its own control and acceptance path.
 
 [Download the signed headset APK, Phone Test #2026](https://github.com/mrcalzon02/ReverieVR/releases/download/phone-test-2026-1/ReverieVR-phone-test-2026-6e07e27.apk) · [Release notes and checksums](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2026-1)

@@ -1,3 +1,7 @@
+## November 16, 2026 · Native campaign and match-ending verification
+
+Source `2ad191b58e2060fa365aaf6bf40b3ad04efdadc0` advanced 14 titles. All 17 registered games passed the installed Android 10 launch and GLES frame check. The installed hub passed 14 instrumentation tests, and the separate upgrade run preserved saved state through a same-signer upgrade and module rollback. The host replays cover eight classic match endings, the full door maze, Gumball's rescue, geographic chart and practice discoveries in Sitka, Pilgrim Road deliveries, two instrumented recon activities, Red Ledger's opening shift and an authored Test Chamber project. Per-title evidence and remaining work are listed in the [campaign and match-ending audit](../gallery/native-games/2026-11-16/campaigns-and-endings/README.md). Physical controller, optics and sustained reference-device performance remain open.
+
 ## 2026-11-08 — Native-game repairs, source and local execution
 
 Signed [Phone Test #2026](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2026-1) ships game commit `6e07e2791f44f92c1cd0b8388b6863e760497c03` for both ARM ABIs. Android 10 launched and rendered all 17 games. The installed hub passed all 14 instrumentation tests on a fresh emulator after the initial system-server crash. See the [per-title audit, gameplay frames and next acceptance steps](../gallery/native-games/2026-11-16/README.md).

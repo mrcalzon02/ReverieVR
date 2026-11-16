@@ -1,3 +1,9 @@
+## November 16, 2026 · Campaigns, fieldwork and match endings
+
+Signed [Phone Test #2028](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2028-1) ships source `2ad191b58e2060fa365aaf6bf40b3ad04efdadc0`. All 17 registered games produced installed Android 10 frames. See the [per-title gameplay evidence and remaining milestones](../gallery/native-games/2026-11-16/campaigns-and-endings/README.md).
+
+The next larger milestones are a geographically verified fishing and docking route in Sitka, additional regional operations in Omega, story consequences across multiple months in Red Ledger and four-theater campaign acceptance in Breakwater. The Gumball ending, all eight classic endings, and the portable Test Chamber author/save/play loop have host evidence. Physical S9 controller feel, optics, audio and sustained performance remain open.
+
 ## Native games development and audit — 2026-11-16
 
 Signed [Phone Test #2026](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2026-1) ships game commit `6e07e2791f44f92c1cd0b8388b6863e760497c03` for both ARM ABIs. Android 10 launched and rendered all 17 games. The installed hub passed all 14 instrumentation tests on a fresh emulator after the initial system-server crash. See the [per-title audit, gameplay frames and next acceptance steps](../gallery/native-games/2026-11-16/README.md).
