@@ -147,6 +147,31 @@ int main(){
     assert(targetVolume.hp==4);
     assert(DamageEnemyVolume(targetVolume,0u,nearA,nearB,2));
     assert(targetVolume.hp==2);
+    // The hostile path is the opposite of player-to-enemy collision: the
+    // player's actual construction and rendered world depth decide damage.
+    // Both sweeps share XY; only the occupied Z interval may damage HP.
+    Simulation hostileVictim(81);
+    ShipAssembly hostileHull;
+    assert(hostileVictim.launch(0));
+    const int beforeHull=hostileVictim.hp();
+    const int beforeShield=hostileVictim.shield();
+    const ShipVolumePoint pilotCenter{
+        hostileVictim.player_x(),hostileVictim.player_y(),-2.55f};
+    const ShipVolumePoint hostileNearA{pilotCenter.x,pilotCenter.y-.30f,pilotCenter.z};
+    const ShipVolumePoint hostileNearB{pilotCenter.x,pilotCenter.y+.30f,pilotCenter.z};
+    const ShipVolumePoint hostileFarA{pilotCenter.x,pilotCenter.y-.30f,pilotCenter.z-.80f};
+    const ShipVolumePoint hostileFarB{pilotCenter.x,pilotCenter.y+.30f,pilotCenter.z-.80f};
+    assert(!hostileVictim.receive_hostile_segment(hostileHull,
+                                                  hostileFarA,hostileFarB,35));
+    assert(hostileVictim.hp()==beforeHull&&hostileVictim.shield()==beforeShield);
+    assert(!hostileVictim.receive_hostile_segment(hostileHull,
+                                                  hostileNearA,hostileNearB,0));
+    assert(hostileVictim.receive_hostile_segment(hostileHull,
+                                                 hostileNearA,hostileNearB,35));
+    assert(hostileVictim.shield()==0
+           &&hostileVictim.hp()==beforeHull-(35-beforeShield));
+    assert(std::fabs(HostileShotDepth(-.85f)+2.55f)<.0001f);
+    assert(HostileShotDepth(1.f)<HostileShotDepth(-.85f));
     // Actual Simulation player bolts have a continuous forward/depth path,
     // derived from checkpointed Y so restoring a sortie cannot lose Z state.
     Simulation volumeFlight(4);

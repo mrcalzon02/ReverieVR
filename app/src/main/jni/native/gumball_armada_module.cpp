@@ -454,7 +454,8 @@ void Flight(Module* m){
             const bool playerBolt=!shot.hostile&&!shot.ally;
             const float depth=playerBolt?
                 reverie::gumball::PlayerShotDepth(shot.y):
-                -3.25f-std::max(0.f,shot.y+.4f)*.35f;
+                (shot.hostile?reverie::gumball::HostileShotDepth(shot.y):
+                 -3.25f-std::max(0.f,shot.y+.4f)*.35f);
             const float drawY=playerBolt?shot.y*.75f+.18f:shot.y;
             reverie::gumball::AppendSpaceBox(
                 m->mesh,shot.x,drawY,depth,
@@ -1021,9 +1022,9 @@ void Update(void* p,const ReverieNativeInputV1* in){
             const auto axes=reverie::gumball::FlightAxesToTarget(
                 m->sim.player_x(),m->sim.player_y(),aim,dt,
                 m->sim.pointer_move_speed());
-            m->sim.update(dt,axes.x,axes.y,pressed,true);
+            m->sim.update(dt,axes.x,axes.y,pressed,true,&m->ship);
         }else{
-            m->sim.update(dt,in->move_x,in->move_y,pressed);
+            m->sim.update(dt,in->move_x,in->move_y,pressed,false,&m->ship);
         }
         if(dt>0.f)m->saveDirty=true; // Bounded one-second in-flight checkpoints; Pause flushes exactly.
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);

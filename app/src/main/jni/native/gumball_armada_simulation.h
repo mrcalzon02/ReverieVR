@@ -34,6 +34,25 @@ struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f;
 inline float PlayerShotDepth(float y){
     return -3.45f-std::max(0.f,y+1.3f)*.92f;
 }
+// Enemy bolts follow a deterministic 3D approach lane from the distant
+// enemy volume to the player's rendered hull plane. Derive Z from the
+// already checkpointed Y: GUMFLY04 needs no new live-shot fields.
+inline float HostileShotDepth(float y){
+    return -2.55f-std::max(0.f,y+.85f)*1.48f;
+}
+inline bool HostileShotHitsPlayerVolume(const ShipAssembly& hull,
+        float px,float py,ShipVolumePoint from,ShipVolumePoint to){
+    if(!std::isfinite(px)||!std::isfinite(py))return false;
+    // At scale .10 the 7-cell hull fits within .35 world units;
+    // allow for .012 projectile radius before the actual voxel sweep.
+    const auto outside=[](float a,float b,float center){
+        return std::max(a,b)<center-.38f||std::min(a,b)>center+.38f;
+    };
+    if(outside(from.x,to.x,px)||outside(from.y,to.y,py))return false;
+    // These are EXACTLY the player mesh's world origin, scale and yaw.
+    return ShipSegmentHitsVoxels(hull,{px,py,-2.55f},.10f,0.f,
+                                 from,to,.012f);
+}
 inline ShipVolumePoint EnemyWorldPoint(const Enemy& e){
     return {e.x,e.y*.75f+.18f,PlayerShotDepth(e.y)};
 }
@@ -216,6 +235,14 @@ public:
     float player_y()const{return py_;}
     const std::array<Enemy,kEnemySlots>& enemies()const{return enemies_;}
     const std::array<Shot,48>& shots()const{return shots_;}
+    // Single damage entry point for ordinary hostile projectile sweeps.
+    // Bombs, mines and warning zones retain their existing hazard rules.
+    bool receive_hostile_segment(const ShipAssembly& hull,
+            ShipVolumePoint from,ShipVolumePoint to,int amount){
+        if(phase_!=Phase::Flight||amount<=0
+            ||!HostileShotHitsPlayerVolume(hull,px_,py_,from,to))return false;
+        damage(amount);return true;
+    }
     Lane lane(unsigned choice)const{
         if(choice>=3)return {};
         const uint32_t sector=node_/1024u,origin=node_%1024u;
@@ -260,9 +287,11 @@ public:
         if(destination_.fortress&&((bosses_>>sector)&1u)==0u)++target_;
         enemies_={};shots_={};return true;
     }
-    void update(float dt,float sx,float sy,bool fire,bool pointerGuided=false){
+    void update(float dt,float sx,float sy,bool fire,bool pointerGuided=false,
+                const ShipAssembly* actualHull=nullptr){
         if(phase_!=Phase::Flight||!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);
+        static const ShipAssembly kStarterHull{};
         elapsed_+=dt;
         if(mission_.time_limit>0.f&&elapsed_>mission_.time_limit){
             failure_=FailureReason::Deadline;phase_=Phase::Lost;return;
@@ -520,7 +549,8 @@ public:
             }
         }
         for(auto& s:shots_)if(s.active){
-            const ShipVolumePoint previous{s.x,s.y*.75f+.18f,PlayerShotDepth(s.y)};
+            const ShipVolumePoint previous{s.x,s.hostile?s.y:s.y*.75f+.18f,
+                s.hostile?HostileShotDepth(s.y):PlayerShotDepth(s.y)};
             if(s.warning>0.f){
                 s.warning=std::max(0.f,s.warning-dt);
                 continue; // warning period is non-damaging and stationary
@@ -540,12 +570,19 @@ public:
                     }
                     if(!s.active)continue;
                 }
-                if(std::fabs(s.x-px_)<(s.zone?.23f:
-                   (s.mine?.21f:(s.bomb?.20f:.17f)))
-                   &&std::fabs(s.y-py_)<(s.mine?.19f:(s.bomb?.19f:.16f))){
-                    s.active=false;damage((s.bomb||s.mine||s.zone)?
-                        s.damage+static_cast<int>(destination_.hazard):
-                        7+static_cast<int>(destination_.hazard));
+                if(s.bomb||s.mine||s.zone){
+                    // Area hazards keep their documented mission-plane rules.
+                    if(std::fabs(s.x-px_)<(s.zone?.23f:
+                       (s.mine?.21f:.20f))
+                       &&std::fabs(s.y-py_)<(s.mine?.19f:.19f)){
+                        s.active=false;
+                        damage(s.damage+static_cast<int>(destination_.hazard));
+                    }
+                }else if(receive_hostile_segment(
+                        actualHull?*actualHull:kStarterHull,previous,
+                        {s.x,s.y,HostileShotDepth(s.y)},
+                        7+static_cast<int>(destination_.hazard))){
+                    s.active=false;
                 }
             }else{
                 for(auto& e:enemies_)if(e.active){
