@@ -192,6 +192,11 @@ jobs:
           script: |
             set -eu
             mkdir -p validation/hub
+            # The runner's sys.boot_completed=1 is NOT a package-manager readiness gate.
+            # On 2026-11-16 the emulator reported booted, then adb install failed
+            # with 'cmd: Can't find service: package'. Keep this a single line:
+            # android-emulator-runner invokes each script line in a separate shell.
+            for ATTEMPT in $(seq 1 60); do if timeout 8s adb get-state 2>/dev/null | grep -Fxq device && [ "$(timeout 8s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ] && timeout 8s adb shell service check package 2>/dev/null | grep -Fq 'Service package: found' && timeout 8s adb shell pm list packages android 2>/dev/null | grep -Fxq 'package:android'; then echo "PASS: Android 10 emulator boot/package service ready (attempt ${ATTEMPT})"; break; fi; if [ "$ATTEMPT" -eq 60 ]; then echo 'FAIL: Android 10 package manager not ready after 60 bounded checks' >&2; adb devices -l; timeout 8s adb shell service check package || true; exit 1; fi; sleep 2; done
             adb logcat -c
             adb install -r validation/hub/ReverieVR-hub-emulator.apk
             adb install -r validation/hub/TestChamber-companion-emulator.apk
