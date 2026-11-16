@@ -28,6 +28,15 @@ public:
     static int32_t RoundTripFuel(Route route);
     bool CanBeginPatrol(Route route) const;
     bool BeginPatrol(Route route);
+    static constexpr int kRidgeExit=8;
+    static constexpr uint8_t kGaugeNote=1,kShelterNote=2;
+    bool OnRidgeTrail() const {return phase_==Phase::Travelling && route_==Route::RidgeBypass;}
+    int trail_position() const {return trail_position_;}
+    uint8_t trail_notes() const {return trail_notes_;}
+    uint8_t filed_ridge_notes() const {return filed_ridge_notes_;}
+    bool WalkRidge(int direction);
+    uint8_t ObservationHere() const;
+    bool RecordObservation();
     bool ReachContact();
     bool InspectContact(ContactEvidence *out) const;
     bool ResolveContact(Decision decision);
@@ -51,6 +60,8 @@ private:
     int32_t information_value_ = 0;
     bool unnecessary_force_ = false;
     std::array<int32_t, 2> route_intel_{};
+    uint8_t trail_position_=0,trail_notes_=0,filed_ridge_notes_=0;
+    static int ReportValue(Route route,Decision decision,uint8_t notes);
 };
 }}  // namespace reverie::forward
 #endif

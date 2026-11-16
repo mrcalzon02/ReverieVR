@@ -80,7 +80,7 @@ static void CodecCases(){
         }
         auto broken=valid;broken.back()^=0x80;cs::Snapshot target;
         Check(!cs::Decode(kind,broken,target),"payload corruption rejected");
-        broken=valid;broken[8]=2;Check(!cs::Decode(kind,broken,target),"unknown version rejected");
+        broken=valid;broken[8]=255;Check(!cs::Decode(kind,broken,target),"unknown version rejected");
         broken=valid;broken.push_back(0);Check(!cs::Decode(kind,broken,target),"trailing data rejected");
         Check(!cs::Decode((kind+1)%8,valid,target),"cross-game save rejected");
         std::cout<<"codec kind="<<kind<<" bytes="<<valid.size()<<" PASS\n";
@@ -95,6 +95,32 @@ static void CodecCases(){
     for(int i=0;i<4;++i)data[cs::kHeaderBytes+842+i]=0xff;
     RepairChecksum(data);
     Check(!cs::Decode(4,data,target),"untrusted history count bounded before allocation");
+}
+static void ChutesRollHistory(){
+    auto s=Initial(2);
+    s.game.Press();s.game.Step(.1f,0.f);
+    auto legacy=Encode(2,s);
+    legacy.resize(legacy.size()-4);
+    legacy[8]=1;
+    const auto size=static_cast<uint32_t>(legacy.size()-cs::kHeaderBytes);
+    for(int i=0;i<4;++i)legacy[16+i]=static_cast<uint8_t>(size>>(8*i));
+    RepairChecksum(legacy);
+    // Exact byte fingerprint of the same mid-CPU-turn save from build 2026.
+    Check(cs::Hash(legacy.data(),legacy.size())==0x726dcc428b2aaa91ull,"original v1 checkpoint bytes");
+    cs::Snapshot migrated;
+    Check(cs::Decode(2,legacy,migrated),"load v1 match");
+    Check(migrated.game.playerRoll.die==0&&migrated.game.cpuRoll.die==0,
+          "v1 has no fabricated roll history");
+    for(int i=0;i<8;++i){s.game.Step(.1f,0.f);migrated.game.Step(.1f,0.f);}
+    Check(migrated.game.cpuRoll.die==s.game.cpuRoll.die&&migrated.game.rival==s.game.rival&&
+          migrated.game.seed==s.game.seed,"v1 resumes exact pending CPU roll");
+    migrated.game.Press();
+    auto roundTrip=RoundTrip(2,migrated);
+    Check(roundTrip.game.playerRoll.die&&roundTrip.game.cpuRoll.die,"both rolls preserved");
+    auto invalid=Encode(2,migrated);invalid.back()=7;RepairChecksum(invalid);
+    Check(!cs::Decode(2,invalid,roundTrip),"invalid saved die rejected");
+    invalid=Encode(2,migrated);invalid[invalid.size()-2]=99;RepairChecksum(invalid);
+    Check(!cs::Decode(2,invalid,roundTrip),"roll inconsistent with token rejected");
 }
 static void RuleHistoryCases(){
     auto chess=Initial(5);
@@ -224,4 +250,4 @@ static void StoreCases(){
     Check(huge.board.goHistory.size()==47000,"oversize source history remains complete");
     std::cout<<"bank interruption, read failures, corruption, retry and limits PASS\n";
 }
-int main(){CodecCases();RuleHistoryCases();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
+int main(){CodecCases();ChutesRollHistory();RuleHistoryCases();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}

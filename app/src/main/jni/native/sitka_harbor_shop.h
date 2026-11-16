@@ -212,7 +212,7 @@ inline unsigned RequiredShopCity(unsigned hull){
 }
 inline bool HarborShopUnlocked(const Journal& journal,unsigned tier){
     return RegisteredFindCount(journal)>=RequiredShopBeach(tier) &&
-           BeachSiteCount(journal.city_sites)>=RequiredShopCity(tier);
+           TrainingVisitCount(journal)>=RequiredShopCity(tier);
 }
 struct ShopOffer{
     std::string title,requirements;
@@ -284,7 +284,7 @@ inline ShopOffer HarborOffer(const Journal& journal,unsigned index){
         o.affordable=journal.credits<=999975u;return o;
     }else if(index==kPurchaseItems+2u){
         const auto pending=BeachSiteCount(journal.beach_sites&~journal.submitted_beach_sites)+
-            journal.starter_tokens;
+            BeachSiteCount(journal.practice_finds&~journal.practice_submitted)+journal.starter_tokens;
         o.title="Register finds/tokens ("+std::to_string(pending)+")";
         o.available=pending>0u;o.unlocked=true;o.affordable=true;return o;
     }else return o;

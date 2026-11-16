@@ -95,7 +95,7 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ## RV-GAME-02 — Ministry of Intelligence: Lantern Desk VR
 
-**Current implementation boundary:** The native board supports three named sectors and two photographic conditions per sector. Filing a report and opening the next sortie advances only the visited sector. The same sector can now reward a different assessment on the next visit. Checkpoints preserve the actual image, phase, accumulated score and per-sector rotation. The field guide shows the same visual cues on every assignment. A physical desk, magnification, annotations and a larger campaign remain open.
+**Current implementation boundary:** The native board supports three named sectors and two photographic conditions per sector. Filing a report and opening the next sortie advances only the visited sector. The same sector can now reward a different assessment on the next visit. Checkpoints preserve the actual image, phase, accumulated score and per-sector rotation. The field guide shows the same visual cues on every assignment. An 8 × 8 loupe enlarges the selected portion of the 16 × 16 photograph at 2×. Aim at the source film or hold Minus and nudge the pad to move the outlined window. Release Minus to resume ordinary report selection. The viewing window survives pause and GL context loss. A fresh launch centers the window on the saved photograph. Annotations, side-by-side comparisons, a physical desk and a larger campaign remain open.
 
 **Source concept:** *Ministry of Intelligence*, the standalone intelligence-command game formerly developed as *Second Lantern*. It must remain separate from older IronSight material.
 
@@ -142,7 +142,7 @@ Do not convert it into a tactical RTS. Do not expose World Truth through conveni
 
 ## RV-GAME-03 — Iron Sight: Forward Detachment VR
 
-**Current implementation boundary:** The native board runs the road and ridge patrols from briefing through contact, return, debrief and base service. Selecting a route at briefing shows its last filed intelligence result. Separate route histories, fuel and damage survive refit, relaunch and checkpoint retries. The outdoor sector, vehicle traversal and squad remain open.
+**Current implementation boundary:** The native board runs the road and ridge patrols from briefing through contact, return, debrief and base service. Selecting a route at briefing shows its last filed intelligence result. Separate route histories, fuel and damage survive refit, relaunch and checkpoint retries. Ridge Bypass includes an eight-step foot survey through a rendered stream crossing, shelter and turnout. The player can nudge the pad right to walk or left to retrace the route. Select walks forward, logs a visible water mark or shelter condition at its location, or opens the original contact at the turnout. Reports for the two nonviolent decisions gain two intelligence points per observation. The debrief and next ridge briefing keep the filed notes. Forward checkpoint v3 keeps the location and notebook in the existing 128-byte slot. A v1 or v2 ridge patrol that was already travelling resumes at the turnout with its original contact available. Main Road, driveable vehicles and squad traversal remain future outdoor work.
 
 **Source concept:** *Iron Sight*, centered on a forward reconnaissance detachment operating in the ambiguous Barsofagrod conflict: patrols, route security, reconnaissance, interdiction, logistics, liaison, ROE, uncertain civilians, deception, IED risk, and survival through discipline rather than indiscriminate combat.
 
@@ -307,3 +307,11 @@ All gameplay advances in native Update once per frame, with common cached vertex
 5. **Omega Front** — build the headless tactical kernel first, then the chibi VR tabletop. Its seventeen distinct factions, newly emerged Eden frontier, **70 multi-operation main campaigns**, territory ecology, layered progression and tenfold prestige requirements remain full release scope.
 
 These are roadmap pointers only. Implementation should begin only after RV-0400/RV-0402 are sufficiently stable and the first tiny native gameplay prototype (RV-0600/RV-0601) has established a safe thermal/performance envelope.
+
+## November 16, 2026 gameplay continuations
+
+Red Ledger's living-quarters ledger cycles through closed-shift accounts, faction accounts and renovations. Closing a day itemizes opening cash, sales, stock, debt payments, protection, fines and the closing balance in cents. The final installment is limited to the remaining balance. The first shift can be completed through the stockroom, bar and living-quarters plaques, and its accounts remain readable the next day after relaunch.
+
+Chutes & Ladders retains the two players' last rolls, landings and destinations. Its v2 match payload imports v1 positions and pending CPU turns. Go previews Chinese area scores, including White's 7.5 komi, as the player marks groups. Reversi identifies the player who passed, Pong labels each side's score and winner, and Snake identifies a loss or a cleared board. Breakout's narrowed paddle can reach both walls. Chess's end-of-match Restart button starts a fresh match in the chosen orientation.
+
+The eight classic match-ending replays use the same module input, render and save entry points as the hub. Build `scripts/audit/probes/classic_match_endings.cpp` once per Android game-kind value (0 through 7), with `-std=c++17 -pthread -Iscripts/audit/probes -Iapp/src/main/jni/native -lEGL -lGLESv2 -lz`, and pass an existing capture directory. Guess the Door's `scripts/audit/probes/guess_full_maze.cpp` uses the same host to follow the visible door-design attributes through twelve rooms and a pit retry.

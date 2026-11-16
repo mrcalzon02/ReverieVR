@@ -237,6 +237,71 @@ int main(){
     assert(range->terrain.indices.size()==18u);
     assert(range->fishing_spots.size()==1u&&range->harbor_sites.size()==1u);
     assert(range->fishing.fishing.journal.fish_inventory[1]==1u);
+    // Walk the production practice course with the real pad and hand inputs.
+    // Returning to the desk is necessary to turn a logged find into a qualification.
+    ReverieNativeInputV1 scout{};
+    scout.struct_size=sizeof(scout);scout.delta_seconds=.05f;
+    scout.listener_valid=1u;scout.listener_right[0]=1.f;
+    scout.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    scout.pointer_origin[1]=-.34f;
+    auto walk=[&](float x,float z){
+        for(int tick=0;tick<200;++tick){
+            const auto pose=range->walk_session->pose();
+            const float dx=x-pose.x,dz=z-pose.z,d=std::hypot(dx,dz);
+            if(d<.09f){scout.move_x=scout.move_y=0;return;}
+            scout.move_x=dx/d;scout.move_y=dz/d;Update(range,&scout);
+        }
+        assert(false&&"normal walking could not reach the field station");
+    };
+    auto& training=range->fishing.fishing.journal;
+    assert(range->beach_sites.size()==12&&range->city_sites.size()==6);
+    for(const auto& site:range->beach_sites){
+        walk(site.x-.20f,site.z);
+        const auto pose=range->walk_session->pose();
+        const float dx=site.x-pose.x,dz=site.z-pose.z,dy=.04f-pose.EyeY()+.34f;
+        const float length=std::sqrt(dx*dx+dz*dz+dy*dy);
+        scout.pointer_direction[0]=dx/length;scout.pointer_direction[1]=dy/length;
+        scout.pointer_direction[2]=dz/length;
+        scout.primary_down=1;Update(range,&scout);
+        assert(training.practice_finds&(1u<<site.id));
+        const auto recorded=saved;Update(range,&scout);assert(saved==recorded);
+        scout.primary_down=0;Update(range,&scout);
+    }
+    assert(training.practice_finds==4095&&training.practice_checkpoints==63);
+    assert(training.beach_sites==0&&training.city_sites==0); // real sites remain independent
+    assert(training.practice_submitted==0&&RegisteredFindCount(training)==0);
+    walk(-6.f,0.f);
+    const auto at_office=range->walk_session->pose();
+    const float dx=-5.f-at_office.x,dz=-at_office.z;
+    const float d=std::hypot(dx,dz);
+    scout.pointer_direction[0]=dx/d;scout.pointer_direction[1]=0;
+    scout.pointer_direction[2]=dz/d;
+    scout.primary_down=1;Update(range,&scout);assert(range->harbor_shop.open());
+    scout.primary_down=0;Update(range,&scout);
+    scout.primary_down=1;Update(range,&scout); // sell the starter coho for 100 credits
+    scout.primary_down=0;Update(range,&scout);assert(training.credits==100);
+    for(int press=0;press<2;++press){
+        scout.move_y=-1;Update(range,&scout);scout.move_y=0;Update(range,&scout);
+    }
+    scout.primary_down=1;Update(range,&scout);assert(RegisteredFindCount(training)==13);
+    assert(TrainingVisitCount(training)==6&&HarborShopUnlocked(training,2u));
+    assert((RegisteredKinds(training)&FindPrerequisites(12))==FindPrerequisites(12));
+    const unsigned line_row=1u+unsigned(kParts.size())+unsigned(Equipment::Line);
+    scout.primary_down=0;Update(range,&scout);
+    for(unsigned n=0;n<kShopItems&&range->harbor_shop.selected()!=line_row;++n){
+        scout.move_y=-1;Update(range,&scout);scout.move_y=0;Update(range,&scout);
+    }
+    for(unsigned level=1;level<=2;++level){
+        scout.primary_down=1;Update(range,&scout);
+        assert(training.line_level==level);
+        scout.primary_down=0;Update(range,&scout);
+    }
+    assert(training.credits==8u); // shop charged 23 then 69 for line levels 1 and 2
+    scout.primary_down=0;scout.secondary_down=1;Update(range,&scout);
+    assert(!range->harbor_shop.open()&&PrepareExit(range));
+    Destroy(range);range=static_cast<State*>(Create(&host));assert(range);
+    assert(range->fishing.fishing.journal.practice_submitted==4095);
+    assert(range->fishing.fishing.journal.practice_checkpoints==63);
     ReverieNativeInputV1 player{};
     player.struct_size=sizeof(player);player.delta_seconds=.05f;
     player.listener_valid=1u;player.listener_right[0]=1.f;
@@ -272,7 +337,8 @@ int main(){
     auto* reopened_range=static_cast<State*>(Create(&host));
     assert(reopened_range&&reopened_range->integration_range);
     assert(saved==stored); // reopening cannot grant starter inventory again
-    assert(reopened_range->fishing.fishing.journal.fish_inventory[1]==1u);
+    assert(reopened_range->fishing.fishing.journal.fish_inventory[1]==0u);
+    assert(reopened_range->fishing.fishing.journal.line_level==2u);
     assert(reopened_range->fishing.Discover(5u,BeachFind::Shell));
     fail_write=true;
     assert(PrepareExit(reopened_range)==0);

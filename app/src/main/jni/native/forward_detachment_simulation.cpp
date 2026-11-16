@@ -15,7 +15,25 @@ bool Simulation::BeginPatrol(Route route) {
     phase_ = Phase::Travelling;
     return true;
 }
+bool Simulation::WalkRidge(int direction) {
+    if(!OnRidgeTrail() || (direction!=-1 && direction!=1))return false;
+    const int next=trail_position_+direction;
+    if(next<0 || next>kRidgeExit)return false;
+    trail_position_=static_cast<uint8_t>(next);
+    return true;
+}
+uint8_t Simulation::ObservationHere() const {
+    if(!OnRidgeTrail())return 0;
+    return trail_position_==2?kGaugeNote:trail_position_==5?kShelterNote:0;
+}
+bool Simulation::RecordObservation(){
+    const uint8_t note=ObservationHere();
+    if(!note || (trail_notes_&note))return false;
+    trail_notes_|=note;
+    return true;
+}
 bool Simulation::ReachContact() {
+    if(OnRidgeTrail() && trail_position_!=kRidgeExit)return false;
     if (phase_ != Phase::Travelling || fuel_remaining_<RoundTripFuel(route_)) return false;
     // The shorter road has the greater hazard; the ridge costs fuel.
     fuel_remaining_ -= (route_ == Route::MainRoad ? 5 : 8);
@@ -31,27 +49,22 @@ bool Simulation::InspectContact(ContactEvidence *out) const {
         : ContactEvidence{false, true, false, false};
     return true;
 }
+int Simulation::ReportValue(Route route,Decision decision,uint8_t notes){
+    if(route==Route::MainRoad)return decision==Decision::HaltAndReport?3:
+        decision==Decision::Avoid?1:-3;
+    if(decision==Decision::Engage)return -5;
+    const int surveyed=((notes&kGaugeNote)?1:0)+((notes&kShelterNote)?1:0);
+    return (decision==Decision::Avoid?2:-1)+2*surveyed;
+}
 bool Simulation::ResolveContact(Decision decision) {
     if (phase_ != Phase::Contact ||
         (decision != Decision::HaltAndReport && decision != Decision::Avoid
          && decision != Decision::Engage)) return false;
     decision_ = decision;
-    if (route_ == Route::MainRoad) {
-        if (decision == Decision::HaltAndReport) information_value_ = 3;
-        else if (decision == Decision::Avoid) information_value_ = 1;
-        else {
-            information_value_ = -3;
-            vehicle_condition_ = std::max(0,vehicle_condition_-25);
-            unnecessary_force_ = true;
-        }
-    } else {
-        if (decision == Decision::Avoid) information_value_ = 2;
-        else if (decision == Decision::HaltAndReport) information_value_ = -1;
-        else {
-            information_value_ = -5;
-            vehicle_condition_ = std::max(0,vehicle_condition_-35);
-            unnecessary_force_ = true;
-        }
+    information_value_=ReportValue(route_,decision,trail_notes_);
+    if(decision==Decision::Engage){
+        vehicle_condition_=std::max(0,vehicle_condition_-(route_==Route::MainRoad?25:35));
+        unnecessary_force_=true;
     }
     phase_ = Phase::Resolved;
     return true;
@@ -66,12 +79,14 @@ bool Simulation::FileDebrief(Debrief *out) {
     if (phase_ != Phase::Returned || out == nullptr) return false;
     *out = {information_value_, vehicle_condition_, fuel_remaining_, unnecessary_force_};
     route_intel_[static_cast<unsigned>(route_)] = information_value_;
+    if(route_==Route::RidgeBypass)filed_ridge_notes_=trail_notes_;
     phase_ = Phase::Debriefed;
     return true;
 }
 bool Simulation::NextPatrol() {
     if(phase_!=Phase::Debriefed)return false;
     phase_=Phase::Briefing;route_=Route::MainRoad;decision_=Decision::Avoid;
+    trail_position_=trail_notes_=0;
     information_value_=0;unnecessary_force_=false;
     return true;
 }

@@ -1296,6 +1296,14 @@ static void TestBreakout() {
     game.Press();game.topRowBroken=true;game.ballY=.915f;
     game.velocityY=.7f;game.Tick();
     assert(game.narrowPaddle&&game.PaddleWidth()<.25f);
+    // A ball at either side wall must still be within the narrow paddle's reach.
+    for(int side:{-1,1}){
+        Breakout edge=game;
+        edge.moving=true;edge.SetPaddle(static_cast<float>(side));
+        edge.ballX=side*.94f;edge.ballY=-.753f;
+        edge.velocityX=0.f;edge.velocityY=-.7f;edge.Tick();
+        assert(edge.velocityY>0.f&&edge.paddleHits==game.paddleHits+1);
+    }
     // Original two-wall campaign: first clearance installs the second
     // full 112-brick wall; only the second clearance wins.
     game.bricks.fill(0);game.bricks[9]=1;game.remaining=1;

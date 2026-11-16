@@ -113,6 +113,27 @@ public:
         if(!fishing.PurchaseCharacter(skill))return false;
         dirty=true;return true;
     }
+    bool RecordPracticeFind(unsigned id){
+        auto& journal=fishing.journal;
+        if(fishing.phase!=FishingPhase::Ready||id>=kPracticeKinds.size()||
+           (journal.practice_finds&(1u<<id)))return false;
+        journal.practice_finds|=1u<<id;
+        dirty=true;return true;
+    }
+    bool VisitPracticeCheckpoint(unsigned id){
+        auto& journal=fishing.journal;
+        if(id>=kPracticeCheckpoints||(journal.practice_checkpoints&(1u<<id)))return false;
+        journal.practice_checkpoints|=1u<<id;
+        dirty=true;return true;
+    }
+    bool FileChartStation(unsigned station){
+        auto& journal=fishing.journal;
+        if(station!=journal.chart_stations||station>=kChartStations)return false;
+        ++journal.chart_stations;
+        journal.credits=std::min(1000000u,journal.credits+kChartStationCredits);
+        dirty=true;
+        return true;
+    }
     bool UpgradeTackle() { return Purchase(Equipment::Rod); }
     bool Flush(const FishingStore& store) {
         if (!dirty) return true;

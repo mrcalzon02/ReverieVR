@@ -16,6 +16,48 @@ static State* Recreate(State* s,const ReverieNativeHostV1* host,const std::strin
     audit::Check(frame==audit::Capture(Render,s,name+"-after"),"both eye frames identical after phase recreation");
     return s;
 }
+#if RECON_PROJECT_KIND == 0
+static void InspectLoupe(State *s,audit::GL &gl){
+    const auto checkpoint=Bytes(s);
+    const auto writes=audit::writes;
+    auto aim=audit::Pointer(.64f,kPhotoY+.64f,kPhotoZ);
+    Update(s,&aim);
+    audit::Check(s->cropX==8 && s->cropY==0,"tracked aim reaches upper right of film");
+    aim.secondary_down=1;Update(s,&aim);
+    auto pan=[&](float x,float y){
+        aim.move_x=x;aim.move_y=y;Update(s,&aim);Update(s,&aim);
+        aim.move_x=aim.move_y=0;Update(s,&aim);
+    };
+    pan(-1,1);pan(-1,1);pan(0,1);
+    aim.secondary_down=0;Update(s,&aim);Update(s,&aim);
+    audit::Check(s->cropX==4 && s->cropY==6 && s->choice==3,
+        "pad pans under a stationary ray and releasing Minus preserves report");
+    constexpr float scale=1.45f;
+    const auto frame=audit::Capture(Render,s,"lantern-bridge-loupe",scale);
+    // Sample every cell center in the actual right-eye loupe framebuffer.
+    // A bright cell must be the identical bit in the captured source film.
+    const auto eye=audit::Eye(1,scale);
+    for(int y=0;y<8;++y)for(int x=0;x<8;++x){
+        const float wx=kLoupeX+(x-3.5f)*2*kPhotoPixel;
+        const float wy=kPhotoY+(3.5f-y)*2*kPhotoPixel;
+        const int px=static_cast<int>((1+(wx+eye.view[12])*eye.projection[0]/-kPhotoZ)*audit::GL::width*.5f);
+        const int py=static_cast<int>((1+wy*eye.projection[5]/-kPhotoZ)*audit::GL::height*.5f);
+        uint8_t rgb[4]{};
+        glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgb);
+        const bool observed=(s->photo.pixels[6+y] & (1u<<(4+x)))!=0;
+        audit::Check((rgb[0]>130)==observed,"2x loupe framebuffer agrees with source pixel");
+    }
+    audit::Check(glGetError()==GL_NO_ERROR && Bytes(s)==checkpoint && audit::writes==writes,
+        "inspection changes no checkpoint, report selection, or storage");
+    Pause(s);GlEnd(s);gl.Recreate();audit::Check(GlStart(s)==1,"loupe GL restored");Resume(s);
+    audit::Check(frame==audit::Capture(Render,s,"lantern-bridge-loupe-restored",scale),
+        "both magnified eye frames survive pause and lost GL context");
+    auto neutral=audit::Input();Update(s,&neutral);
+    auto old=aim;old.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;Update(s,&old);
+    audit::Check(s->cropX==4 && s->cropY==6,"old input prefix preserves inspection");
+    std::puts("PASS Lantern loupe: all 64 framebuffer cells matched original evidence; no report or save on pan");
+}
+#endif
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);audit::Check(argc==2,"capture directory argument");audit::output=argv[1];
     audit::GL context;auto host=audit::Host();auto* s=static_cast<State*>(Create(&host));
@@ -34,6 +76,7 @@ int main(int argc,char** argv){
     audit::Check(s->choice==2,"selected river preserved");
     Click(s);s=Recreate(s,&host,"lantern-in-flight");
     Click(s);Cycle(s,3);s=Recreate(s,&host,"lantern-photo");
+    InspectLoupe(s,context);
     const auto photo=s->photo;const auto prior=audit::saves;
     audit::reject_writes=true;Click(s);
     audit::Check(s->simulation.phase()==sim::Phase::Filed&&s->simulation.credibility()==3
@@ -96,6 +139,36 @@ int main(int argc,char** argv){
     s=Recreate(s,&host,"forward-confirmed-refit");
     audit::Check(s->simulation.LastRouteIntel(sim::Route::MainRoad)==1 &&
         s->simulation.LastRouteIntel(sim::Route::RidgeBypass)==0,"last filed road intelligence survived refit and recreation");
+    Cycle(s);Click(s);
+    audit::Check(s->simulation.OnRidgeTrail() && s->simulation.trail_position()==0,"ridge patrol starts on foot");
+    const auto start=audit::Capture(Render,s,"forward-ridge-trailhead");
+    auto walk=[&](float direction){
+        auto input=audit::Input();input.move_x=direction;
+        Update(s,&input);Update(s,&input);input.move_x=0;Update(s,&input);
+    };
+    walk(1);walk(1);Click(s);
+    audit::Check(s->simulation.trail_position()==2 && s->simulation.trail_notes()==sim::Simulation::kGaugeNote,
+        "actual pad walk reaches gauge, Select records water mark");
+    s=Recreate(s,&host,"forward-ridge-gauge");
+    walk(1);walk(-1);
+    audit::Check(s->simulation.trail_position()==2 && s->simulation.trail_notes()==1,"can retrace route");
+    Click(s);Click(s);Click(s);
+    audit::Check(s->simulation.trail_position()==5,"Select-only movement reaches shelter");
+    const auto shelter=audit::Capture(Render,s,"forward-ridge-shelter");
+    audit::Check(start!=shelter,"world changes through walking");
+    audit::reject_writes=true;Click(s);
+    audit::Check(s->simulation.trail_notes()==3 && PrepareExit(s)==0,"failed shelter note save guarded");
+    audit::reject_writes=false;s=Recreate(s,&host,"forward-ridge-notebook");
+    walk(1);walk(1);walk(1);Click(s);
+    audit::Check(s->simulation.phase()==sim::Phase::Contact && s->evidence.civilian_silhouettes,
+        "ridge turnout joins existing civilian contact");
+    Cycle(s);Click(s);Click(s);Click(s);
+    audit::Check(s->debrief.information_value==6 && s->debrief.fuel_remaining==4 &&
+        s->simulation.filed_ridge_notes()==3,"two verified observations affect actual filed report");
+    s=Recreate(s,&host,"forward-ridge-filed");Click(s);Cycle(s);
+    audit::Check(s->simulation.LastRouteIntel(sim::Route::RidgeBypass)==6 &&
+        s->simulation.filed_ridge_notes()==3 && s->simulation.LastRouteIntel(sim::Route::MainRoad)==1,
+        "both observations and route intel survive restart and next briefing");
     std::puts("PASS_FORWARD normal continuation retains75/10, safe second patrol75/0, Cancel unchanged, explicit confirmed refit100/20");
 #endif
     const auto valid=audit::saves;const auto lastState=Bytes(s);GlEnd(s);Destroy(s);

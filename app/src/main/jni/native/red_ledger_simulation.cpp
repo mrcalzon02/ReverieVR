@@ -980,17 +980,9 @@ DayLedger Simulation::CloseDay() {
         ++day_pressure_delta_;
     }
 
-    const int32_t debt_payment =
-        std::min(
-            cash_cents_,
-            kDailyDebtServiceCents
-        );
-    cash_cents_ -= debt_payment;
-    debt_cents_ =
-        std::max(
-            0,
-            debt_cents_ - debt_payment
-        );
+    const int32_t debt_payment=std::min({cash_cents_,debt_cents_,kDailyDebtServiceCents});
+    cash_cents_-=debt_payment;
+    debt_cents_-=debt_payment;
 
     last_ledger_.day = day_;
     last_ledger_.opening_cash_cents =

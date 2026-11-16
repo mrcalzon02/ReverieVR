@@ -1,12 +1,96 @@
 #include "gumball_armada_module.cpp"
 #include "featured_module_test_host.h"
+#include <iterator>
 using Checkpoint=reverie::gumball::CampaignSave;
 static void Tap(Module* state,float x,float y){auto in=audit::Pointer(-4,0,-2.94f);Update(state,&in);in=audit::Pointer(x,y,-2.94f);Update(state,&in);in.primary_down=1;Update(state,&in);in.primary_down=0;Update(state,&in);}
 static void Back(Module* state){auto in=audit::Input();Update(state,&in);in.secondary_down=1;Update(state,&in);in.secondary_down=0;Update(state,&in);}
 static Checkpoint::Bytes StateBytes(const Module* m){Checkpoint::Bytes bytes{};audit::Check(Checkpoint::Encode(m->sim,m->ship,&bytes),"encode full actual module state");return bytes;}
+static void LaunchCrown(Module* state){
+    auto idle=audit::Input();
+    Tap(state,0,-.25f);
+    for(int i=0;i<12;++i)Update(state,&idle);
+    Tap(state,0,-.25f);
+    audit::Check(state->sim.phase()==Phase::Rescue,"arm and launch Crown Route through the actual chart");
+}
+static void RoyalRescueCheckpoint(ReverieNativeHostV1* host){
+    std::ifstream old("app/src/test/native/fixtures/gumball-four-fortresses-v4.bin",std::ios::binary);
+    audit::saves.clear();
+    auto& slot=audit::saves["campaign.v1"];
+    slot.assign(std::istreambuf_iterator<char>(old),std::istreambuf_iterator<char>());
+    audit::Check(slot.size()==4096&&std::memcmp(slot.data(),"GUMFLY04",8)==0,"prior build's four-fortress save fixture");
+    auto* state=static_cast<Module*>(Create(host));
+    audit::Check(state&&!state->loadBlocked&&GlStart(state)==1,"reopen four-fortress v4 save in actual module");
+    audit::Check(state->sim.generals_defeated()==4&&state->sim.kills()==1214
+        &&state->sim.visited()==61&&!state->sim.king_rescued(),"old endgame migrated without inventing rescue");
+    const auto cash=state->sim.cash();
+    audit::Capture(Render,state,"gumball-crown-chart");
+    LaunchCrown(state);
+    auto input=audit::Input();input.primary_down=1;
+    for(int i=0;i<270;++i)Update(state,&input);
+    audit::Check(state->sim.phase()==Phase::SignalLost&&!state->sim.king_rescued(),"holding off-target times out and stays on result");
+    audit::Check(state->sim.cash()==cash&&state->sim.support().booked()==SupportKind::CapitaineEclair,
+                 "loss preserves wallet and the combat escort booking");
+    input.primary_down=0;Update(state,&input);input.primary_down=1;Update(state,&input);
+    audit::Check(state->sim.phase()==Phase::Chart,"failure returns to chart for retry");
+    LaunchCrown(state);
+    bool recreated=false,blockedSave=false;
+    for(int i=0;i<260&&state->sim.phase()==Phase::Rescue;++i){
+        const auto target=state->sim.rescue_target();
+        const unsigned leg=state->sim.rescue_leg();
+        if(leg==0){
+            // Untracked fallback uses real pad axes. The next legs use the
+            // controller's world-space ray and its independent click.
+            input=audit::Input();
+            const auto axes=reverie::gumball::FlightAxesToTarget(state->sim.player_x(),
+                state->sim.player_y(),target,.05f,state->sim.flight_speed());
+            input.move_x=axes.x;input.move_y=axes.y;
+        }else input=audit::Pointer(target.x,target.y,-2.94f);
+        input.primary_down=1;
+        Update(state,&input);
+        if(!recreated&&leg==1&&state->sim.rescue_link()>.25f){
+            audit::Capture(Render,state,"gumball-trace-pod");
+            Pause(state);const auto saved=StateBytes(state);
+            GlEnd(state);Destroy(state);state=static_cast<Module*>(Create(host));
+            audit::Check(GlStart(state)==1&&state->resumeFlight&&StateBytes(state)==saved,
+                         "active rescue restores drifting pod, partial link and ship exactly");
+            for(int frame=0;frame<8;++frame)Update(state,&input);
+            audit::Check(state->resumeFlight&&StateBytes(state)==saved,"held primary cannot skip continuation");
+            input.primary_down=0;Update(state,&input);input.primary_down=1;Update(state,&input);
+            audit::Check(!state->resumeFlight&&StateBytes(state)==saved,"resume edge leaves partial link intact");
+            recreated=true;
+        }
+        if(!blockedSave&&leg==2&&state->sim.rescue_link()>.5f){
+            audit::Capture(Render,state,"gumball-convoy-tow");
+            audit::reject_writes=true;blockedSave=true;
+        }
+    }
+    audit::Check(recreated&&blockedSave&&state->sim.phase()==Phase::Homecoming&&state->sim.king_rescued(),
+                 "three live controller links tow the King home");
+    audit::Check(state->sim.cash()==cash&&PrepareExit(state)==0,"failed rescue write keeps the live ending and exit guard");
+    audit::reject_writes=false;Pause(state);
+    audit::Check(PrepareExit(state)==1&&slot[8]==5,"V5 ending durably retried");
+    GlEnd(state);Destroy(state);state=static_cast<Module*>(Create(host));audit::Check(GlStart(state)==1,"ending GL");
+    input=audit::Input();input.primary_down=1;Update(state,&input);
+    audit::Check(state->sim.phase()==Phase::Homecoming,"held restart input cannot skip ending");
+    audit::Capture(Render,state,"gumball-king-home");
+    input.primary_down=0;Update(state,&input);input.primary_down=1;Update(state,&input);Update(state,&input);
+    audit::Check(state->sim.phase()==Phase::Credits,"fresh click opens credits and held click stays on credits");
+    audit::Capture(Render,state,"gumball-campaign-credits");
+    GlEnd(state);Destroy(state);state=static_cast<Module*>(Create(host));
+    audit::Check(state->sim.phase()==Phase::Credits,"credits resume after process recreation");
+    input.primary_down=0;Update(state,&input);input.primary_down=1;Update(state,&input);
+    audit::Check(state->sim.phase()==Phase::Chart&&state->sim.king_rescued(),"credits return to saved free flight");
+    audit::Check(GlStart(state)==1,"postgame chart GL");
+    audit::Capture(Render,state,"gumball-free-flight");GlEnd(state);
+    audit::Check(state->sim.cash()==cash&&state->sim.support().booked()==SupportKind::CapitaineEclair,
+                 "homecoming pays no duplicate reward or escort debit");
+    Destroy(state);
+    std::puts("PASS Gumball v4 four-fortress save to Crown Route, timeout, retry, pad/ray rescue, interrupted tow, homecoming, credits and saved free flight");
+}
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     audit::Check(argc==2,"capture directory argument");audit::output=argv[1];audit::GL context;auto host=audit::Host();
+    RoyalRescueCheckpoint(&host);audit::saves.clear();
     auto* state=static_cast<Module*>(Create(&host));audit::Check(state&&!state->loadBlocked&&GlStart(state)==1,"fresh Gumball actual GL");
     Tap(state,1.55f,-.94f);Tap(state,0,.88f);
     audit::Check(state->sim.cash()==55&&state->sim.support().booked()==SupportKind::CapitaineEclair,"real paid support purchase");

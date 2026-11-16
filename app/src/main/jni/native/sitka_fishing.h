@@ -52,6 +52,16 @@ inline constexpr std::array<const char*,13> kRodNames={{
     "Precision long cast","Heavy offshore","Master angler rod"
 }};
 
+// Permanent IDs on the fictional practice shore. Keep separate from the 64
+// approved geography IDs. A player's earned qualifications apply at the desk.
+inline constexpr std::array<BeachFind,12> kPracticeKinds={{
+    BeachFind::Shell,BeachFind::Crab,BeachFind::Rock,BeachFind::SeaGlass,
+    BeachFind::Driftwood,BeachFind::Crab,BeachFind::MarineLife,BeachFind::MarineLife,
+    BeachFind::Driftwood,BeachFind::MarineLife,BeachFind::MarineLife,BeachFind::MarineLife
+}};
+inline constexpr unsigned kPracticeCheckpoints=6u;
+inline constexpr unsigned kChartStations=3u;
+inline constexpr unsigned kChartStationCredits=25u;
 struct Journal {
     uint32_t seed=0x51A7CAu;
     uint32_t credits=0;
@@ -72,6 +82,8 @@ struct Journal {
     uint64_t submitted_beach_sites=0;
     uint32_t starter_tokens=0,submitted_starter_tokens=0;
     uint32_t submitted_discoveries=0;
+    uint32_t practice_finds=0,practice_submitted=0,practice_checkpoints=0;
+    uint32_t chart_stations=0; // successive filed survey stations
 };
 inline uint32_t BeachSiteCount(uint64_t bits){
     uint32_t count=0;
@@ -88,7 +100,17 @@ inline Journal StarterJournal(){
     return j;
 }
 inline uint32_t RegisteredFindCount(const Journal& j){
-    return BeachSiteCount(j.submitted_beach_sites)+j.submitted_starter_tokens;
+    return BeachSiteCount(j.submitted_beach_sites)+j.submitted_starter_tokens+
+        BeachSiteCount(j.practice_submitted);
+}
+inline uint32_t RegisteredKinds(const Journal& j){
+    uint32_t kinds=j.submitted_discoveries;
+    for(size_t i=0;i<kPracticeKinds.size();++i)
+        if(j.practice_submitted&(1u<<i))kinds|=FindMask(kPracticeKinds[i]);
+    return kinds;
+}
+inline unsigned TrainingVisitCount(const Journal& j){
+    return BeachSiteCount(j.city_sites)+BeachSiteCount(j.practice_checkpoints);
 }
 // The Tier 0 pole, reel/spool, line, bait and shore kit cannot wear out.
 // Basic bait is always available; Cast never consumes bait or starter gear.
@@ -131,7 +153,7 @@ inline EquipmentOffer NextEquipment(const Journal& j,Equipment item){
     result.required_sites=next; // unique finds along authentic shoreline
     result.required_kinds=FindPrerequisites(next);
     result.unlocked=RegisteredFindCount(j)>=result.required_sites &&
-        (j.submitted_discoveries&result.required_kinds)==result.required_kinds;
+        (RegisteredKinds(j)&result.required_kinds)==result.required_kinds;
     result.affordable=j.credits>=result.credits;
     return result;
 }
@@ -168,8 +190,8 @@ inline CharacterOffer NextCharacter(const Journal& j,CharacterSkill skill){
     o.required_city=o.next_level>2u?o.next_level-2u:0u;
     o.required_beach_kinds=FindPrerequisites(o.next_level);
     o.unlocked=RegisteredFindCount(j)>=o.required_beach &&
-       BeachSiteCount(j.city_sites)>=o.required_city &&
-       (j.submitted_discoveries&o.required_beach_kinds)==o.required_beach_kinds;
+       TrainingVisitCount(j)>=o.required_city &&
+       (RegisteredKinds(j)&o.required_beach_kinds)==o.required_beach_kinds;
     o.affordable=j.credits>=o.credits;
     return o;
 }
@@ -265,9 +287,10 @@ struct Fishing {
     bool SubmitFinds(){
         if(phase!=FishingPhase::Ready)return false;
         if(journal.submitted_beach_sites==journal.beach_sites&&
-           !journal.starter_tokens)return false;
+           journal.practice_submitted==journal.practice_finds&&!journal.starter_tokens)return false;
         journal.submitted_beach_sites=journal.beach_sites;
         journal.submitted_discoveries=journal.discoveries;
+        journal.practice_submitted=journal.practice_finds;
         journal.submitted_starter_tokens+=journal.starter_tokens;
         journal.starter_tokens=0u;
         return true; // registration unlocks purchases, never grants money
@@ -320,11 +343,10 @@ struct Fishing {
     }
     bool UpgradeTackle(){return Purchase(Equipment::Rod);}
 };
-// V5 retains inventory and office registrations in the SAME save slot.
-// Clean-start development format; old prototype versions are not migrated.
+// V6 appends the chart log to the shipped V5 journal in the same slot.
 inline std::string SaveJournal(const Journal& j){
-    std::string out="SITKA-FISH-5\n";
-    const std::array<uint64_t,32> fields={{
+    std::string out="SITKA-FISH-6\n";
+    const std::array<uint64_t,36> fields={{
         j.seed,j.credits,j.gear,j.total,j.caught[0],j.caught[1],
         j.caught[2],j.caught[3],j.helm_upgrades,j.hull_tier,
         j.reel_level,j.line_level,j.lure_level,j.shore_kit_level,
@@ -333,18 +355,20 @@ inline std::string SaveJournal(const Journal& j){
         j.deckhand_level,j.city_sites,j.city_discoveries,
         j.fish_inventory[0],j.fish_inventory[1],j.fish_inventory[2],
         j.fish_inventory[3],j.shellfish_inventory,j.submitted_beach_sites,
-        j.starter_tokens,j.submitted_starter_tokens,j.submitted_discoveries
+        j.starter_tokens,j.submitted_starter_tokens,j.submitted_discoveries,j.chart_stations,
+        j.practice_finds,j.practice_submitted,j.practice_checkpoints
     }};
     for(uint64_t n:fields)out+=std::to_string(n)+"\n";
     return out;
 }
 inline bool LoadJournal(std::string_view bytes,Journal& out){
-    constexpr std::string_view version="SITKA-FISH-5\n";
-    if(bytes.substr(0,version.size())!=version)return false;
+    constexpr std::string_view v5="SITKA-FISH-5\n",v6="SITKA-FISH-6\n";
+    const auto version=bytes.substr(0,v6.size());
+    if(version!=v5&&version!=v6)return false;
     bytes.remove_prefix(version.size());
-    constexpr unsigned fields=32u;
+    const unsigned fields=version==v6?36u:32u;
     if(bytes.size()>512u)return false;
-    std::array<uint64_t,32> n{};
+    std::array<uint64_t,36> n{};
     for(unsigned i=0;i<fields;++i){
         const auto end=bytes.find('\n');
         if(end==std::string_view::npos||end==0u||end>20u)return false;
@@ -353,7 +377,8 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
         if(parsed.ec!=std::errc{}||parsed.ptr!=begin+end)return false;
         bytes.remove_prefix(end+1u);
     }
-    if(!bytes.empty()||n[0]==0u||n[0]>UINT32_MAX||
+    if(!bytes.empty()||n[33]>=(1u<<kPracticeKinds.size())||(n[34]&~n[33])||
+       n[35]>=(1u<<kPracticeCheckpoints)||n[32]>kChartStations||n[0]==0u||n[0]>UINT32_MAX||
        n[1]>1000000u||n[2]>kEquipmentMax[0]||n[3]>1000000u||
        n[8]>65535u||n[9]>3u||n[10]>kEquipmentMax[1]||
        n[11]>kEquipmentMax[2]||n[12]>kEquipmentMax[3]||
@@ -406,6 +431,9 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
         j.submitted_starter_tokens=static_cast<uint32_t>(n[30]);
         j.submitted_discoveries=static_cast<uint32_t>(n[31]);
     }
+    j.practice_finds=uint32_t(n[33]);j.practice_submitted=uint32_t(n[34]);
+    j.practice_checkpoints=uint32_t(n[35]);
+    j.chart_stations=static_cast<uint32_t>(n[32]);
     out=j;return true;
 }
 }} // namespace reverie::sitka

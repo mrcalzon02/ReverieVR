@@ -90,5 +90,34 @@ int main(){
     assert(restored.Checksum()==before);
     assert(!CampaignSave::Encode(restored,nullptr));
     assert(!CampaignSave::Decode(nullptr,bytes.data(),bytes.size()));
+    // This exact v9 record was emitted by the shipped 990a33f encoder
+    // after a fresh seed-414 party marched from Hearthwell to Charter Gate.
+    Session gate(414);
+    assert(gate.frontier.Travel(7));
+    assert(CampaignSave::Encode(gate,&bytes));
+    bytes[8]=9;Reseal(bytes);
+    const uint8_t shipped_digest[]={0x9a,0x74,0xd6,0x1f,0x8b,0x01,0xb0,0x82};
+    assert(std::equal(bytes.end()-8,bytes.end(),shipped_digest));
+    assert(CampaignSave::Decode(&restored,bytes.data(),bytes.size()));
+    assert(restored.Checksum()==gate.Checksum());
+    assert(restored.OrderRelief(0) && !restored.OrderRelief(0));
+    // Reverse the two deliveries and leave the main party elsewhere.
+    assert(restored.OrderRelief(1) && restored.OrderRelief(3) && restored.OrderRelief(3));
+    assert(!restored.OrderRelief(3) && !restored.OrderRelief(2));
+    assert(restored.frontier.Travel(6));
+    assert(restored.OrderRelief(1) && restored.OrderRelief(2) && restored.OrderRelief(2));
+    assert(restored.OrderRelief(1) && restored.OrderRelief(0) && restored.OrderRelief(0));
+    assert(restored.frontier.location()==6 && !restored.OrderRelief(0));
+    assert(CampaignSave::Encode(restored,&bytes));
+    const auto completed=restored.Checksum();
+    const size_t relief_offset=55+16*14+Checkpoint::kBytes+17+32+2+9+3+3+2+4;
+    assert(bytes[relief_offset]==2 && bytes[relief_offset+1]==0 && bytes[relief_offset+2]==3);
+    for(const auto &bad:std::array<std::array<uint8_t,3>,5>{{{3,0,0},{1,4,0},{1,0,4},{0,0,1},{2,1,3}}}){
+        auto malformed=bytes;
+        std::copy(bad.begin(),bad.end(),malformed.begin()+relief_offset);
+        Reseal(malformed);
+        assert(!CampaignSave::Decode(&restored,malformed.data(),malformed.size()));
+        assert(restored.Checksum()==completed);
+    }
     std::cout<<"Omega Front strategic campaign save/replay/corruption regressions passed\n";
 }

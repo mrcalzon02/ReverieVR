@@ -37,7 +37,8 @@ struct State {
 #if RECON_PROJECT_KIND == 0
     sim::Photograph photo{};
     sim::ReportResult result{};
-    bool hasPhoto=false;
+    bool hasPhoto=false,panChord=false;
+    int cropX=4,cropY=4,lastAimX=-1,lastAimY=-1;
 #else
     sim::ContactEvidence evidence{};
     sim::Debrief debrief{};
@@ -61,6 +62,125 @@ void Text(State *s,const char *str,float y,float size,
           float r,float g,float b){
     s->font.Fit(str,0.f,y,4.66f,size,r,g,b,-2.87f);
 }
+#if RECON_PROJECT_KIND == 0
+constexpr float kPhotoPixel=.083f,kPhotoY=.16f,kPhotoZ=-2.92f,kLoupeX=1.59f;
+constexpr int kFilmSize=16,kWindowSize=8;
+void DrawFilm(State *s,float cx,int startX,int startY,int size){
+    const float step=kPhotoPixel*kFilmSize/size;
+    Rect(s,cx,kPhotoY,1.46f,1.46f,-2.96f,.14f,.17f,.14f);
+    for(int y=0;y<size;++y)for(int x=0;x<size;++x){
+        if(s->photo.pixels[startY+y] & (1u<<(startX+x)))
+            Rect(s,cx+(x-(size-1)*.5f)*step,kPhotoY+((size-1)*.5f-y)*step,
+                 step*.96f,step*.96f,kPhotoZ,.84f,.85f,.63f);
+    }
+}
+void DrawLoupe(State *s){
+    DrawFilm(s,kLoupeX,s->cropX,s->cropY,kWindowSize);
+    const float width=kWindowSize*kPhotoPixel;
+    const float x=(s->cropX-4)*kPhotoPixel,y=kPhotoY-(s->cropY-4)*kPhotoPixel;
+    for(int side:{-1,1}){
+        Rect(s,x+side*width*.5f,y,.014f,width,-2.90f,.96f,.70f,.27f);
+        Rect(s,x,y+side*width*.5f,width,.014f,-2.90f,.96f,.70f,.27f);
+    }
+    s->font.Fit("SOURCE FRAME",0.f,-.64f,1.42f,.025f,.77f,.89f,.84f,-2.87f);
+    s->font.Fit("2X LOUPE",kLoupeX,-.64f,1.42f,.025f,.96f,.82f,.45f,-2.87f);
+}
+// Aim updates only when its source pixel changes. A stationary head ray
+// cannot return the loupe to center immediately after a pad pan.
+bool AimLoupe(State *s,const ReverieNativeInputV1 *in,bool padOwns){
+    int hitX=-1,hitY=-1;
+    if(ReverieNativeInputHasPointerV1(in) && in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+       in->pointer_direction[2]<-.0001f){
+        const float t=(kPhotoZ-in->pointer_origin[2])/in->pointer_direction[2];
+        const float x=in->pointer_origin[0]+t*in->pointer_direction[0];
+        const float y=in->pointer_origin[1]+t*in->pointer_direction[1]-kPhotoY;
+        const float half=kFilmSize*kPhotoPixel*.5f;
+        if(t>0 && x>=-half && x<half && y<=half && y>-half){
+            hitX=std::clamp(static_cast<int>((half+x)/kPhotoPixel),0,kFilmSize-1);
+            hitY=std::clamp(static_cast<int>((half-y)/kPhotoPixel),0,kFilmSize-1);
+        }
+    }
+    const bool moved=hitX!=s->lastAimX || hitY!=s->lastAimY;
+    s->lastAimX=hitX;s->lastAimY=hitY;
+    if(!moved || hitX<0 || padOwns)return false;
+    const int x=std::clamp(hitX-kWindowSize/2,0,kFilmSize-kWindowSize);
+    const int y=std::clamp(hitY-kWindowSize/2,0,kFilmSize-kWindowSize);
+    if(x==s->cropX && y==s->cropY)return false;
+    s->cropX=x;s->cropY=y;
+    return true;
+}
+#endif
+#if RECON_PROJECT_KIND == 1
+float TrailX(int marker){return .48f*std::sin(.74f*marker);}
+float TrailZ(int marker,int position){return -3.4f-2.f*(marker-position);}
+void GroundBand(State *s,float nearX,float farX,float nearZ,float farZ,
+                float halfWidth,float height,float r,float g,float b){
+    auto v=[&](float x,float z){reverie::flatmesh::Vertex(s->mesh,x,height,z,r,g,b);};
+    v(nearX-halfWidth,nearZ);v(nearX+halfWidth,nearZ);v(farX+halfWidth,farZ);
+    v(nearX-halfWidth,nearZ);v(farX+halfWidth,farZ);v(farX-halfWidth,farZ);
+}
+void DrawRidgeTrail(State *s){
+    const auto &patrol=s->simulation;
+    const int pos=patrol.trail_position();
+    const float origin=TrailX(pos);
+    const auto tri=[&](float ax,float ay,float bx,float by,float cx,float cy,
+                       float z,float r,float g,float b){
+        reverie::flatmesh::Triangle(s->mesh,ax,ay,bx,by,cx,cy,z,r,g,b);
+    };
+    Rect(s,0,0,96,70,-28,.48f,.68f,.73f);
+    for(int i=-3;i<5;++i){
+        const float x=i*6.5f-origin;
+        tri(x-7,-1.1f,x,2.1f+(i%3)*.47f,x+6,-1.1f,-20,.23f,.38f,.37f);
+        tri(x,2.1f+(i%3)*.47f,x+6,-1.1f,x+1,-1.1f,-20,.31f,.45f,.42f);
+    }
+    GroundBand(s,0,0,-.3f,-27,40,-1.05f,.29f,.40f,.27f);
+    for(int m=sim::Simulation::kRidgeExit+4;m>=pos-1;--m){
+        const float z=TrailZ(m,pos),x=TrailX(m)-origin;
+        const float closerZ=TrailZ(m-1,pos),closerX=TrailX(m-1)-origin;
+        GroundBand(s,closerX,x,closerZ,z,.80f,-1.04f,.62f,.53f,.36f);
+        if(m<0 || z>-.65f)continue;
+        const float tree=x+(m%2?-1.f:1.f)*(2.9f+.12f*(m%3));
+        Rect(s,tree,-.52f,.13f,1.f,z,.23f,.19f,.13f);
+        tri(tree-.56f,-.56f,tree,1.06f,tree+.56f,-.56f,z,.14f,.29f,.22f);
+        if(m==2){
+            // A measuring staff sits in the stream. Its waterline and bands
+            // stay in world coordinates as the observer approaches.
+            GroundBand(s,x-2,x-2,z+1.1f,z-1.2f,.72f,-1.02f,.29f,.49f,.53f);
+            Rect(s,x-1.25f,-.30f,.19f,1.50f,z,.89f,.82f,.62f);
+            for(int mark=0;mark<5;++mark)
+                Rect(s,x-1.28f,.22f-.14f*mark,.11f,.045f,z,.23f,.24f,.20f);
+            Rect(s,x-1.25f,-.31f,.19f,.10f,z,.23f,.44f,.52f);
+        }else if(m==5){
+            // Posts, triangular roof and a bench make the shelter visible
+            // before it becomes possible to record its condition.
+            Rect(s,x+1.15f,-.37f,.09f,1.34f,z,.37f,.29f,.21f);
+            Rect(s,x+2.43f,-.37f,.09f,1.34f,z,.37f,.29f,.21f);
+            Rect(s,x+1.79f,-.61f,1.15f,.10f,z,.43f,.33f,.22f);
+            tri(x+.93f,.25f,x+1.79f,.87f,x+2.65f,.25f,z,.55f,.30f,.20f);
+        }else if(m==sim::Simulation::kRidgeExit){
+            Rect(s,x-.99f,-.35f,.11f,1.4f,z,.34f,.28f,.21f);
+            Rect(s,x-1.f,.14f,.84f,.33f,z,.80f,.71f,.46f);
+        }
+    }
+    Rect(s,0,1.39f,4.62f,.52f,-2.99f,.09f,.16f,.16f);
+    Text(s,"RIDGE BYPASS  /  FOOT SURVEY",1.39f,.044f,.91f,.96f,.85f);
+    Rect(s,0,-1.21f,4.79f,.84f,-2.99f,.08f,.13f,.14f);
+    char label[80];
+    const int notes=(patrol.trail_notes()&1)+((patrol.trail_notes()>>1)&1);
+    std::snprintf(label,sizeof(label),"TRAIL %d / %d      NOTES %d / 2",
+                  pos,sim::Simulation::kRidgeExit,notes);
+    Text(s,label,-.91f,.031f,.77f,.92f,.88f);
+    const auto here=patrol.ObservationHere();
+    const char *action="SELECT TO WALK ON";
+    if(pos==sim::Simulation::kRidgeExit)action="RIDGE TURNOUT  /  SELECT TO INSPECT CONTACT";
+    else if(here && !(patrol.trail_notes()&here))action=here==sim::Simulation::kGaugeNote?
+        "SELECT TO RECORD THE HIGH WATER MARK":"SELECT TO RECORD THE INTACT SHELTER";
+    else if(here)action="OBSERVATION LOGGED  /  SELECT TO WALK ON";
+    Text(s,action,-1.18f,.033f,.99f,.85f,.52f);
+    Text(s,"PAD RIGHT TO WALK   /   LEFT TO RETURN",-1.47f,.028f,.81f,.90f,.86f);
+    if(s->saveFailed)Text(s,"SAVE FAILED - RETRYING",1.73f,.029f,1.f,.60f,.41f);
+}
+#endif
 int Choices(const State *s){
 #if RECON_PROJECT_KIND == 0
     if(s->simulation.phase()==sim::Phase::Briefing)return 3;
@@ -74,6 +194,11 @@ int Choices(const State *s){
 }
 void DrawBoard(State *s){
     s->mesh.clear();s->font.Clear();
+#if RECON_PROJECT_KIND == 1
+    if(!s->loadBlocked && s->simulation.OnRidgeTrail()){
+        DrawRidgeTrail(s);s->upload=true;return;
+    }
+#endif
     Rect(s,0,0,5.0f,3.45f,-3.03f,.028f,.050f,.076f);
     Rect(s,0,1.43f,4.75f,.44f,-2.99f,.13f,.21f,.22f);
     Text(s,kHeader,1.39f,.053f,.93f,.94f,.83f);
@@ -122,24 +247,23 @@ void DrawBoard(State *s){
             Text(s,text,.99f,.029f,.79f,.91f,.96f);
             // The field reference is identical on all assignments. It describes
             // image features without identifying the current photograph.
-            s->font.Fit("FIELD GUIDE",-1.52f,.57f,1.28f,.030f,.79f,.91f,.96f,-2.87f);
-            s->font.Fit("COLUMN",-1.52f,.26f,1.28f,.028f,.92f,.82f,.59f,-2.87f);
-            s->font.Fit("PAIRED PROFILES",-1.52f,.05f,1.35f,.025f,.83f,.90f,.87f,-2.87f);
-            s->font.Fit("BRIDGE DAMAGE",1.52f,.26f,1.35f,.028f,.92f,.82f,.59f,-2.87f);
-            s->font.Fit("GAP IN DECK",1.52f,.05f,1.28f,.025f,.83f,.90f,.87f,-2.87f);
+            s->font.Fit("FIELD GUIDE",-1.57f,.65f,1.28f,.030f,.79f,.91f,.96f,-2.87f);
+            s->font.Fit("COLUMN",-1.57f,.36f,1.28f,.028f,.92f,.82f,.59f,-2.87f);
+            s->font.Fit("PAIRED PROFILES",-1.57f,.16f,1.35f,.025f,.83f,.90f,.87f,-2.87f);
+            s->font.Fit("BRIDGE DAMAGE",-1.57f,-.12f,1.35f,.028f,.92f,.82f,.59f,-2.87f);
+            s->font.Fit("GAP IN DECK",-1.57f,-.32f,1.28f,.025f,.83f,.90f,.87f,-2.87f);
         }
         if(s->hasPhoto){
-            Rect(s,0,.16f,1.5f,1.5f,-2.96f,.14f,.17f,.14f);
-            for(int y=0;y<16;y++)for(int x=0;x<16;x++)
-                if((s->photo.pixels[y] & (1u<<x))!=0)
-                    Rect(s,(x-7.5f)*.083f,(7.5f-y)*.083f+.16f,
-                         .080f,.080f,-2.92f,.84f,.85f,.63f);
+            DrawFilm(s,0.f,0,0,kFilmSize);
+            if(s->simulation.phase()==sim::Phase::PhotoReady)DrawLoupe(s);
         }
         if(s->simulation.phase()==sim::Phase::PhotoReady){
             const char *labels[]={"NO CONTACT","POSSIBLE CONTACT",
                                   "VEHICLE COLUMN","BRIDGE DAMAGE"};
-            Text(s,"FILE ASSESSMENT",-.88f,.033f,.83f,.91f,.90f);
-            Text(s,labels[s->choice%4],-1.18f,.040f,1.f,.81f,.36f);
+            Text(s,"AIM AT PHOTO OR HOLD MINUS + PAD TO PAN",-.90f,.027f,.83f,.91f,.90f);
+
+            std::snprintf(text,sizeof(text),"FILE: %s",labels[s->choice%4]);
+            Text(s,text,-1.19f,.040f,1.f,.81f,.36f);
         }else{
             std::snprintf(text,sizeof(text),"TRUST %+d  EFFECT %+d",
                      s->result.credibility_delta,s->result.operational_effect);
@@ -175,6 +299,11 @@ void DrawBoard(State *s){
                 if(intel)std::snprintf(text,sizeof(text),"LAST FILED INTEL %+d",intel);
                 else std::snprintf(text,sizeof(text),"NO FILED REPORT");
                 Text(s,text,-.78f,.030f,.78f,.87f,.90f);
+                if(route==sim::Route::RidgeBypass && s->simulation.filed_ridge_notes()){
+                    const uint8_t filed=s->simulation.filed_ridge_notes();
+                    Text(s,filed==3?"FILED: GAUGE AND SHELTER":filed==1?"FILED: WATER MARK":"FILED: SHELTER INTACT",
+                         -1.24f,.025f,.76f,.87f,.86f);
+                }
                 Text(s,s->simulation.CanBeginPatrol(route)?"SELECT TO DEPLOY":
                     s->simulation.vehicle_condition()<=0?"VEHICLE DISABLED - USE BASE SERVICE":
                     "LOW FUEL - CHOOSE BASE SERVICE",-1.02f,.032f,.92f,.80f,.57f);
@@ -210,6 +339,12 @@ void DrawBoard(State *s){
         Text(s,text,.56f,.046f,.94f,.82f,.42f);
         std::snprintf(text,sizeof(text),"VEHICLE %d",s->debrief.vehicle_condition);
         Text(s,text,.05f,.045f,.80f,.89f,.87f);
+        if(s->simulation.trail_notes()){
+            const auto notes=s->simulation.trail_notes();
+            Text(s,notes==3?"FILED: HIGH WATER MARK / SHELTER INTACT":
+                 notes==1?"FILED: HIGH WATER MARK":"FILED: SHELTER INTACT",
+                 -.18f,.032f,.77f,.89f,.88f);
+        }
         if(s->debrief.unnecessary_force)
             Text(s,"UNNECESSARY FORCE",- .37f,.039f,1.f,.52f,.43f);
         Text(s,"SELECT NEXT PATROL",-.94f,.037f,1.f,.85f,.36f);
@@ -279,6 +414,7 @@ bool Act(State *s){
         ok=s->simulation.CompleteRecon();
         if(ok&&s->simulation.photo()){
             s->photo=*s->simulation.photo();s->hasPhoto=true;
+            s->cropX=s->cropY=4;s->lastAimX=s->lastAimY=-1;s->panChord=false;
         }
         break;
     case sim::Phase::PhotoReady:
@@ -297,6 +433,10 @@ bool Act(State *s){
         else ok=s->simulation.BeginPatrol(static_cast<sim::Route>(s->choice));
         break;
     case sim::Phase::Travelling:
+        if(s->simulation.OnRidgeTrail() && s->simulation.trail_position()<sim::Simulation::kRidgeExit){
+            ok=s->simulation.RecordObservation() || s->simulation.WalkRidge(1);
+            break;
+        }
         ok=s->simulation.ReachContact();
         if(ok)ok=s->simulation.InspectContact(&s->evidence);
         break;
@@ -381,7 +521,12 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     bool first=in->primary_down!=0,second=in->secondary_down!=0;
     bool axis=std::fabs(in->move_x)>.65f||std::fabs(in->move_y)>.65f;
     if(!s->inputReady){
-        if(!first&&!second&&!axis)s->inputReady=true;
+        if(!first&&!second&&!axis){
+            s->inputReady=true;
+#if RECON_PROJECT_KIND == 0
+            s->panChord=false;
+#endif
+        }
         return; // Recreated/lifecycle-restored boards require released controls.
     }
     if(s->loadBlocked){
@@ -394,17 +539,49 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         if(s->retrySeconds<=0.f){Save(s);DrawBoard(s);}
     }
     const int choices=Choices(s);
-    if(choices>1 && ((second&&!s->secondary)||(axis&&!s->axis))){
-        // The secondary button always advances. Left/up goes back, right/down
-        // goes forward; a held rocker still moves exactly one selection.
+    bool nextButton=second&&!s->secondary;
+    bool stepAxis=axis&&!s->axis;
+    bool activate=first&&!s->primary;
+#if RECON_PROJECT_KIND == 0
+    if(s->simulation.phase()==sim::Phase::PhotoReady){
+        bool redraw=AimLoupe(s,in,second || s->panChord);
+        // A short Minus tap still advances the report. Holding it with a
+        // rocker direction exclusively moves the window by two film pixels.
+        if(second && axis){
+            if(!s->panChord || !s->axis){
+                const int dx=in->move_x>.65f?2:in->move_x<-.65f?-2:0;
+                const int dy=in->move_y>.65f?2:in->move_y<-.65f?-2:0;
+                const int x=std::clamp(s->cropX+dx,0,kFilmSize-kWindowSize);
+                const int y=std::clamp(s->cropY+dy,0,kFilmSize-kWindowSize);
+                redraw|=x!=s->cropX || y!=s->cropY;
+                s->cropX=x;s->cropY=y;
+            }
+            s->panChord=true;
+        }
+        nextButton=!second && s->secondary && !s->panChord;
+        stepAxis=stepAxis && !second && !s->panChord;
+        activate=activate && !second && !s->panChord;
+        if(!second)s->panChord=false;
+        if(redraw)DrawBoard(s);
+    }
+#endif
+#if RECON_PROJECT_KIND == 1
+    if(s->simulation.OnRidgeTrail() && stepAxis && !first && std::fabs(in->move_x)>.65f){
+        if(s->simulation.WalkRidge(in->move_x>0?1:-1)){
+            Save(s);DrawBoard(s);
+            ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+        }
+    }
+#endif
+    if(choices>1 && (nextButton || stepAxis)){
         const bool horizontal=std::fabs(in->move_x)>=std::fabs(in->move_y);
         const bool previous=horizontal ? in->move_x<0.f : in->move_y<0.f;
-        const int step=second&&!s->secondary ? 1 : previous ? -1 : 1;
+        const int step=nextButton ? 1 : previous ? -1 : 1;
         s->choice=(s->choice+choices+step)%choices;
         Save(s);DrawBoard(s);
         ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
     }
-    if(first&&!s->primary){
+    if(activate){
         bool ok=Act(s);
         ReverieNativeRequestFeedbackV1(s->host,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
                                       REVERIE_NATIVE_FEEDBACK_FAILURE);

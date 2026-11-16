@@ -3,6 +3,14 @@
 **Target:** ReverieVR, one phone-resident APK, Galaxy S9 / Daydream.  
 **Prior baseline (2026-10-16):** Development-only S01/S02 combat, S03 starter weapons, S08/S09 objectives/salvage, **partial S06 connected shipyard**, and **partial source-integrated named lane rivals plus purchasable companion support contracts** with checked V3 campaign saves. Complete integrated game/Android/Daydream acceptance remains open. The standalone shipyard component and tests were byte-verified against the commit and passed strict GCC/Clang and Clang ASan/UBSan. The integrated Android/NDK APK and physical S9 headset playthrough remain unverified; authored textures, deep voiced announcer and full campaigns remain unimplemented.
 
+## The Crown Route and free flight — 2026-11-16
+
+Defeating the fourth general reveals a royal distress call on the chart. Arm the center **Crown Route** card and confirm it to begin. The Parliament relay gives the player the escape pod's signal. Steer into the dotted ring with the tracked controller or directional pad and hold primary for one second. The next contact is the drifting pod. Tow it to the moving relief ship to see why the King disappeared. A missed twelve-second window returns the player to the chart to try again. Combat escorts and supplies stay booked for their next combat sortie.
+
+The voyage ends at the homecoming and credits. In saved free flight the three route cards now lead to the other three sectors, with combat, income and construction available. General rank bonuses count the number of flags earned. The V5 full checkpoint retains previous V4 and V1–V3 import paths, including saves already through all four fortresses. It saves the partial signal lock, tow, homecoming, credits and postgame.
+
+The campaign regression pilots an unmodified starter ship from a fresh chart and buys upgrades from sortie earnings. Strict GCC reached credits in 67 sorties (61 clears, six losses, four generals, 1,214 kills). The GLES2 module regression starts from the preceding build's V4 save, exercises a timeout, retry, real pad and controller-ray input, process recreation and a failed terminal write, and renders both eyes through credits. Run `scripts/verify-gumball-armada.sh` and `scripts/verify-featured-persistence.sh`. The 4,096-byte fixture was captured at source `990a33f` after the same 67 attempts and an Éclair booking. Authored multi-phase regional bosses, bespoke finale music and voices, and physical S9/controller acceptance remain open.
+
 ## Ordinary enemy fire across the flight area — 2026-11-16
 
 Standard enemy bolts approach from depth above the top of the flight area, then traverse the pilot's plane. Rendering and swept voxel contact use the same path. Previously, steering to the middle or top kept the pilot out of reach of these bolts even on a direct intercept. The GCC simulation regression intercepts and dodges an enemy-fired bolt at four heights using the live steering controls. Bombs, mines and warning zones retain their existing behavior.
@@ -144,7 +152,7 @@ A candy-painted flight-action RPG, with modular ships made from licorice trusses
 - Four earlier numerical upgrade tracks remain present alongside these physical parts; commander skill tree, named hull classes, localized part damage, tiered loot and full fleet-building are still unimplemented.
 - Module save slot is still named `campaign.v1` for compatibility, but the **binary payload is now schema version 2** containing weapon ownership and active weapon. The module reads and validates older version-1 snapshots, migrates their existing cash/levels/position to v2 and atomically rewrites the slot. Runtime failures surface a save-error warning. The game does not yet resume mid-sortie.
 - The source remains Development-only and governed by unchanged native ABI v1. No Android APK, Galaxy S9 launch, dual-eye comfort or complete campaign acceptance is claimed.
-- Do **not** claim the Candy King has been rescued when defeating four prototype generals. Until a real finale is authored the UI says that the Sour Armada is defeated but the King remains missing.
+- Defeating the four prototype generals opens the Crown Route. Only completing the live three-stage rescue returns the King and opens postgame free flight.
 
 ## Delivery gates
 
@@ -168,7 +176,7 @@ A candy-painted flight-action RPG, with modular ships made from licorice trusses
 
 
 
-**Current partial code slice:** once a sortie has been completed, a deterministic guest selection can produce Pip's bounded escort shots, Lolly's bounded shield/salvage aid, Blort's slow interceptable double-bomb attacks, Nib's shootable minefield, or separate Biff/Baff offset bomb waves (or no guest). Those are actual simulation/render source paths with procedural silhouettes and a new unit-test runner; the full integrated native build and S9 VR pass remain pending. The other eight original cast characters (six shopkeepers, Lady Limewire and Marshal Muck), complete shops/quests, bespoke sprites, portraits, voice and future Extra Lime continues remain planned. The final four-general results screen is no longer a permanent trap: it returns to the chart, while the Candy King remains missing.
+**Current partial code slice:** once a sortie has been completed, a deterministic guest selection can produce Pip's bounded escort shots, Lolly's bounded shield/salvage aid, Blort's slow interceptable double-bomb attacks, Nib's shootable minefield, or separate Biff/Baff offset bomb waves (or no guest). Those are actual simulation/render source paths with procedural silhouettes and a new unit-test runner; the full integrated native build and S9 VR pass remain pending. The other eight original cast characters (six shopkeepers, Lady Limewire and Marshal Muck), complete shops/quests, bespoke sprites, portraits, voice and future Extra Lime continues remain planned. The four-general results screen returns to the chart, where the Crown Route unlocks.
 
 The **14 named character concepts** (six shopkeepers/operators, two friendly mid-sortie support pilots, and six recurring Sour nuisance/rival pilots) have an authoritative *planned* cast bible: [GUMBALL_ARMADA_CAST_BIBLE.md](GUMBALL_ARMADA_CAST_BIBLE.md). It records original characterization, shop archetype assignments, sample dialogue, future encounter mechanics and visual briefs. **Portraits, voice lines and shop transactions are still planned; the six runtime-source characters are described above, without artwork or sound assets.** Character images are deliberately deferred for later production.
 

@@ -42,11 +42,19 @@ int32_t Asset(const char* name,void* bytes,uint32_t capacity,uint32_t* actual){
     std::memcpy(bytes,source.data(),source.size());
     return REVERIE_NATIVE_SAVE_OK;
 }
-int32_t ReadSave(const char*,void*,uint32_t,uint32_t* size){
-    if(size)*size=0;
-    return REVERIE_NATIVE_SAVE_NOT_FOUND;
+std::string saved;
+bool fail_write=false;
+int32_t ReadSave(const char*,void* data,uint32_t capacity,uint32_t* size){
+    *size=static_cast<uint32_t>(saved.size());
+    if(saved.empty())return REVERIE_NATIVE_SAVE_NOT_FOUND;
+    if(!data)return REVERIE_NATIVE_SAVE_OK;
+    if(capacity<*size)return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+    std::memcpy(data,saved.data(),*size);
+    return REVERIE_NATIVE_SAVE_OK;
 }
-int32_t WriteSave(const char*,const void*,uint32_t){
+int32_t WriteSave(const char*,const void* data,uint32_t size){
+    if(fail_write)return REVERIE_NATIVE_SAVE_ERROR;
+    saved.assign(static_cast<const char*>(data),size);
     return REVERIE_NATIVE_SAVE_OK;
 }
 void LogLine(int32_t level,const char* tag,const char* message) {
@@ -86,6 +94,10 @@ int main(int argc,char** argv){
     host.read_asset=Asset;
     host.read_save=ReadSave;
     host.write_save=WriteSave;
+    // Existing installed V5 journal with a prior sale. Preserve its purse,
+    // inventory and registration while upgrading inside the same host slot.
+    saved="SITKA-FISH-5\n5482442\n100\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n"
+          "0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n1\n0\n0\n1\n0\n";
     auto* state=static_cast<State*>(Create(&host));
     if(!state){
         std::fprintf(stderr,"SITKA_TEST_CREATE_FAILED (no state)\n");
@@ -100,6 +112,18 @@ int main(int argc,char** argv){
     }
     assert(state->geo_tiles->registered_count()==16u);
     assert(!state->geo_view);
+    for(const auto& station:reverie::sitka::kSurveyRoute){
+        const auto& record=state->geo_tiles->record(station.row,station.column);
+        const auto bytes=ReadFile(asset_root+"/sitka/coast/tiles/"+record.filename);
+        const auto land=reverie::sitka::ParseTerrainMesh(
+            reinterpret_cast<const uint8_t*>(bytes.data()),bytes.size());
+        const auto actual=[&](uint32_t index){
+            const auto& v=land.vertices[index];
+            return land.origin_east+v.x==station.east&&land.origin_north+v.z==station.north&&
+                std::abs(v.y-station.elevation)<.001f;
+        };
+        assert(std::any_of(land.indices.begin(),land.indices.end(),actual));
+    }
     assert(OnGlCreated(state));
     assert(state->geo_gl.ready());
     ReverieNativeInputV1 input{};
@@ -122,6 +146,24 @@ int main(int argc,char** argv){
     assert(PrepareFrame(state));
     assert(!state->geo_tiles->PendingGpuSwap());
     assert(state->geo_gl.batch_count()>=4u);
+    assert(state->chart_route&&state->fishing.fishing.journal.credits==100);
+    auto fly_to=[&](const reverie::sitka::ChartStation& station){
+        for(unsigned i=0;i<650;++i){
+            const double dx=station.east-state->geo_east,dn=station.north-state->geo_north;
+            if(std::hypot(dx,dn)<4.)break;
+            input.move_x=float(std::clamp(dx/4.,-1.,1.));
+            input.move_y=float(std::clamp(-dn/4.,-1.,1.));
+            Update(state,&input);
+        }
+        input.move_x=input.move_y=0;
+        for(unsigned i=0;i<6;++i)Update(state,&input);
+        assert(std::hypot(station.east-state->geo_east,station.north-state->geo_north)<4.);
+        assert(PrepareFrame(state));
+    };
+    input.primary_down=1;Update(state,&input);
+    assert(state->fishing.fishing.journal.chart_stations==0); // off-site
+    input.primary_down=0;Update(state,&input);
+    fly_to(reverie::sitka::kSurveyRoute[0]);
     // The exact same GPU surface is read from TWO actual eye renders, with
     // the native head transform, licensed persistent Lato overlay and no
     // terrain uploads during the second eye.
@@ -177,6 +219,19 @@ int main(int argc,char** argv){
     }
     ppm.close();
     assert(ppm.good());
+    for(unsigned i=0;i<reverie::sitka::kChartStations;++i){
+        if(i)fly_to(reverie::sitka::kSurveyRoute[i]);
+        // On the last site, exercise the same recoverable failure as Android exit.
+        fail_write=(i==2);
+        input.primary_down=1;Update(state,&input);Update(state,&input);
+        assert(state->fishing.fishing.journal.chart_stations==i+1);
+        assert(state->fishing.fishing.journal.credits==100+(i+1)*25);
+        input.primary_down=0;Update(state,&input);
+    }
+    assert(state->fishing.write_failed&&PrepareExit(state)==0);
+    fail_write=false;assert(PrepareExit(state));
+    assert(state->fishing.fishing.journal.submitted_starter_tokens==1);
+    assert(state->fishing.fishing.journal.shellfish_inventory==1);
     // Leave the map and restore old gameplay: no second APK / reset save.
     input.secondary_down=1u;
     input.move_x=1.f;
@@ -189,12 +244,16 @@ int main(int argc,char** argv){
     assert(!state->geo_tiles->PendingGpuSwap());
     ReleaseGl(state);
     Destroy(state);
+    state=static_cast<State*>(Create(&host));assert(state&&state->chart_route);
+    assert(state->fishing.fishing.journal.chart_stations==3);
+    assert(state->fishing.fishing.journal.credits==175);
+    Destroy(state);
     assert(eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT));
     assert(eglDestroyContext(display,context));
     assert(eglDestroySurface(display,surface));
     assert(eglTerminate(display));
     std::cout<<"PASS genuine Sitka USGS/NOAA 16-tile source: live native Create, "
              <<"four tile GPU swap, two stereoscopic GLES2 previews, "
-             <<"no gameplay save migration; colored pixels "<<colored[0]
+             <<"three surveyed sites, V5/V6 journal and retry; colored pixels "<<colored[0]
              <<" / "<<colored[1]<<"\n";
 }

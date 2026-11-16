@@ -223,6 +223,22 @@ int main() {
             == before_turn_away - 1
     );
 
+    Simulation business;
+    for(int day=1;day<=135;++day){
+        if(business.beer_units()<8&&business.current_event()!=EventType::SupplyInterruption)
+            assert(business.BuySupply(SupplierItem::BeerCrate));
+        while(business.current_patron()){
+            if(business.beer_units()==0){assert(business.TurnAwayCurrentPatron());continue;}
+            if(business.clean_cups()==0)assert(business.WashOneCup());
+            ServeAndCollect(&business);
+        }
+        const int owed=business.debt_cents();
+        const auto closed=business.CloseDay();
+        assert(closed.debt_service_cents==owed-business.debt_cents());
+        if(day==134)assert(closed.debt_service_cents==50&&business.debt_cents()==0);
+        if(day==135)assert(closed.debt_service_cents==0);
+    }
+    std::cout<<"Red Ledger 135 closes: final 50-cent installment and paid-off balance verified.\n";
     std::cout
         << "red ledger manual service smoke passed\n";
     std::cout

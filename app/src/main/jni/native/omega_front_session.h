@@ -124,6 +124,12 @@ public:
         primary_=in.primary;secondary_=in.secondary;
         return changed;
     }
+    bool OrderRelief(int site){
+        if(view!=FrontMode::SectorMap || !frontier.ReliefOrder(site))return false;
+        ++orders;
+        if(frontier.deployed())EnterBattle();
+        return true;
+    }
     void ResetEdges(){
         primary_=secondary_=false;last_px_=last_py_=-1;
         axis_x_=axis_y_=0;repeat_=0;

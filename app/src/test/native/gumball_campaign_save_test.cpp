@@ -24,7 +24,72 @@ static void Continue(Simulation& game,const ShipAssembly& ship,unsigned ticks){
         assert(Bytes(game,ship)==Bytes(resumed,rebuilt));
     }
 }
+static void FlySortie(Simulation& game,const ShipAssembly& ship){
+    for(int i=0;i<12000&&game.phase()==Phase::Flight;++i){
+        float nearest=100.f,x=game.player_x();
+        for(const auto& e:game.enemies())if(e.active&&e.y<nearest){nearest=e.y;x=e.x;}
+        const auto axes=FlightAxesToTarget(game.player_x(),game.player_y(),{x,-.52f,true},
+                                           .035f,game.pointer_move_speed());
+        game.update(.035f,axes.x,axes.y,true,true,&ship);
+    }
+}
+// Ordinary campaign entry only. Buy upgrades with earned currency, take the
+// Sweep lane, and aim at the foremost live enemy. Failed sorties can be retried.
+static void CampaignFromNewGame(){
+    Simulation game;
+    ShipAssembly ship;
+    game.configure_ship_profile(ship.profile(),ship.ready());
+    int attempts=0;
+    while(!game.is_rescue_route(1)&&attempts<100){
+        ++attempts;
+        if(!game.owns_weapon(Weapon::RockCannon))game.buy_weapon(Weapon::RockCannon);
+        else if(game.level(Upgrade::Blaster)<6)game.buy(Upgrade::Blaster);
+        for(const auto upgrade:{Upgrade::Thruster,Upgrade::Hull,Upgrade::Shield})game.buy(upgrade);
+        assert(game.launch(0));
+        const auto oldFlags=game.bosses();
+        FlySortie(game,ship);
+        if(game.phase()==Phase::Lost)assert(oldFlags==game.bosses());
+        if(game.bosses()!=oldFlags){
+            assert(game.node()%1024==1023);
+            assert(game.bosses()==(1u<<game.generals_defeated())-1u);
+            assert(game.phase()==(game.bosses()==15?Phase::ArmadaDefeated:Phase::Won));
+            Continue(game,ship,0);
+        }
+        assert(game.recover());
+    }
+    assert(game.bosses()==15&&game.is_rescue_route(1)&&!game.is_rescue_route(0));
+    const auto cash=game.cash();
+    assert(game.launch(1)&&game.phase()==Phase::Rescue);
+    for(int i=0;i<400&&game.phase()==Phase::Rescue;++i){
+        const auto axes=FlightAxesToTarget(game.player_x(),game.player_y(),game.rescue_target(),
+                                           .05f,game.pointer_move_speed());
+        game.update(.05f,axes.x,axes.y,true,true,&ship);
+    }
+    assert(game.phase()==Phase::Homecoming&&game.king_rescued()&&game.cash()==cash);
+    assert(game.recover()&&game.phase()==Phase::Credits);
+    const auto saved=Bytes(game,ship);
+    Simulation postgame;ShipAssembly restored;
+    assert(CampaignSave::Decode(&postgame,&restored,saved.data(),saved.size()));
+    assert(postgame.recover()&&postgame.phase()==Phase::Chart&&!postgame.is_rescue_route(1));
+    unsigned regions=1u<<(postgame.node()/1024);
+    for(unsigned choice=0;choice<3;++choice){
+        const auto lane=postgame.lane(choice);
+        assert(!lane.fortress&&lane.id<kLaneCount);
+        regions|=1u<<(lane.id/1024);
+    }
+    assert(regions==15u);
+    const auto destination=postgame.lane(0).id;
+    assert(postgame.launch(0));
+    FlySortie(postgame,restored);
+    assert(postgame.phase()==Phase::Won&&postgame.node()==destination&&postgame.bosses()==15);
+    assert(postgame.recover()&&postgame.king_rescued());
+    Continue(postgame,restored,0);
+    assert(postgame.launch(1)&&postgame.phase()==Phase::Flight&&postgame.king_rescued());
+    std::printf("PASS cold start to credits: %d sorties, %u clears, %u kills, %u generals, postgame intercept open\n",
+                attempts,game.visited(),game.kills(),game.generals_defeated());
+}
 int main(){
+    CampaignFromNewGame();
     ShipAssembly ship;
     assert(ship.edit(4,2,2,Part::Armor)==ShipEdit::Placed);
     Simulation starter(109);assert(starter.configure_ship_profile(ship.profile(),ship.ready()));

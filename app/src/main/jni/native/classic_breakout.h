@@ -24,6 +24,8 @@ struct Breakout {
     static float BrickY(int row) { return .76f-.119f*row; }
     static int BrickValue(int row) { return row<2?7:(row<4?5:(row<6?3:1)); }
     float PaddleWidth() const {return narrowPaddle?.22f:.40f;}
+    // Leave the same gap at the wall after the paddle shrinks.
+    float PaddleLimit() const {return narrowPaddle?.86f:.77f;}
     void Boost(float factor){
         velocityX=std::clamp(velocityX*factor,-1.15f,1.15f);
         velocityY=std::clamp(velocityY*factor,-1.15f,1.15f);
@@ -40,7 +42,7 @@ struct Breakout {
         moving=finished=won=false;
     }
     void SetPaddle(float x) {
-        if(std::isfinite(x))paddle=std::clamp(x,-.77f,.77f);
+        if(std::isfinite(x))paddle=std::clamp(x,-PaddleLimit(),PaddleLimit());
         if(!moving&&!finished)ballX=paddle;
     }
     void Press() {

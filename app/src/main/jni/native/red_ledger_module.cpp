@@ -142,10 +142,11 @@ static const TargetBounds kWorkTargets[] = {
         {-2.55f, -0.30f, -2.97f},
         {0.35f, 0.85f, 0.12f}
     },
-    {WorkTarget::DoorStock,{2.53f,-0.20f,-2.93f},{0.38f,0.85f,0.12f}},
-    {WorkTarget::DoorLiving,{0.60f,-0.20f,-2.93f},{0.38f,0.85f,0.12f}},
-    {WorkTarget::ToBar,{-2.47f,-0.20f,-2.93f},{0.42f,0.85f,0.13f}},
-    {WorkTarget::ToStock,{2.47f,-0.20f,-2.93f},{0.42f,0.85f,0.13f}},
+    // Keep the full visible doorway and the plaque above it actionable.
+    {WorkTarget::DoorStock,{2.53f,-0.06f,-2.93f},{0.38f,0.99f,0.16f}},
+    {WorkTarget::DoorLiving,{0.60f,0.09f,-2.93f},{0.38f,1.14f,0.16f}},
+    {WorkTarget::ToBar,{-2.47f,-0.08f,-2.93f},{0.42f,0.97f,0.16f}},
+    {WorkTarget::ToStock,{2.47f,-0.08f,-2.93f},{0.42f,0.97f,0.16f}},
     {WorkTarget::StockNext,{-0.70f,-0.48f,-1.02f},{0.35f,0.30f,0.30f}},
     {WorkTarget::StockBuy,{0.40f,-0.48f,-1.02f},{0.35f,0.30f,0.30f}},
     {WorkTarget::DrinkChoice,{1.25f,-0.50f,-1.10f},{0.32f,0.29f,0.25f}},
@@ -161,6 +162,8 @@ struct ProductGlResource {
     GLsizei vertex_count = 0;
 };
 
+enum class LedgerPage { Renovations, Accounts, Factions };
+
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
     Simulation simulation;
@@ -168,7 +171,7 @@ struct ModuleState {
     property::Renovations renovations;
     clientele::State clientele;
     int hovered_offer = -1;
-    bool ledger_visible = false;
+    LedgerPage ledger_page=LedgerPage::Renovations;
     bool save_dirty = false;
     bool save_failed = false;
     bool load_blocked = false;
@@ -677,23 +680,27 @@ bool ActivateWorkTarget(
             break;
 
         case WorkTarget::Ledger:
-            state->ledger_visible=!state->ledger_visible;
+            switch(state->ledger_page){
+                case LedgerPage::Renovations: state->ledger_page=LedgerPage::Accounts;break;
+                case LedgerPage::Accounts: state->ledger_page=LedgerPage::Factions;break;
+                case LedgerPage::Factions: state->ledger_page=LedgerPage::Renovations;break;
+            }
             changed=true;
             break;
         case WorkTarget::UpgradeNext:
             changed=state->renovations.next();
-            state->ledger_visible=false;
+            state->ledger_page=LedgerPage::Renovations;
             break;
         case WorkTarget::UpgradeBuy:
             changed=state->renovations.buy(&simulation,state->market);
-            if(changed)state->ledger_visible=false;
+            if(changed)state->ledger_page=LedgerPage::Renovations;
             break;
         case WorkTarget::Bed: {
             const int32_t today=simulation.day();
             simulation.CloseDay();
             changed=simulation.day()!=today;
             if (changed) {
-                state->ledger_visible=true;
+                state->ledger_page=LedgerPage::Accounts;
                 state->clientele.next_day(
                     state->renovations.tier(property::Walls)+
                     state->renovations.tier(property::Floor)+
@@ -1765,16 +1772,28 @@ void RefreshStatusBoard(ModuleState *state) {
             sim.day(),sim.cash_cents());
         std::snprintf(rows[1],sizeof(rows[1]),"DEBT: %d  REP: %d",
             sim.debt_cents(),sim.reputation());
-        if(state->ledger_visible) {
+        if(state->ledger_page==LedgerPage::Accounts){
+            const auto &ledger=sim.last_ledger();
+            if(ledger.day>0){
+                std::snprintf(rows[0],sizeof(rows[0]),"SHIFT %d ACCOUNTS / CENTS",ledger.day);
+                std::snprintf(rows[1],sizeof(rows[1]),"OPEN %d   SALES +%d",ledger.opening_cash_cents,ledger.sales_cents);
+                std::snprintf(rows[2],sizeof(rows[2]),"SUPPLIES %d   DEBT PAID %d",ledger.supply_spend_cents,ledger.debt_service_cents);
+                std::snprintf(rows[3],sizeof(rows[3]),"PROTECTION %d   FINES %d",ledger.protection_spend_cents,ledger.inspection_fines_cents);
+                std::snprintf(rows[4],sizeof(rows[4]),"CLOSE %d   SERVED %d/%d",ledger.closing_cash_cents,
+                              ledger.patrons_served,ledger.patrons_served+ledger.patrons_lost);
+            }else{
+                std::snprintf(rows[2],sizeof(rows[2]),"FIRST SHIFT STILL OPEN");
+                std::snprintf(rows[3],sizeof(rows[3]),"REST AFTER THE LAST CUSTOMER");
+            }
+            std::snprintf(rows[5],sizeof(rows[5]),"LEDGER / FACTION ACCOUNTS");
+        }else if(state->ledger_page==LedgerPage::Factions) {
             std::snprintf(rows[2],sizeof(rows[2]),"101:%d 202:%d",
                 market.favor(0),market.favor(1));
             std::snprintf(rows[3],sizeof(rows[3]),"303:%d 404:%d",
                 market.favor(2),market.favor(3));
             std::snprintf(rows[4],sizeof(rows[4]),"505:%d 606:%d",
                 market.favor(4),market.favor(5));
-            const auto &ledger=sim.last_ledger();
-            std::snprintf(rows[5],sizeof(rows[5]),"DAY %d SALES %d LOST %d",
-                ledger.day,ledger.sales_cents,ledger.patrons_lost);
+            std::snprintf(rows[5],sizeof(rows[5]),"LEDGER / RENOVATIONS");
         } else {
             const int category=state->renovations.category();
             const int tier=state->renovations.tier(category);

@@ -46,10 +46,11 @@ public:
         PutI(&b[16],s.vehicle_condition_);PutI(&b[20],s.fuel_remaining_);PutI(&b[24],s.information_value_);
         b[28]=state.choice;b[29]=state.confirm_refit?1:0;
         PutI(&b[30],s.route_intel_[0]);PutI(&b[34],s.route_intel_[1]);
+        b[38]=s.trail_position_;b[39]=s.trail_notes_;b[40]=s.filed_ridge_notes_;
         Finish(b);*output=b;return true;
     }
     static bool Decode(ForwardState* output,const uint8_t* b,size_t size){
-        if(!output||!Header(b,size,1)||!Padding(b,b[8]==1?30:38)||b[15]>1||b[29]>1)return false;
+        if(!output||!Header(b,size,1)||!Padding(b,b[8]==1?30:b[8]==2?38:41)||b[15]>1||b[29]>1)return false;
         ForwardState next;auto& s=next.simulation;
         s.phase_=static_cast<forward::Phase>(b[12]);s.route_=static_cast<forward::Route>(b[13]);
         s.decision_=static_cast<forward::Decision>(b[14]);s.unnecessary_force_=b[15]!=0;
@@ -58,6 +59,12 @@ public:
         s.route_intel_ = {GetI(&b[30]),GetI(&b[34])};
         if(b[8]==1 && s.phase_==forward::Phase::Debriefed && b[13]<2)
             s.route_intel_[b[13]]=s.information_value_;
+        if(b[8]>=3){
+            s.trail_position_=b[38];s.trail_notes_=b[39];s.filed_ridge_notes_=b[40];
+        }else if(s.route_==forward::Route::RidgeBypass && s.phase_!=forward::Phase::Briefing){
+            // Before the trail, travelling already offered immediate contact.
+            s.trail_position_=forward::Simulation::kRidgeExit;
+        }
         if(!Valid(next))return false;
         *output=next;return true;
     }
@@ -98,7 +105,16 @@ private:
             ||s.fuel_remaining_<0||s.fuel_remaining_>20)return false;
         const auto road=s.route_intel_[0], ridge=s.route_intel_[1];
         if(road!=0 && road!=3 && road!=1 && road!=-3)return false;
-        if(ridge!=0 && ridge!=-1 && ridge!=2 && ridge!=-5)return false;
+        if(s.trail_position_>forward::Simulation::kRidgeExit || s.trail_notes_>3 || s.filed_ridge_notes_>3)return false;
+        if(s.route_==forward::Route::MainRoad && (s.trail_position_ || s.trail_notes_))return false;
+        if(s.route_==forward::Route::RidgeBypass && s.phase_!=forward::Phase::Travelling &&
+           s.phase_!=forward::Phase::Briefing && s.trail_position_!=forward::Simulation::kRidgeExit)return false;
+        bool validRidge=ridge==0 && !s.filed_ridge_notes_;
+        for(auto choice:{forward::Decision::Avoid,forward::Decision::HaltAndReport,forward::Decision::Engage})
+            validRidge|=ridge==forward::Simulation::ReportValue(forward::Route::RidgeBypass,choice,s.filed_ridge_notes_);
+        if(!validRidge)return false;
+        if(s.phase_==forward::Phase::Debriefed && s.route_==forward::Route::RidgeBypass &&
+           s.trail_notes_!=s.filed_ridge_notes_)return false;
         if(s.phase_==forward::Phase::Debriefed && s.LastRouteIntel(s.route_)!=s.information_value_)return false;
         const bool briefing=s.phase_==forward::Phase::Briefing;
         if(state.confirm_refit&&!briefing)return false;
@@ -114,9 +130,7 @@ private:
         }
         if(s.phase_==forward::Phase::Resolved&&(s.fuel_remaining_<leg||s.fuel_remaining_>20-leg))return false;
         if(s.phase_!=forward::Phase::Resolved&&s.fuel_remaining_>20-2*leg)return false;
-        const int value=s.route_==forward::Route::MainRoad?
-            (s.decision_==forward::Decision::HaltAndReport?3:s.decision_==forward::Decision::Avoid?1:-3):
-            (s.decision_==forward::Decision::HaltAndReport?-1:s.decision_==forward::Decision::Avoid?2:-5);
+        const int value=forward::Simulation::ReportValue(s.route_,s.decision_,s.trail_notes_);
         if(s.decision_==forward::Decision::Engage
             &&s.vehicle_condition_>(s.route_==forward::Route::MainRoad?75:65))return false;
         return s.information_value_==value
@@ -124,7 +138,7 @@ private:
             &&(s.vehicle_condition_>0||s.unnecessary_force_);
     }
     static Bytes Start(uint8_t kind){
-        Bytes b{};std::memcpy(b.data(),"RECON001",8);b[8]=2;b[9]=kind;return b;
+        Bytes b{};std::memcpy(b.data(),"RECON001",8);b[8]=kind==1?3:2;b[9]=kind;return b;
     }
     static uint64_t Hash(const uint8_t* b){
         uint64_t hash=14695981039346656037ull;
@@ -136,7 +150,7 @@ private:
         for(size_t i=kBytes-8;i<kBytes;++i){b[i]=static_cast<uint8_t>(hash);hash>>=8;}
     }
     static bool Header(const uint8_t* b,size_t size,uint8_t kind){
-        if(!b||size!=kBytes||std::memcmp(b,"RECON001",8)||(b[8]!=1 && b[8]!=2)||b[9]!=kind||b[10]||b[11])return false;
+        if(!b||size!=kBytes||std::memcmp(b,"RECON001",8)||(b[8]<1 || b[8]>(kind==1?3:2))||b[9]!=kind||b[10]||b[11])return false;
         uint64_t hash=Hash(b);
         for(size_t i=kBytes-8;i<kBytes;++i){if(b[i]!=static_cast<uint8_t>(hash))return false;hash>>=8;}
         return true;

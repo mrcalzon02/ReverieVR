@@ -139,12 +139,13 @@ inline std::vector<BeachSite> ParseBeachSites(
 // GLES2. A creature or protected archaeological trace remains in the world
 // after observation; only inert collectables are removed.
 inline uint64_t BeachVisibleMask(const std::vector<BeachSite>& sites,
-    const Journal& journal,const FreeRoamSession& roam){
+    const Journal& journal,const FreeRoamSession& roam,bool practice=false){
+    const uint64_t collected=practice?journal.practice_finds:journal.beach_sites;
     uint64_t mask=0u;
     const auto player=roam.pose();
     for(const auto& s:sites){
         if(s.id>=64u)continue;
-        const bool found=(journal.beach_sites&(uint64_t(1)<<s.id))!=0u;
+        const bool found=(collected&(uint64_t(1)<<s.id))!=0u;
         if(found&&Specimen(s.specimen).action==ShoreAction::Collect)continue;
         if(std::hypot(double(s.x)-player.x,double(s.z)-player.z)>
            kShoreRevealRadiusM)continue;
@@ -155,12 +156,13 @@ inline uint64_t BeachVisibleMask(const std::vector<BeachSite>& sites,
     return mask;
 }
 inline TerrainMesh BeachMarkerMesh(const std::vector<BeachSite>& sites,
-    const Journal& journal,const FreeRoamSession& roam,uint64_t visible){
+    const Journal& journal,const FreeRoamSession& roam,uint64_t visible,bool practice=false){
+    const uint64_t collected=practice?journal.practice_finds:journal.beach_sites;
     TerrainMesh mesh;
     const auto player=roam.pose();
     for(const auto& s:sites){
         if(s.id>=64u||(visible&(uint64_t(1)<<s.id))==0u)continue;
-        const bool found=(journal.beach_sites&(uint64_t(1)<<s.id))!=0u;
+        const bool found=(collected&(uint64_t(1)<<s.id))!=0u;
         if(found&&Specimen(s.specimen).action==ShoreAction::Collect)continue;
         // Do not trust a stale visibility mask supplied by the caller.
         if(std::hypot(double(s.x)-player.x,double(s.z)-player.z)>

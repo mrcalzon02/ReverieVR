@@ -67,8 +67,69 @@ static void TestMovingHelm(ReverieNativeHostV1& host,const char* capture){
     }
     ReleaseGl(range);Destroy(range);
 }
+static void TestPracticeShore(ReverieNativeHostV1& host,const char* capture){
+    // TestMovingHelm supplied the ordinary fresh-save/test-bay host above.
+    auto* game=static_cast<State*>(Create(&host));
+    assert(game&&OnGlCreated(game));
+    ReverieNativeInputV1 input{};
+    input.struct_size=sizeof(input);input.delta_seconds=.05f;
+    input.listener_valid=1u;input.listener_right[0]=1.f;
+    input.move_x=1.f;
+    for(unsigned i=0;i<50;++i)Update(game,&input);
+    input.move_x=0;input.move_y=1;
+    for(unsigned i=0;i<7;++i)Update(game,&input);
+    input.move_y=0;Update(game,&input);
+    assert(game->beach_visible_mask==1u&&PrepareFrame(game));
+    auto render=[&](){
+        glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        for(unsigned side=0;side<2;++side){
+            glViewport(int(side*256),0,256,256);
+            ReverieNativeEyeV1 eye{};eye.struct_size=sizeof(eye);eye.eye_index=side;
+            const float pitch=1.0f,c=std::cos(pitch),s=std::sin(pitch);
+            const float view[16]={1,0,0,0, 0,c,s,0, 0,-s,c,0, side?-.032f:.032f,0,0,1};
+            std::copy(view,view+16,eye.view);
+            eye.projection[0]=eye.projection[5]=1.7f;
+            eye.projection[10]=-1.00669f;eye.projection[11]=-1.f;eye.projection[14]=-.20067f;
+            assert(RenderEye(game,&eye));
+        }
+        std::vector<unsigned char> pixels(512*256*4);
+        glReadPixels(0,0,512,256,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+        assert(glGetError()==GL_NO_ERROR);return pixels;
+    };
+    const auto revealed=render();
+    ReleaseGl(game);assert(OnGlCreated(game));Update(game,&input);assert(PrepareFrame(game));
+    const auto restored=render();
+    for(int side=0;side<2;++side)for(int y=100;y<156;++y)for(int x=100;x<156;++x){
+        const size_t idx=size_t((y*512+side*256+x)*4);
+        assert(std::equal(revealed.begin()+idx,revealed.begin()+idx+3,restored.begin()+idx));
+    }
+    if(capture){
+        std::ofstream out(capture,std::ios::binary);out<<"P6\n512 256\n255\n";
+        for(int y=255;y>=0;--y)for(int x=0;x<512;++x)
+            out.write(reinterpret_cast<const char*>(&revealed[(y*512+x)*4]),3);
+        out.close();assert(out.good());
+    }
+    const auto pose=game->walk_session->pose();
+    const float dx=1.f-pose.x,dy=.04f-pose.EyeY()+.34f,dz=-pose.z;
+    const float d=std::sqrt(dx*dx+dy*dy+dz*dz);
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;input.pointer_origin[1]=-.34f;
+    input.pointer_direction[0]=dx/d;input.pointer_direction[1]=dy/d;input.pointer_direction[2]=dz/d;
+    input.primary_down=1;Update(game,&input);assert(PrepareFrame(game));
+    assert(game->fishing.fishing.journal.practice_finds==1u);
+    const auto collected=render();
+    for(int side=0;side<2;++side){
+        unsigned changed=0;
+        for(int y=100;y<156;++y)for(int x=100;x<156;++x){
+            const size_t idx=size_t((y*512+side*256+x)*4);
+            if(!std::equal(revealed.begin()+idx,revealed.begin()+idx+3,collected.begin()+idx))
+                ++changed;
+        }
+        assert(changed>20u);
+    }
+    ReleaseGl(game);Destroy(game);
+}
 int main(int argc,char** argv){
-    assert(argc==1||argc==2);
+    assert(argc>=1&&argc<=3);
     const EGLDisplay display=eglGetDisplay(EGL_DEFAULT_DISPLAY);
     EGLint major=0,minor=0;assert(eglInitialize(display,&major,&minor));
     assert(eglBindAPI(EGL_OPENGL_ES_API));
@@ -142,7 +203,8 @@ int main(int argc,char** argv){
     State terrain_only;terrain_only.host=&host;
     terrain_only.terrain=world.terrain;terrain_only.waters=world.waters;
     assert(OnGlCreated(&terrain_only));ReleaseGl(&terrain_only);
-    TestMovingHelm(host,argc==2?argv[1]:nullptr);
+    TestMovingHelm(host,argc>=2?argv[1]:nullptr);
+    TestPracticeShore(host,argc==3?argv[2]:nullptr);
     assert(eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT));
     assert(eglDestroyContext(display,context));assert(eglDestroySurface(display,surface));
     assert(eglTerminate(display));

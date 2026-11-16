@@ -1,5 +1,11 @@
 # Procedural Test Chamber — working integrated showcase (2026-10-30)
 
+## Author, reopen and play a saved scene — 2026-11-16
+
+In the workshop, **Project / Next** at the top right opens the next project. Projects two and three start empty. Point at Add Box or Add Cylinder, then select and drag the new object with Move X/Z. Motion Tools opens the object animation settings. Its Light Tools and Sound Tools pages attach a point light and a periodic spatial sound to the selected object. Save and Play Test are on the main tool page. A successful save now remembers its project number for the next launch. If a remembered project becomes unreadable, the recovery path retains its bytes and checks the other slots.
+
+Run `scripts/verify-test-chamber-authoring.sh <capture-directory>` for the real GLES/controller regression. Starting from the bundled scene, it opens an empty second project, places and moves a box and cylinder, assigns a bob, light and emitter to the cylinder, and saves through the visible controls. After module destruction and recreation it checks both-eye playback, light motion, the actual host stereo cue ID and left/right gain reversal when the listener turns. It also exercises an interrupted last-project write. Hardware controller handling, headset optics and audible speaker output still require an on-device run.
+
 ## Project recovery and readable controls — 2026-11-08 source
 
 The native workshop can now recover from a bad default project. It checks

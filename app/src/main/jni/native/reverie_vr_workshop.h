@@ -21,6 +21,8 @@ constexpr size_t kVrProjectSlots=3, kVrEditMaxPieces=48, kVrUndo=16;
 constexpr size_t kVrSlotMaxBytes=65536;
 constexpr double kVrMenuLeft=-2.05,kVrMenuRight=-.45;
 constexpr double kVrMenuTop=1.11,kVrMenuRowHeight=.235;
+constexpr double kVrProjectButtonX=.92,kVrProjectButtonY=1.15,kVrProjectButtonWidth=2.10;
+constexpr int kVrNextProjectButton=10;
 enum class VrTool { Move, Rotate, Scale };
 enum class VrEvent { None, Selected, Modified, Saved, Play, Edit, Project, Rejected };
 struct VrRay { double ox=0,oy=0,oz=0,dx=0,dy=0,dz=0;bool valid=false; };
@@ -48,6 +50,8 @@ inline int VrMenuHit(const VrRay& ray) {
     const double t=(-2.62-ray.oz)/ray.dz;
     if(t<.3||t>9.)return -1;
     const double x=ray.ox+t*ray.dx,y=ray.oy+t*ray.dy;
+    if(std::abs(x-kVrProjectButtonX)<=kVrProjectButtonWidth*.5
+       &&std::abs(y-kVrProjectButtonY)<=kVrMenuRowHeight*.5)return kVrNextProjectButton;
     if(x<kVrMenuLeft||x>kVrMenuRight)return -1;
     const double row=(kVrMenuTop-y)/kVrMenuRowHeight;
     const int index=static_cast<int>(std::floor(row));
@@ -98,20 +102,21 @@ public:
     bool recovering=false;
     std::array<bool,kVrProjectSlots> blocked_slots{};
     std::string recovery_notice;
-    bool Open(const Scene& seed,const VrStore& store) {
+    bool Open(const Scene& seed,const VrStore& store,size_t preferred=0) {
         if(dirty){last_error="SAVE CHANGES BEFORE REOPENING PROJECT";return false;}
         if(!ScenePlayable(seed)||!store.read||!store.write)return false;
         seed_=seed;
-        if(LoadSlot(0,store))return true;
-        // Prefer an existing valid project before choosing a fresh fallback.
-        for(size_t target=1;target<kVrProjectSlots;++target)
-            if(LoadSlot(target,store,true))return true;
-        for(size_t target=1;target<kVrProjectSlots;++target)
-            if(LoadSlot(target,store))return true;
+        if(preferred>=kVrProjectSlots)preferred=0;
+        if(LoadSlot(preferred,store,preferred!=0))return true;
+        // A missing or unreadable remembered slot may have intact siblings.
+        for(size_t target=0;target<kVrProjectSlots;++target)
+            if(target!=preferred&&LoadSlot(target,store,true))return true;
+        for(size_t target=0;target<kVrProjectSlots;++target)
+            if(!blocked_slots[target]&&LoadSlot(target,store))return true;
         // A bad set of slots must not prevent launching the recovery screen.
         // The preview is read-only and none of the original bytes are replaced.
         scene=seed_;motions.clear();light=VrLight{};sound=VrSound{};
-        selected=slot=0;editing=false;recovering=true;dirty=false;mesh_dirty=true;
+        selected=0;slot=preferred;editing=false;recovering=true;dirty=false;mesh_dirty=true;
         undo_.clear();motion_page=lighting_page=audio_page=false;
         last_error="NO READABLE PROJECT - SELECT TO RETRY";
         UpdateRecoveryNotice();
@@ -413,7 +418,7 @@ public:
         last_primary=primary;last_secondary=secondary;
         if(recovering) {
             if(pressed||secondary_pressed)
-                return Open(seed_,store)&&!recovering?VrEvent::Project:VrEvent::Rejected;
+                return Open(seed_,store,slot)&&!recovering?VrEvent::Project:VrEvent::Rejected;
             return VrEvent::None;
         }
         if(secondary_pressed){
@@ -431,6 +436,8 @@ public:
         if(!primary){EndDrag();return VrEvent::None;}
         if(pressed){
             const int menu=VrMenuHit(ray);
+            if(menu==kVrNextProjectButton)
+                return NextProject(store)?VrEvent::Project:VrEvent::Rejected;
             if(menu>=0){
                 if(audio_page){
                     switch(menu){

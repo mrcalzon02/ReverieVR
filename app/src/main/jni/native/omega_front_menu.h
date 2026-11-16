@@ -10,7 +10,7 @@ namespace reverie { namespace omega {
 // Menus are deliberately not part of the campaign checkpoint: reopening the
 // module must reach a safe title screen, never fire an order on load.
 enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Gallery, Playing };
-enum class MenuCommand : uint8_t { None, Resume, RetryLoad, StartNew, SetFieldAction, SetCommandMode, CommitTurn, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon };
+enum class MenuCommand : uint8_t { None, Resume, RetryLoad, StartNew, SetFieldAction, SetCommandMode, CommitTurn, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon, WorldMap };
 
 // A menu's release/idle ray must not overwrite the restored tactical cursor.
 // A fresh click, deliberate pointer movement, or pointer loss re-arms aiming.
@@ -36,6 +36,7 @@ public:
     int selected=0;
     int field_choice=0,mode_choice=0;
     MenuScreen return_to=MenuScreen::Title;
+    bool world_available=false;
 
     static float ButtonY(int index,bool compact=false) {
         return compact?.585f-.187f*index:.42f-.225f*index;
@@ -65,7 +66,7 @@ public:
         case MenuScreen::Campaign: return (has_campaign||load_failed)?4:3;
         case MenuScreen::Controls: return 1;
         case MenuScreen::ConfirmNew: return 2;
-        case MenuScreen::Pause: return 5;
+        case MenuScreen::Pause: return world_available?6:5;
         case MenuScreen::FieldOrders: return 8;
         case MenuScreen::TacticalOrders: return 5;
         case MenuScreen::Gallery: return 5;
@@ -92,8 +93,8 @@ public:
         }
         case MenuScreen::Pause: {
             const char *v[]={"RESUME","CAMPAIGN BRIEFING","FACTION GALLERY",
-                "CONTROLS","MAIN MENU"};
-            return index>=0&&index<5?v[index]:"";
+                "CONTROLS","MAIN MENU","WORLD MAP"};
+            return index>=0&&index<Count(has_campaign,load_failed)?v[index]:"";
         }
         case MenuScreen::FieldOrders: {
             const char *v[]={"DEPLOY","FORAGE / CONVOY","RECRUIT","REPAIR / SECURE",
@@ -114,8 +115,9 @@ public:
         }
         return "";
     }
-    void OpenPause(bool primary,bool secondary) {
+    void OpenPause(bool primary,bool secondary,bool strategic=false) {
         if(screen!=MenuScreen::Playing)return;
+        world_available=strategic;
         Enter(MenuScreen::Pause);
         primary_down_=primary;secondary_down_=secondary;
     }
@@ -198,6 +200,7 @@ public:
             Enter(MenuScreen::Playing);
             return MenuCommand::SetCommandMode;
         case MenuScreen::Pause:
+            if(selected==5){Enter(MenuScreen::Playing);return MenuCommand::WorldMap;}
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::Resume;}
             if(selected==1)Enter(MenuScreen::Campaign);
             else if(selected==2){return_to=MenuScreen::Pause;Enter(MenuScreen::Gallery);}

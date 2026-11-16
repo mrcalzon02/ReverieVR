@@ -27,15 +27,22 @@ int main() {
 
     Simulation bypass;
     assert(bypass.BeginPatrol(Route::RidgeBypass));
-    assert(bypass.ReachContact());
+    assert(!bypass.ReachContact() && !bypass.RecordObservation() && !bypass.WalkRidge(-1));
+    for(int i=0;i<Simulation::kRidgeExit;++i){
+        assert(bypass.WalkRidge(1));
+        if(bypass.ObservationHere())assert(bypass.RecordObservation() && !bypass.RecordObservation());
+    }
+    assert(!bypass.WalkRidge(1) && bypass.ReachContact());
     assert(bypass.InspectContact(&evidence));
     assert(evidence.civilian_silhouettes && !evidence.weapon_identified);
     assert(bypass.ResolveContact(Decision::Avoid));
     assert(bypass.ReturnToBase() && bypass.FileDebrief(&report));
-    assert(report.information_value == 2 && report.fuel_remaining == 4);
+    assert(report.information_value == 6 && report.fuel_remaining == 4);
 
     Simulation bad;
-    assert(bad.BeginPatrol(Route::RidgeBypass) && bad.ReachContact());
+    assert(bad.BeginPatrol(Route::RidgeBypass));
+    for(int i=0;i<Simulation::kRidgeExit;++i)assert(bad.WalkRidge(1));
+    assert(bad.ReachContact());
     assert(bad.ResolveContact(Decision::Engage));
     assert(bad.ReturnToBase() && bad.FileDebrief(&report));
     assert(report.unnecessary_force && report.vehicle_condition == 65);

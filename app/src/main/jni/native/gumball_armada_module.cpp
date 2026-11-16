@@ -66,7 +66,7 @@ struct Module {
     bool inLoadout=false;
     int supportSelected=0,loadoutSelected=0;
     YardCursor yardCursor{};
-    bool secondary=false;
+    bool secondary=false,awaitResultRelease=false;
     bool flightPointer=false;
     float flightTargetX=0.f,flightTargetY=0.f;
     reverie::gumball::MenuPointerFocus pointerFocus{};
@@ -129,27 +129,36 @@ void Chart(Module* m){
     const unsigned sector=m->sim.node()/1024u;
     std::snprintf(text,sizeof(text),"SECTOR %u  /  %s",sector+1u,
                   generals[sector<4u?sector:3u]);
-    TextFit(m,text,0,.94f,3.70f,.034f,1.f,.63f,.55f);
+    const char* dispatch=m->sim.king_rescued()?"ROYAL CONVOY HOME / FREE FLIGHT":
+        (m->sim.is_rescue_route(1)?"ROYAL DISTRESS SIGNAL / TAKE THE CROWN ROUTE":text);
+    TextFit(m,dispatch,0,.94f,4.4f,.034f,1.f,.73f,.56f);
 
     const char* names[]={"SOUR SWEEP","INTERCEPT","RECOVERY"};
     for(int n=0;n<3;++n){
         const float x=reverie::gumball::kChartRouteX[n];
         Frame(m,x,reverie::gumball::kChartRouteCardY,1.44f,
               reverie::gumball::kChartRouteCardHeight,m->selected==n);
-        const auto lane=m->sim.lane(static_cast<unsigned>(n));
-        std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
-        TextFit(m,text,x,.035f,1.32f,.030f,1.f,.88f,.95f);
-        TextFit(m,names[n],x,-.115f,1.32f,.034f,.69f,1.f,.84f);
-        const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
-        TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
-            reverie::gumball::CastGuestName(rival),
-            x,-.265f,1.31f,.026f,1.f,.70f,.51f);
-        if(lane.fortress)TextFit(m,"FORTRESS ROUTE",x,-.410f,1.32f,
-                                .025f,1.f,.45f,.47f);
-        else{
-            std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
-                          lane.hazard,lane.reward);
-            TextFit(m,text,x,-.410f,1.30f,.025f,.90f,.88f,.72f);
+        if(m->sim.is_rescue_route(static_cast<unsigned>(n))){
+            TextFit(m,"CROWN ROUTE",x,.035f,1.32f,.030f,1.f,.88f,.95f);
+            TextFit(m,"RESCUE THE KING",x,-.115f,1.32f,.034f,1.f,.86f,.46f);
+            TextFit(m,"TRACE THE RELAY",x,-.265f,1.31f,.026f,1.f,.70f,.51f);
+            TextFit(m,"TOW POD TO CONVOY",x,-.410f,1.32f,.025f,.90f,.88f,.72f);
+        }else{
+            const auto lane=m->sim.lane(static_cast<unsigned>(n));
+            std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
+            TextFit(m,text,x,.035f,1.32f,.030f,1.f,.88f,.95f);
+            TextFit(m,names[n],x,-.115f,1.32f,.034f,.69f,1.f,.84f);
+            const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
+            TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
+                reverie::gumball::CastGuestName(rival),
+                x,-.265f,1.31f,.026f,1.f,.70f,.51f);
+            if(lane.fortress)TextFit(m,"FORTRESS ROUTE",x,-.410f,1.32f,
+                                    .025f,1.f,.45f,.47f);
+            else{
+                std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
+                              lane.hazard,lane.reward);
+                TextFit(m,text,x,-.410f,1.30f,.025f,.90f,.88f,.72f);
+            }
         }
         TextFit(m,m->routeLaunch.armed==n?
              (m->routeLaunch.ready(n)?"CLICK AGAIN TO FLY":"LOCKING ROUTE"):
@@ -200,10 +209,7 @@ void Chart(Module* m){
     }
     std::snprintf(text,sizeof(text),"G %u  /  RANK %d  /  GENERALS %u OF 4",
                   m->sim.cash(),m->sim.command_rank(),
-                  static_cast<unsigned>((m->sim.bosses()&1u)
-                    +((m->sim.bosses()>>1u)&1u)
-                    +((m->sim.bosses()>>2u)&1u)
-                    +((m->sim.bosses()>>3u)&1u)));
+                  m->sim.generals_defeated());
     TextFit(m,text,0,-1.39f,4.2f,.034f,1.f,.88f,.64f);
     if(m->routeLaunch.armed>=0)
         TextFit(m,m->routeLaunch.ready(m->routeLaunch.armed)?
@@ -595,6 +601,89 @@ void Flight(Module* m){
         Text(m,status,0,-1.62f,.029f,.91f,1.f,.77f);
     }
 }
+void CrownPod(Module* m,float x,float y,float scale){
+    Disc(m,x,y,scale*.65f,-2.94f,.67f,.29f,.50f);
+    Disc(m,x,y,scale*.48f,-2.94f,.32f,.76f,.86f);
+    for(int side:{-1,1}){
+        Tri(m,x+side*.46f*scale,y-.08f*scale,x+side*.91f*scale,y-.37f*scale,
+            x+side*.44f*scale,y-.39f*scale,-2.94f,.81f,.46f,.57f);
+    }
+    Rect(m,x,y+.21f*scale,.57f*scale,.19f*scale,-2.94f,1.f,.76f,.22f);
+    for(int point=-1;point<=1;++point){
+        const float root=x+point*.19f*scale;
+        Tri(m,root-.10f*scale,y+.28f*scale,root+.10f*scale,y+.28f*scale,
+            root+point*.07f*scale,y+(point==0?.58f:.46f)*scale,-2.94f,1.f,.82f,.26f);
+    }
+}
+void RoyalRescue(Module* m){
+    Background(m);
+    const auto& sim=m->sim;
+    const int leg=sim.rescue_leg();
+    const auto target=sim.rescue_target();
+    // The ring and ship use the same interaction plane and radius as the simulation.
+    const float radius=Simulation::kRescueRadius;
+    reverie::gumball::AppendSpaceLane(m->mesh,12.f-sim.rescue_window(),4095);
+    if(leg==0){
+        Rect(m,target.x,target.y,.08f,.62f,-2.94f,.76f,.42f,.84f);
+        Rect(m,target.x,target.y+.08f,.88f,.06f,-2.94f,.67f,.30f,.68f);
+        Disc(m,target.x,target.y+.31f,.10f,-2.94f,.99f,.69f,.26f);
+    }else if(leg==1)CrownPod(m,target.x,target.y,.36f);
+    else{
+        Rect(m,target.x,target.y+.24f,1.14f,.16f,-2.94f,.27f,.65f,.74f);
+        for(int side:{-1,1}){
+            Rect(m,target.x+side*.45f,target.y,.17f,.56f,-2.94f,.56f,.32f,.67f);
+            Rect(m,target.x+side*.45f,target.y-.27f,.10f,.06f,-2.94f,1.f,.82f,.28f);
+        }
+    }
+    for(int i=0;i<20;++i){
+        const float a=i*.31415927f,b=(i+.80f)*.31415927f;
+        reverie::flatmesh::Segment(m->mesh,target.x+radius*std::cos(a),target.y+radius*std::sin(a),
+            target.x+radius*std::cos(b),target.y+radius*std::sin(b),.025f,-2.94f,.99f,.90f,.50f);
+    }
+    if(leg==2){
+        const float x=sim.player_x(),y=sim.player_y();
+        Rect(m,x,y-.27f,.018f,.36f,-2.94f,.92f,.80f,.36f);
+        CrownPod(m,x,y-.49f,.22f);
+    }
+    reverie::gumball::AppendAssemblyMesh(m->mesh,m->ship,sim.player_x(),sim.player_y(),-2.94f,.09f,0.f);
+    const char* names[]={"PARLIAMENT RELAY","ROYAL ESCAPE POD","RELIEF CONVOY"};
+    const char* tasks[]={"Trace the sealed distress call.","Match the drifting pod and attach the tow.",
+                         "Bring the King alongside the relief ship."};
+    Text(m,names[leg],0,1.45f,.065f,1.f,.83f,.54f);
+    TextFit(m,tasks[leg],0,1.13f,4.35f,.043f,.92f,.95f,.97f);
+    char status[80];
+    std::snprintf(status,sizeof(status),"LINK %d OF 3     SIGNAL %d SEC",leg+1,
+                  static_cast<int>(std::ceil(sim.rescue_window())));
+    Text(m,status,0,-1.26f,.041f,.91f,.91f,.76f);
+    TextFit(m,sim.at_rescue_target()?"HOLD PRIMARY TO LINK":"STEER INTO THE DOTTED RING",
+        0,-1.48f,4.5f,.037f,.78f,.97f,.94f);
+    Rect(m,0,-1.65f,2.8f,.055f,-2.94f,.21f,.25f,.34f);
+    const float width=2.8f*sim.rescue_link();
+    Rect(m,-1.4f+width*.5f,-1.65f,width,.055f,-2.94f,1.f,.78f,.33f);
+}
+void RoyalDispatch(Module* m){
+    Background(m);
+    const auto phase=m->sim.phase();
+    CrownPod(m,0,.71f,.62f);
+    if(phase==Phase::SignalLost){
+        Text(m,"SIGNAL LOST",0,1.43f,.066f,1.f,.65f,.48f);
+        TextFit(m,"The pod fell back into radio shadow.",0,.03f,4.45f,.043f,.95f,.90f,.78f);
+        TextFit(m,"The relay can open another window.",0,-.30f,4.45f,.041f,.83f,.94f,.95f);
+        Text(m,"CLICK FOR CHART / RETRY CROWN ROUTE",0,-1.16f,.035f,.83f,.94f,.95f);
+    }else if(phase==Phase::Homecoming){
+        Text(m,"THE KING IS HOME",0,1.43f,.070f,1.f,.83f,.52f);
+        TextFit(m,"The King took the last evacuation tug.",0,.08f,4.45f,.043f,.95f,.94f,.84f);
+        TextFit(m,"To hide the refugees, he silenced the royal beacon.",0,-.24f,4.45f,.042f,.90f,.88f,.97f);
+        TextFit(m,"Your relay call brought the last ship home.",0,-.56f,4.45f,.042f,.81f,.96f,.93f);
+        Text(m,"CLICK FOR CREDITS",0,-1.24f,.037f,.97f,.85f,.56f);
+    }else{
+        Text(m,"GUMBALL ARMADA",0,1.43f,.069f,1.f,.83f,.52f);
+        Text(m,"A ReverieVR game",0,.03f,.055f,.95f,.94f,.84f);
+        TextFit(m,"Game and original campaign: ReverieVR contributors",0,-.34f,4.45f,.034f,.90f,.88f,.97f);
+        Text(m,"Lato typeface: Lukasz Dziedzic",0,-.63f,.035f,.81f,.96f,.93f);
+        Text(m,"CLICK TO RETURN TO FREE FLIGHT",0,-1.24f,.037f,.97f,.85f,.56f);
+    }
+}
 void Result(Module* m){
     Background(m);auto phase=m->sim.phase();
     const char* headline="SHIP DISABLED";
@@ -626,7 +715,7 @@ void Result(Module* m){
                   m->sim.salvage().collected(),m->sim.salvage().expired());
     Text(m,text,0,-.70f,.035f,.76f,.93f,.77f);
     if(phase==Phase::ArmadaDefeated)
-        Text(m,"THE KING IS STILL MISSING",0,-.95f,.044f,.91f,.80f,.48f);
+        TextFit(m,"ROYAL SIGNAL FOUND / FLY THE CROWN ROUTE",0,-.95f,4.5f,.038f,.91f,.80f,.48f);
     Text(m,"CLICK TO RETURN TO CHART",0,-1.17f,.038f,.74f,.94f,.88f);
 }
 void Rebuild(Module* m){
@@ -644,6 +733,9 @@ void Rebuild(Module* m){
         else if(m->inLoadout)LoadoutView(m);
         else if(m->sim.phase()==Phase::Chart)Chart(m);
         else if(m->sim.phase()==Phase::Flight)Flight(m);
+        else if(m->sim.phase()==Phase::Rescue)RoyalRescue(m);
+        else if(m->sim.phase()==Phase::SignalLost||m->sim.phase()==Phase::Homecoming
+                ||m->sim.phase()==Phase::Credits)RoyalDispatch(m);
         else Result(m);
         if(m->resumeFlight){
             Rect(m,0,.14f,4.15f,.72f,-2.83f,.035f,.055f,.08f);
@@ -737,7 +829,8 @@ bool LoadCheckpoint(Module* m){
     m->sim=next;m->ship=ship;m->loadBlocked=false;
     m->campaignSaveError=false;m->shipSaveError=false;m->shipDirty=false;
     m->saveDirty=imported;m->saveRetrySeconds=1.f;
-    m->resumeFlight=next.phase()==Phase::Flight;m->resumeReady=false;
+    m->awaitResultRelease=next.phase()!=Phase::Chart&&next.phase()!=Phase::Flight&&next.phase()!=Phase::Rescue;
+    m->resumeFlight=next.phase()==Phase::Flight||next.phase()==Phase::Rescue;m->resumeReady=false;
     m->inYard=m->inLoadout=m->inSupport=false;
     return true;
 }
@@ -903,6 +996,8 @@ void Pause(void* p){
     auto* m=static_cast<Module*>(p);if(!m)return;
     if(m->saveDirty&&!m->loadBlocked)Save(m);
     m->primary=false;m->secondary=false;
+    const auto phase=m->sim.phase();
+    m->awaitResultRelease=phase!=Phase::Chart&&phase!=Phase::Flight&&phase!=Phase::Rescue;
     Rebuild(m);
 }
 int32_t PrepareExit(void* p){
@@ -927,6 +1022,10 @@ void Update(void* p,const ReverieNativeInputV1* in){
     if(m->saveDirty){
         m->saveRetrySeconds-=dt;
         if(m->saveRetrySeconds<=0.f){Save(m);Rebuild(m);}
+    }
+    if(m->awaitResultRelease){
+        if(!pressed)m->awaitResultRelease=false;
+        m->primary=pressed;return;
     }
     const Phase phase=m->sim.phase();
     // Aiming at a drawn control must focus that exact control, and primary
@@ -1002,7 +1101,8 @@ void Update(void* p,const ReverieNativeInputV1* in){
     const bool clickEdge=pressed&&!m->primary;
     if(phase==Phase::Chart&&clickEdge&&!mayClick)
         ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
-    if(phase==Phase::Flight){
+    if(phase==Phase::Flight||phase==Phase::Rescue){
+        const auto leg=m->sim.rescue_leg();
         const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
         const int shieldBefore=m->sim.shield();
         const uint32_t fired=m->sim.shots_fired();
@@ -1032,7 +1132,14 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(m->sim.shots_fired()>fired)
             ReverieNativeRequestSoundV1(m->host,m->sim.weapon()==Weapon::RockCannon?
                 REVERIE_NATIVE_SOUND_WEAPON_HEAVY:REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
-        if(m->sim.phase()!=Phase::Flight||m->sim.kit_activations()!=usedKits)
+        if(m->sim.rescue_leg()!=leg){
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            ReverieNativeRequestSoundV1(m->host,m->sim.king_rescued()?
+                REVERIE_NATIVE_SOUND_CAMPAIGN_VICTORY:REVERIE_NATIVE_SOUND_WAVE_CLEAR);
+        }
+        if(m->sim.phase()==Phase::SignalLost)
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        if(m->sim.phase()!=phase||m->sim.rescue_leg()!=leg||m->sim.kit_activations()!=usedKits)
             Save(m); // consuming a paid kit is durable before a process crash
         if(m->sim.kit_activations()!=usedKits)
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -1231,7 +1338,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     break;
                 case reverie::gumball::RoutePress::Launch:
                     good=m->sim.launch(static_cast<unsigned>(m->selected));
-                    if(good)Save(m); // consume pending escort exactly once
+                    if(good)Save(m); // commit the route and any deployed support
                     else ReverieNativeRequestFeedbackV1(
                         m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
                     break;
@@ -1309,7 +1416,7 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
         glActiveTexture(GL_TEXTURE0);
         if(chartArt){
             for(unsigned lane=0;lane<3u;++lane){
-                const unsigned image=reverie::gumball::Mix(
+                const unsigned image=m->sim.is_rescue_route(lane)?6u:reverie::gumball::Mix(
                     m->sim.lane(lane).id)%kRouteArtworkCount;
                 const GLuint texture=m->routeTextures[image];
                 if(!texture)continue;

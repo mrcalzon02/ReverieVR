@@ -17,6 +17,19 @@ enum class ContinentTerrain : uint8_t {
     Sea, Shoal, Meadow, Forest, Dryland, Badlands, Highland,
     Snow, Marsh, River, Road, Ford, Ruins, Farm
 };
+// The Pilgrim Road relief route shares its western terminus with S008.
+struct ReliefSite {
+    const char *name;
+    int x,y;
+    ContinentTerrain terrain;
+};
+constexpr ReliefSite kReliefRoad[]={
+    {"CHARTER GATE",15,9,ContinentTerrain::Road},
+    {"EAST FORD",16,9,ContinentTerrain::Ford},
+    {"MOBILE CLINIC",17,9,ContinentTerrain::Meadow},
+    {"PILGRIM CAMP",16,10,ContinentTerrain::Marsh}
+};
+constexpr int kReliefSites=sizeof(kReliefRoad)/sizeof(kReliefRoad[0]);
 struct ContinentalCell {
     ContinentTerrain terrain=ContinentTerrain::Sea;
     uint8_t elevation=0;
@@ -50,6 +63,8 @@ public:
                 cell.terrain=sites[row*4+col];
                 cell.elevation=25;
             }
+        for(const auto &site:kReliefRoad)
+            cells_[Index(site.x,site.y)].terrain=site.terrain;
     }
     static constexpr bool Inside(int x,int y) {
         return x>=0 && y>=0 && x<kContinentWidth && y<kContinentHeight;

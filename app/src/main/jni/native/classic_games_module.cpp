@@ -929,6 +929,8 @@ void RebuildBoard(Module *m,bool fixed){
             Text(m,white,1.94f,.52f,.032f,.95f,.96f,.85f);
         }
 #if CLASSIC_GAME_KIND == 5
+        ChessPanelRect(m,2.22f,-1.36f,.98f,.30f,-3.026f,
+                       m->boardControlHover==2?.34f:.20f,.42f,.41f);
         ChessPanelText(m,"RESTART",2.22f,-1.35f,.031f,
                        1.f,.95f,.78f);
 #else
@@ -946,6 +948,15 @@ void RebuildBoard(Module *m,bool fixed){
         if(s.kind==reverie::boardgames::Kind::Go&&s.goReview){
             Text(m,"MARK DEAD",1.94f,1.09f,.034f,.95f,.95f,.78f);
             Text(m,"GROUPS",1.94f,.88f,.034f,.95f,.95f,.78f);
+            const auto area=s.GoArea();
+            char score[24];
+            Text(m,"AREA SCORE",-1.94f,.99f,.032f,.95f,.95f,.78f);
+            std::snprintf(score,sizeof(score),"BLACK %.0f",area.first);
+            Text(m,score,-1.94f,.69f,.030f,.90f,.94f,.90f);
+            std::snprintf(score,sizeof(score),"WHITE %.1f",area.second);
+            Text(m,score,-1.94f,.45f,.030f,.90f,.94f,.90f);
+            Text(m,"INCLUDES",-1.94f,.07f,.028f,.78f,.86f,.82f);
+            Text(m,"7.5 KOMI",-1.94f,-.14f,.028f,.78f,.86f,.82f);
         }else if(m->cpuFailed){
             Text(m,"CPU ERROR",1.94f,1.09f,.034f,1.f,.56f,.46f);
             Text(m,"RESTART",1.94f,.88f,.034f,1.f,.56f,.46f);
@@ -964,7 +975,7 @@ void RebuildBoard(Module *m,bool fixed){
             Text(m,black,1.94f,.75f,.032f,.95f,.96f,.85f);
             Text(m,white,1.94f,.52f,.032f,.95f,.96f,.85f);
             if(s.passes==1)
-                {Text(m,"OPPONENT",1.94f,-.68f,.033f,.97f,.91f,.48f);
+                {Text(m,s.side==1?"CPU":"YOU",1.94f,-.68f,.033f,.97f,.91f,.48f);
                  Text(m,"PASSED",1.94f,-.88f,.033f,.97f,.91f,.48f);}
         }
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
@@ -1083,6 +1094,29 @@ void RebuildBoard(Module *m,bool fixed){
 #endif
     }else {m->dirty=false;m->upload=true;}
 }
+#if CLASSIC_GAME_KIND == 2
+void DrawRoll(Module *m,float x,const char *name,int tile,const State::Roll &roll){
+    char line[32];
+    const auto label=[&](const char *value,float y){
+        Text(m,value,x,y,reverie::breakwater::font::FittedScale(value,1.14f,.038f),
+             .92f,.94f,.83f);
+    };
+    label(name,1.08f);
+    std::snprintf(line,sizeof(line),"SQUARE %d",tile);label(line,.83f);
+    if(!roll.die)return;
+    std::snprintf(line,sizeof(line),"ROLLED %d",roll.die);label(line,.40f);
+    std::snprintf(line,sizeof(line),"FROM %d",roll.from);label(line,.18f);
+    if(roll.Overshot()){
+        label("OVERSHOT",-.11f);label("STAY HERE",-.33f);
+    }else{
+        std::snprintf(line,sizeof(line),"LANDED %d",roll.Landing());label(line,-.11f);
+        if(tile!=roll.Landing()){
+            label(tile>roll.Landing()?"LADDER TO":"CHUTE TO",-.40f);
+            std::snprintf(line,sizeof(line),"%d",tile);label(line,-.62f);
+        }
+    }
+}
+#endif
 void Rebuild(Module *m,bool fixed){
     // Reset glyph batches for ALL Classic kinds, not just Chess/Checkers.
     // Otherwise HUD glyphs accumulate every frame and titles never upload.
@@ -1155,9 +1189,13 @@ void Rebuild(Module *m,bool fixed){
         Rect(m,-1.40f,s.paddle*1.19f,.075f,.56f,-2.96f,.33f,.95f,.78f);
         Rect(m,1.40f,s.ai*1.19f,.075f,.56f,-2.96f,.98f,.60f,.44f);
         Rect(m,s.ball_x*1.55f,s.ball_y*1.22f,.11f,.11f,-2.93f,.94f,.95f,.70f);
-        std::snprintf(status,sizeof(status),"%d : %d",s.score,s.opponent);
-        Text(m,status,1.94f,1.04f,.041f,1,1,.79f);
-        Text(m,s.finished?"PRESS TO RESTART":
+        Text(m,"YOU",-2.23f,.47f,.045f,.67f,.96f,.84f);
+        Text(m,"CPU",2.23f,.47f,.045f,1.f,.75f,.60f);
+        std::snprintf(status,sizeof(status),"%d",s.score);
+        Text(m,status,-2.23f,.12f,.066f,1,1,.88f);
+        std::snprintf(status,sizeof(status),"%d",s.opponent);
+        Text(m,status,2.23f,.12f,.066f,1,1,.88f);
+        Text(m,s.finished?(s.score>s.opponent?"YOU WIN - PRESS TO RESTART":"CPU WINS - PRESS TO RESTART"):
              s.moving?"MOVE PADDLE TO BLOCK":"PRESS TO SERVE",
              0,-1.46f,.040f,.70f,.83f,.83f);
         }
@@ -1196,7 +1234,7 @@ void Rebuild(Module *m,bool fixed){
         Text(m,status,1.87f,1.12f,
              reverie::breakwater::font::FittedScale(status,.58f,.034f),
              .86f,.91f,.68f);
-        Text(m,s.finished?"PRESS TO RESTART":
+        Text(m,s.finished?(s.food<0?"BOARD CLEARED - PRESS TO RESTART":"GAME OVER - PRESS TO RESTART"):
              s.moving?"POINT TO TURN":"PRESS TO START",
              0,-1.48f,.043f,.78f,.90f,.83f);
         }
@@ -1218,26 +1256,18 @@ void Rebuild(Module *m,bool fixed){
                     link.to>link.from?.32f:.95f,
                     link.to>link.from?.96f:.40f,.50f);
         }
+        Text(m,"EXACT ROLL",-2.05f,-1.06f,.030f,.78f,.86f,.82f);
+        Text(m,"TO FINISH",-2.05f,-1.26f,.030f,.78f,.86f,.82f);
         Rect(m,0,-1.56f,2.8f,.29f,-2.97f,.22f,.33f,.35f);
         }else{
         if(s.position>0)Rect(m,CellX(s.position)-.06f,CellY(s.position),
                              .11f,.15f,-2.92f,.32f,.96f,.73f);
         if(s.rival>0)Rect(m,CellX(s.rival)+.06f,CellY(s.rival),
                           .11f,.15f,-2.92f,1.f,.61f,.47f);
-        if(s.die>0)
-            std::snprintf(status,sizeof(status),"YOU %d CPU %d SPIN %d",
-                          s.position,s.rival,s.die);
-        else
-            std::snprintf(status,sizeof(status),"YOU %d CPU %d",
-                          s.position,s.rival);
-        std::snprintf(status,sizeof(status),"YOU %d",s.position);
-        Text(m,status,1.94f,1.14f,.033f,.94f,.89f,.68f);
-        std::snprintf(status,sizeof(status),"CPU %d",s.rival);
-        Text(m,status,1.94f,.91f,.033f,.94f,.89f,.68f);
-        if(s.die>0) {
-            std::snprintf(status,sizeof(status),"SPIN %d",s.die);
-            Text(m,status,1.94f,.68f,.033f,.94f,.89f,.68f);
-        }
+#if CLASSIC_GAME_KIND == 2
+        DrawRoll(m,-2.05f,"YOU",s.position,s.playerRoll);
+        DrawRoll(m,2.05f,"CPU",s.rival,s.cpuRoll);
+#endif
         Text(m,s.finished?(s.position==100?"YOU WIN PRESS":"CPU WINS PRESS"):
              s.player_turn?"SELECT TO ROLL":"CPU ROLLING",
              0,-1.56f,.045f,1,.96f,.78f);
@@ -1665,7 +1695,10 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
         reverie::chesspanel::Hit(1,copy.pointer_origin,
                                 copy.pointer_direction,&panelX,&panelY);
-    const int controlHover=chessPanelAim&&!m->board.finished&&
+    const bool resultButton=chessPanelAim&&std::abs(panelX)<.49f&&
+        panelY<-1.21f&&panelY>-1.51f;
+    const int controlHover=resultButton&&m->board.finished?2:
+        chessPanelAim&&!m->board.finished&&
         m->board.ChessHumanTurn()&&std::abs(panelX)<.49f&&
         panelY<-.82f&&panelY>-1.14f?1:0;
     const bool chessPanelHover=chessPanelAim &&
@@ -1794,9 +1827,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                 std::abs(leftPanelY)<1.57f) ||
             (chessPanelAim && std::abs(panelX)<.82f &&
                 std::abs(panelY)<1.57f &&
-                controlHover!=1 &&
-                !(m->board.ChessDrawClaimable()&&
-                  panelY< -1.21f && panelY> -1.51f))) {
+                controlHover==0 &&
+                !(resultButton&&m->board.ChessDrawClaimable()))) {
             ChessWikiOpen(m,chessLeftPanelAim?0:1);
             ReverieNativeRequestFeedbackV1(m->host,
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -1810,6 +1842,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         if(m->board.finished||m->cpuFailed) {
             m->cpuFailed=false;
             m->board.Reset(m->board.kind);
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             m->padFocus.active=false;
             m->boardCursorX=m->boardCursorY=0;
         }else if(m->board.kind==reverie::boardgames::Kind::Chess?
@@ -1837,8 +1870,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                 m->dirty=true;
             }else if(
 #if CLASSIC_GAME_KIND == 5
-                    chessPanelAim && std::abs(panelX)<.49f &&
-                    panelY<-1.21f && panelY>-1.51f &&
+                    resultButton &&
 #else
                     false &&
 #endif
@@ -1876,7 +1908,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                             "ClassicCpu",error.what());
     }
 #if CLASSIC_GAME_KIND == 5
-    if(m->board.ply!=prevPly) {
+    if(m->board.ply>prevPly) {
         if(!m->chessTween.Begin(previousChessCells,m->board,prevPly))
             ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
                 "ClassicChess","Completed chess ply could not animate");

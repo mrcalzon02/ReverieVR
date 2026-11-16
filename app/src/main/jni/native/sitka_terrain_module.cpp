@@ -1,7 +1,7 @@
 // Integrated native Sitka gameplay. An explicitly labeled NON-GEOGRAPHIC
 // test range is used only when approved geographic assets are absent.
 #include "sitka_terrain_gl.h"
-#include "sitka_land_tile_stream.h"
+#include "sitka_chart_survey.h"
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
@@ -49,6 +49,9 @@ struct State {
     std::unique_ptr<reverie::sitka::LandTileStream> geo_tiles;
     reverie::sitka::TerrainGl geo_gl;
     reverie::nativetext::LatoLayer geo_text;
+    reverie::sitka::TerrainGl chart_pin;
+    bool chart_route=false,chart_primary_held=false;
+    std::string chart_caption;
     bool geo_view=false,geo_chord_held=false;
     double geo_east=0.,geo_north=0.;
     float geo_altitude=210.f;
@@ -146,6 +149,53 @@ bool WriteFishingSave(void* user,const std::string& text) {
 reverie::sitka::FishingStore Store(State* state) {
     return {state,ReadFishingSave,WriteFishingSave};
 }
+// Updated once per input frame; head-locked text stays stable between eyes.
+void UpdateChartCaption(State& state){
+    using namespace reverie::sitka;
+    const unsigned visited=state.fishing.fishing.journal.chart_stations;
+    std::string title="SITKA / NOAA ENC + USGS 3DEP";
+    std::string target="ELEVATION: LOW GREEN TO HIGH TAN";
+    std::string cue="TOUCH PAD TO MOVE";
+    if(state.chart_route){
+        title="CHART SURVEY   "+std::to_string(visited)+" / "+std::to_string(kChartStations);
+        if(visited<kChartStations){
+            const auto& site=kSurveyRoute[visited];
+            target=site.name;
+            const double dx=site.east-state.geo_east,dn=site.north-state.geo_north;
+            const double distance=std::hypot(dx,dn);
+            if(distance<=kChartSurveyRadius){
+                cue=state.geo_tiles->OnDisplayedTile(site.row,site.column)?
+                    "SELECT: FILE SOURCE SAMPLE (+25 CR)":"LOADING SOURCE TILE";
+            }else{
+                const auto meters=int(std::ceil(distance/5.))*5;
+                cue="PAD";
+                if(std::abs(dn)>kChartSurveyRadius*.5)cue+=dn>0.?" UP":" DOWN";
+                if(std::abs(dx)>kChartSurveyRadius*.5)cue+=dx>0.?" RIGHT":" LEFT";
+                cue+="   "+std::to_string(meters)+" M";
+            }
+        }else{
+            target="SURVEY COMPLETE / THREE STATIONS FILED";
+            cue="EXPLORE THE CHART OR RETURN TO THE HARBOR";
+        }
+    }
+    const std::string record=state.fishing.write_failed?"SAVE PENDING / RETRY ON EXIT":
+        state.chart_route&&visited?
+        std::string("FILED: ")+kSurveyRoute[visited-1u].name+" / "+
+            std::to_string(int(kSurveyRoute[visited-1u].elevation))+"."+
+            std::to_string(int(std::lround(kSurveyRoute[visited-1u].elevation*10))%10)+" M 3DEP":
+        "NOAA ENC LAND / USGS 3DEP";
+    const std::string caption=title+"\n"+target+"\n"+cue+"\n"+record;
+    if(caption==state.chart_caption)return;
+    state.chart_caption=caption;
+    auto& text=state.geo_text;text.Clear();
+    text.Fit(title.c_str(),0.f,1.38f,2.90f,.055f,.98f,.94f,.68f);
+    text.Fit(target.c_str(),0.f,1.14f,2.90f,.049f,.98f,.97f,.93f);
+    text.Fit(cue.c_str(),0.f,.89f,2.90f,.041f,.99f,.82f,.47f);
+    text.Fit("+",0.f,0.f,.16f,.05f,.98f,.96f,.72f);
+    text.Fit(record.c_str(),0.f,-.92f,2.90f,.038f,.9f,.96f,.94f);
+    text.Fit("VOL UP + RIGHT: EXIT / + UP OR DOWN: ALT",0.f,-1.13f,3.15f,.037f,.9f,.96f,.94f);
+    text.Fit("CHART LAND / NOT FOR NAVIGATION",0.f,-1.35f,2.90f,.037f,.96f,.78f,.58f);
+}
 #include "sitka_integration_range.h"
 void* Create(const ReverieNativeHostV1* host) {
     if (!ReverieNativeHostSupportsLogV1(host) ||
@@ -172,6 +222,7 @@ void* Create(const ReverieNativeHostV1* host) {
             try{
                 state->geo_tiles.reset(new reverie::sitka::LandTileStream(
                     ReadText(host,"sitka/coast/index.txt",16384u)));
+                state->chart_route=reverie::sitka::HasSurveyRoute(*state->geo_tiles);
                 state->geo_east=state->geo_tiles->origin_east()+
                     512.*state->geo_tiles->columns()*.5;
                 // Start over the waterfront portion of the archived chart.
@@ -517,29 +568,20 @@ int32_t OnGlCreated(void* instance) {
     }
     if(state->geo_tiles){
         if(!state->geo_gl.CreateOverlay(state->lighting,&error)||
+           (state->chart_route&&!state->chart_pin.Create(reverie::sitka::ChartStationPin(),
+                                                         state->lighting,&error))||
            !state->geo_text.Create()){
             Log(state->host,"Real Sitka geographic preview GLES unavailable; "
                 "existing fishing test range remains operational");
+            state->chart_pin.Release();
             state->geo_text.Release();
             state->geo_gl.Release();
             state->geo_tiles.reset();
             state->geo_view=false;
         }else{
             state->geo_tiles->AfterGlContextLoss();
-            // In-headset labels are actual Lato glyphs, NOT model textures.
-            state->geo_text.Clear();
-            state->geo_text.Fit(
-                "SITKA / USGS 3DEP + NOAA ENC CHART LAND",
-                0.f,.85f,2.90f,.043f,.98f,.94f,.68f);
-            state->geo_text.Fit(
-                "GEOGRAPHY PREVIEW / NOT FOR NAVIGATION",
-                0.f,.66f,2.90f,.037f,.96f,.78f,.58f);
-            state->geo_text.Fit(
-                "ELEVATION: LOW GREEN TO HIGH TAN",
-                0.f,.47f,2.90f,.035f,.89f,.98f,.88f);
-            state->geo_text.Fit(
-                "VOL UP + RIGHT: EXIT / + UP OR DOWN: ALT",
-                0.f,.28f,2.90f,.034f,.9f,.96f,.94f);
+            state->chart_caption.clear();
+            UpdateChartCaption(*state);
         }
     }
     if(!state->water_gl.Create(state->waters,state->weather,&error)){
@@ -564,10 +606,15 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
+    // Re-upload nearby finds after EGL recreation, even if the player stayed still.
+    state->beach_dirty=state->beach_visible_mask!=0u;
     {
-        const auto signs=state->walk_session?
+        auto signs=state->walk_session?
             reverie::sitka::HarborShopSigns(state->harbor_sites,*state->walk_session):
             reverie::sitka::TerrainMesh{};
+#if defined(REVERIE_SITKA_INTEGRATION_RANGE)
+        if(state->integration_range)AddPracticeShore(signs,state->city_sites);
+#endif
         if((!state->harbor_sites.empty()&&
             !state->harbor_gl.Create(signs,state->lighting,&error))||
            !state->harbor_panel_gl.Create(
@@ -643,6 +690,7 @@ int32_t OnGlCreated(void* instance) {
 void ReleaseGl(void* instance) {
     if(instance){
         static_cast<State*>(instance)->horizon_gpu.Release();
+        static_cast<State*>(instance)->chart_pin.Release();
         static_cast<State*>(instance)->geo_text.Release();
         static_cast<State*>(instance)->geo_gl.Release();
         if(static_cast<State*>(instance)->geo_tiles)
@@ -683,8 +731,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
     // The default secondary action (Volume Up) plus rightward touch toggles
-    // the map inspector. It never launches an unauthorized boat or alters
-    // Sitka's fishing saves. A held chord can toggle only once.
+    // the land chart. A held chord can toggle only once.
     const bool geo_chord=state->geo_tiles &&
         input->secondary_down!=0u && input->primary_down==0u &&
         input->move_x>.80f;
@@ -693,6 +740,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         if(!state->geo_chord_held){
             state->geo_chord_held=true;
             state->geo_view=!state->geo_view;
+            state->chart_primary_held=false;
             ReverieNativeRequestFeedbackV1(
                 state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         }
@@ -701,6 +749,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(state->geo_view && state->geo_tiles){
         const double dt=std::isfinite(input->delta_seconds)?
             std::clamp(double(input->delta_seconds),0.,.05):0.;
+        const bool chart_press=input->primary_down&&!state->chart_primary_held;
+        state->chart_primary_held=input->primary_down!=0u;
         if(input->secondary_down!=0u || input->primary_down!=0u){
             // The secondary button leaves Daydream touch axes live. Gamepads
             // can also hold Select to adjust the geographic observation
@@ -710,7 +760,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 65.f,300.f);
         }else{
             state->geo_east+=double(input->move_x)*80.*dt;
-            state->geo_north+=double(input->move_y)*80.*dt;
+            state->geo_north-=double(input->move_y)*80.*dt;
         }
         const double west=state->geo_tiles->origin_east();
         const double north=state->geo_tiles->origin_north();
@@ -730,7 +780,20 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             state->geo_last_errors=state->geo_tiles->failed_reads();
             Log(state->host,state->geo_tiles->last_error().c_str());
         }
-        return; // No fishing/boat/harbor simulation while flying map.
+        const auto station=state->fishing.fishing.journal.chart_stations;
+        if(state->chart_route&&chart_press&&!input->secondary_down&&
+           std::abs(input->move_y)<.35f&&station<reverie::sitka::kChartStations){
+            const auto& site=reverie::sitka::kSurveyRoute[station];
+            const bool reached=std::hypot(state->geo_east-site.east,state->geo_north-site.north)
+                <=reverie::sitka::kChartSurveyRadius;
+            if(reached&&state->geo_tiles->OnDisplayedTile(site.row,site.column)&&
+               state->fishing.FileChartStation(station)){
+                if(!state->fishing.Flush(Store(state)))Log(state->host,"Sitka chart log save deferred");
+                ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            }else ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        }
+        UpdateChartCaption(*state);
+        return; // Fishing and boat simulation stay at the berth during the survey.
     }
     state->water_gl.Update(input->delta_seconds);
     const bool listener=input->struct_size>=
@@ -755,7 +818,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(state->walk_session && !state->beach_sites.empty()){
         const uint64_t visible=reverie::sitka::BeachVisibleMask(
             state->beach_sites,state->fishing.fishing.journal,
-            *state->walk_session);
+            *state->walk_session,state->integration_range);
         if(visible!=state->beach_visible_mask){
             state->beach_visible_mask=visible;
             state->beach_dirty=true;
@@ -773,9 +836,11 @@ void Update(void* instance,const ReverieNativeInputV1* input){
        !(state->skiff&&state->skiff->Active())){
         const auto found=reverie::sitka::FindCityVisit(
             *state->walk_session,state->city_sites,
-            state->fishing.fishing.journal.city_sites,
+            state->integration_range?state->fishing.fishing.journal.practice_checkpoints:
+                                     state->fishing.fishing.journal.city_sites,
             state->fishing.fishing.journal.observation_level);
-        if(found.valid && state->fishing.DiscoverCity(found.site,found.kind)){
+        if(found.valid && (state->integration_range?state->fishing.VisitPracticeCheckpoint(found.site):
+                           state->fishing.DiscoverCity(found.site,found.kind))){
             if(!state->fishing.Flush(Store(state)))
                 Log(state->host,"Sitka city visit save deferred");
             ReverieNativeRequestFeedbackV1(
@@ -959,7 +1024,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             const auto found=reverie::sitka::FindBeachTarget(
                 source,ray_input.pointer_direction,foot.x,foot.z,
                 *state->walk_session,state->beach_sites,
-                state->fishing.fishing.journal.beach_sites,
+                state->integration_range?state->fishing.fishing.journal.practice_finds:
+                                         state->fishing.fishing.journal.beach_sites,
                 state->fishing.fishing.journal.shore_kit_level,
                 state->fishing.fishing.journal.observation_level);
             if(found.valid){
@@ -967,7 +1033,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 // sellable shellfish bundle. Live animal observations and
                 // ordinary beach finds remain discovery-only.
                 state->beach_primary_latched=true;
-                const bool collected=found.shellfish_bundle?
+                const bool collected=state->integration_range?state->fishing.RecordPracticeFind(found.site):
+                    found.shellfish_bundle?
                     state->fishing.CollectShellfishBundle(found.site):
                     state->fishing.Discover(found.site,found.kind);
                 if(collected){
@@ -984,7 +1051,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         }
     }
     reverie::sitka::FishingCastTarget target;
-    if(!state->beach_primary_latched && !boat_chord&&!(state->skiff&&state->skiff->Active())&&
+    if(listener&&state->walk_session&&!state->beach_primary_latched&&
+       !boat_chord&&!(state->skiff&&state->skiff->Active())&&
        input->primary_down&&ReverieNativeInputHasPointerV1(input)){
         ReverieNativeInputV1 normalized=*input;
         if(ReverieNativeSanitizePointerV1(&normalized)){
@@ -997,11 +1065,6 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing_spots,state->waters);
         }
     }
-    // The player can fish from ANY grounded accessible shore, not just
-    // a prescribed pedestrian or fishing-stance node. Cast still requires
-    // a valid sourced water target; broader spot coverage is forthcoming.
-    if(target.valid && (!state->walk_session || !listener))
-        target.valid=false;
     const bool fishing_control=!boat_chord&&
         !state->harbor_shop.open()&&
         !state->harbor_shop.consumes_primary()&&
@@ -1027,15 +1090,39 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         auto lines=state->harbor_shop.open()?
             reverie::sitka::HarborShopPanel(state->harbor_shop,state->fishing):
             reverie::sitka::ShoreGameplayPanel(state->fishing,aimed_shop>=0);
-        if(state->integration_range)
-            lines[0]="SITKA TEST RANGE / NOT REAL GEOGRAPHY";
+        if(state->integration_range&&!state->harbor_shop.open()){
+            const auto& journal=state->fishing.fishing.journal;
+            const unsigned finds=reverie::sitka::BeachSiteCount(journal.practice_finds);
+            lines[0]="PRACTICE BAY / "+std::to_string(finds)+"/12 FINDS / "+
+                std::to_string(reverie::sitka::BeachSiteCount(journal.practice_checkpoints))+"/6 STOPS";
+            if(state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready){
+                const auto next=std::find_if(state->beach_sites.begin(),state->beach_sites.end(),
+                    [&](const reverie::sitka::BeachSite& site){return !(journal.practice_finds&(1u<<site.id));});
+                if(next!=state->beach_sites.end()){
+                    const auto& def=reverie::sitka::Specimen(next->specimen);
+                    const double dx=next->x-foot.x,dz=next->z-foot.z,distance=std::hypot(dx,dz);
+                    if(distance<=reverie::sitka::kShoreRevealRadiusM)
+                        lines[4]=std::string("AIM DOWN + SELECT: ")+def.name;
+                    else{
+                        const double across=dx*state->shop_rx+dz*state->shop_rz;
+                        const double forward=dx*state->shop_rz-dz*state->shop_rx;
+                        const char* direction=std::abs(across)>std::abs(forward)?
+                            (across>0.?"RIGHT":"LEFT"):(forward>0.?"UP":"DOWN");
+                        lines[4]=std::string("FOLLOW BANK: PAD ")+direction+" / "+
+                            std::to_string(unsigned(std::ceil(distance)))+" M TO "+def.name;
+                    }
+                }else lines[4]=journal.practice_submitted==journal.practice_finds?
+                    "FIELD LOG COMPLETE / ALL FINDS REGISTERED":"12 FINDS / RETURN TO HARBOR OFFICE TO REGISTER";
+            }
+        }
         if(state->skiff && !state->harbor_shop.open() && aimed_shop<0 &&
            state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready &&
            state->skiff->AtBerth(listener_east,listener_north))
             lines[2]="SELECT + VOL UP: BOARD HERE / DOCK WHEN SLOW";
         const bool show_map_hint=state->integration_range && state->geo_tiles &&
             !state->harbor_shop.open();
-        const char* map_hint="VOL UP + PAD RIGHT: NOAA/USGS LAND MAP";
+        const char* map_hint=state->chart_route?"VOL UP + PAD RIGHT: CHART SURVEY (+25 CR / SITE)":
+            "VOL UP + PAD RIGHT: NOAA/USGS LAND MAP";
         std::string signature;
         for(const auto& line:lines){signature+=line;signature+='\n';}
         if(show_map_hint)signature+=map_hint;
@@ -1101,7 +1188,7 @@ int32_t PrepareFrame(void* instance){
         std::string error;
         const auto marker=reverie::sitka::BeachMarkerMesh(
             state->beach_sites,state->fishing.fishing.journal,
-            *state->walk_session,state->beach_visible_mask);
+            *state->walk_session,state->beach_visible_mask,state->integration_range);
         const std::vector<reverie::sitka::TerrainMesh> extras={
             marker.indices.empty()?reverie::sitka::TerrainMesh{}:marker};
         if(!state->beach_gl.ReplaceSeafloor(extras,&error)){
@@ -1223,12 +1310,23 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
         };
         const float shift[16]={
             1.f,0.f,0.f,0.f, 0.f,1.f,0.f,0.f,
-            0.f,0.f,1.f,0.f, -x,-state->geo_altitude,-z,1.f
+            0.f,0.f,-1.f,0.f,
+            -x,-state->geo_altitude,z-state->geo_altitude*c/s,1.f
         };
         float angled[16];
         ReverieNativeMat4Multiply(angled,tilt,shift);
         ReverieNativeMat4Multiply(camera.view,eye->view,angled);
         if(!state->geo_gl.RenderEye(&camera))return 0;
+        const auto station=state->fishing.fishing.journal.chart_stations;
+        if(state->chart_route&&station<reverie::sitka::kChartStations){
+            const auto& site=reverie::sitka::kSurveyRoute[station];
+            if(state->geo_tiles->OnDisplayedTile(site.row,site.column)){
+                const float pin[16]={1,0,0,0, 0,1,0,0, 0,0,1,0,
+                    float(site.east-state->geo_tiles->origin_east()),site.elevation,
+                    float(site.north-state->geo_tiles->origin_north()),1};
+                if(!state->chart_pin.RenderEye(&camera,pin))return 0;
+            }
+        }
         // Actual licensed Lato HUD: 'NOT FOR NAVIGATION' never disappears.
         return state->geo_text.Draw(eye->projection,false)?1:0;
     }

@@ -34,8 +34,10 @@ struct State {
     bool has_campaign=false,block_primary=false,block_secondary=false,pointer_primary_down=false;
     bool secondary_consumed=false;
     float secondary_hold=0;
-    // Unserialized presentation mode: all campaign state stays in v9 saves.
-    bool continent_view=true;
+    bool continent_view=true,relief_view=false,world_relief=false;
+    bool road_pointer=false,road_pad=false;
+    int road_focus=0,road_axis=0;
+    float road_x=0,road_y=0;
     GLuint program=0,vbo=0;
     GLint pos=-1,color=-1,mvp=-1;
     bool upload=true,save_failed=false,load_failed=false;
@@ -224,14 +226,13 @@ void DrawContinent(State *s){
     s->font.Clear();s->sprites.Clear();
     s->base_vertices=s->unit_vertices=0;
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
-    Text(s,"OMEGA FRONT  CONTINENTAL COMMAND",1.070f,.013f,.92f,.94f,.81f);
-    Text(s,"CONTINENT  /  REGION TO ISSUE FIELD ORDERS",.997f,.009f,.71f,.84f,.85f);
+    Text(s,"OMEGA FRONT  /  CONTINENTAL COMMAND",.84f,.016f,.92f,.94f,.81f);
     DrawMenuTab(s);
     DrawWorldTab(s);
     char line[128];
-    std::snprintf(line,sizeof(line),"DAY %d  RATIONS %d  SALVAGE %d  HEARTHFALL 16/600",
+    std::snprintf(line,sizeof(line),"DAY %d  RATIONS %d  SALVAGE %d  HEARTHFALL S001-S016",
                   f.day(),f.rations(),f.salvage());
-    Text(s,line,.914f,.010f,.77f,.85f,.88f);
+    Text(s,line,.70f,.010f,.77f,.85f,.88f);
     constexpr float step=.062f,cy=-.045f;
     // Solid ocean base ensures still meaningful coastlines if optional PNGs
     // are unavailable, while approved preloaded tile sheets carry land detail.
@@ -300,23 +301,102 @@ void DrawContinent(State *s){
         Rect(s,px,py,.039f,.039f,kBoardZ+.015f,
              current?.97f:.99f,current?.96f:.72f,current?.84f:.17f);
     }
-    Text(s,"NORTHERN HEIGHTS      HEARTHFALL      EASTERN MARCH",-.786f,.009f,
-         .70f,.86f,.81f);
     const auto *site=f.sector(s->session.focused);
     if(site){
         const bool known=f.intelligence(s->session.focused)==game::Intelligence::Surveyed;
         std::snprintf(line,sizeof(line),"HEARTHFALL S%03d  %s",
             s->session.focused+1,known?site->name:"UNSURVEYED");
-        Text(s,line,-.910f,.012f,.94f,.92f,.72f);
+        Text(s,line,-.81f,.012f,.94f,.92f,.72f);
     }
-    Text(s,"REGION FOR ACTIONS  /  REST OF CONTINENT NOT YET EXPLOITABLE",
-         -1.035f,.0085f,.82f,.85f,.76f);
-    Text(s,"COASTS  RIVERS  RIDGES  FARMS  ROADS  WASTES",
+    for(int i=0;i<2;++i){
+        const float x=i?.48f:-.48f;
+        const bool selected=s->world_relief==(i!=0);
+        Rect(s,x,-1.012f,.88f,.145f,kBoardZ+.01f,selected?.24f:.08f,
+             selected?.35f:.17f,selected?.39f:.22f);
+        s->font.Fit(i?"PILGRIM ROAD":"HEARTHFALL",x,-1.012f,.82f,.013f,
+                    .98f,.92f,.76f,kNear);
+    }
+    for(int i=1;i<game::kReliefSites;++i){
+        const auto &road=game::kReliefRoad[i];
+        Rect(s,(road.x-14.5f)*step,cy+(9.5f-road.y)*step,.032f,.032f,
+             kBoardZ+.016f,.56f,.97f,.94f);
+    }
+    Text(s,"PAD LEFT / RIGHT TO CHOOSE REGION   CLICK TO ENTER",
          -1.145f,.009f,.72f,.86f,.83f);
     s->upload=true;
 }
 
+float RoadX(int i){return (game::kReliefRoad[i].x-16)*.66f;}
+float RoadY(int i){return .25f-(game::kReliefRoad[i].y-9)*.53f;}
+int RoadHit(float x,float y){
+    for(int i=0;i<game::kReliefSites;++i)
+        if(std::fabs(x-RoadX(i))<=.29f && std::fabs(y-RoadY(i))<=.16f)return i;
+    return -1;
+}
+const char *RoadOrderHint(const game::Frontier &f,int target){
+    using Status=game::Frontier::ReliefStatus;
+    if(f.relief_status()==Status::Filed)return "MANIFEST FILED  /  BOTH STATIONS SUPPLIED";
+    if(f.relief_status()==Status::AwaitingDispatch){
+        if(f.location()!=7)return "MARCH THE MAIN PARTY TO S008 CHARTER GATE TO DISPATCH";
+        if(f.rations()<4 || f.salvage()<2)return "DISPATCH NEEDS 4 FIELD RATIONS AND 2 SALVAGE";
+        return target==0?"CLICK CHARTER GATE TO DISPATCH":"SELECT CHARTER GATE TO LOAD THE PARTY";
+    }
+    if(target!=f.relief_site()){
+        if(target!=1 && f.relief_site()!=1)return "REACH EAST FORD BEFORE TAKING THIS BRANCH";
+        return "CLICK TO MARCH ONE DAY";
+    }
+    if(target==2 && !f.clinic_supplied())return "CLICK TO UNLOAD 2 REPAIR PARTS AT THE CLINIC";
+    if(target==3 && !f.camp_supplied())return "CLICK TO UNLOAD 4 RATIONS AT THE CAMP";
+    if(target==0 && f.clinic_supplied() && f.camp_supplied())return "CLICK TO FILE THE RETURN MANIFEST";
+    if(f.clinic_supplied() && f.camp_supplied())return "BOTH STOPS SUPPLIED  /  RETURN VIA FORD TO CHARTER GATE";
+    return "CHOOSE A CONNECTED STOP";
+}
+void DrawReliefRoad(State *s){
+    const auto &f=s->session.frontier;
+    using Status=game::Frontier::ReliefStatus;
+    s->mesh.clear();s->font.Clear();s->sprites.Clear();
+    Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.028f,.060f,.075f);
+    Rect(s,0,.75f,1.99f,.30f,kBoardZ-.04f,.09f,.17f,.20f);
+    s->base_vertices=s->unit_vertices=s->mesh.size()/6u;
+    Text(s,"PILGRIM ROAD",1.00f,.025f,.99f,.91f,.68f);
+    Rect(s,.89f,1.065f,.33f,.145f,kBoardZ-.03f,.20f,.30f,.35f);
+    TextAt(s,"MENU",.89f,1.065f,.011f,.95f,.92f,.8f);
+    Rect(s,-.89f,1.065f,.33f,.145f,kBoardZ-.03f,.20f,.30f,.35f);
+    TextAt(s,"WORLD",-.89f,1.065f,.011f,.95f,.92f,.8f);
+    Text(s,"EASTERN MARCH  /  F16 RELIEF CONVOY",.81f,.014f,.67f,.88f,.88f);
+    Text(s,"Deliver parts to the clinic and rations to the camp.",.66f,.012f,.92f,.93f,.84f);
+    for(int i:{0,2,3})
+        Line(s,RoadX(1),RoadY(1),RoadX(i),RoadY(i),.026f,kBoardZ,.58f,.67f,.55f);
+    char line[120];
+    for(int i=0;i<game::kReliefSites;++i){
+        const float x=RoadX(i),y=RoadY(i);
+        const bool selected=s->road_focus==i;
+        Rect(s,x,y,.58f,.32f,kBoardZ,selected?.89f:.32f,selected?.76f:.48f,selected?.45f:.5f);
+        Rect(s,x,y,.55f,.29f,kBoardZ,.08f,.17f,.19f);
+        s->font.Fit(game::kReliefRoad[i].name,x,y+.052f,.51f,.013f,.98f,.96f,.84f,kNear);
+        const char *status=i==0?"S008 DEPOT":i==1?"CROSSING":i==2?
+            (f.clinic_supplied()?"PARTS RECEIVED":"NEEDS 2 PARTS"):
+            (f.camp_supplied()?"FOOD RECEIVED":"NEEDS 4 RATIONS");
+        s->font.Fit(status,x,y-.065f,.51f,.009f,.67f,.88f,.86f,kNear);
+        if(f.relief_site()==i && f.relief_status()==Status::OnRoad){
+            Rect(s,x,y+.19f,.24f,.065f,kBoardZ,.64f,.82f,.69f);
+            s->font.Fit("PARTY",x,y+.19f,.21f,.008f,.10f,.18f,.17f,kNear);
+        }
+    }
+    if(f.relief_status()==Status::Filed)
+        std::snprintf(line,sizeof(line),"Report accepted   /   Pilgrim Road relations %d   /   Trust %d",f.relation(16),f.trust());
+    else if(f.relief_status()==Status::OnRoad)
+        std::snprintf(line,sizeof(line),"Day %d   /   On board: %d parts, %d rations",f.day(),f.clinic_supplied()?0:2,f.camp_supplied()?0:4);
+    else std::snprintf(line,sizeof(line),"Dispatch cargo: 2 parts from salvage, 4 field rations");
+    Text(s,line,-.57f,.013f,.75f,.91f,.87f);
+    Text(s,RoadOrderHint(f,s->road_focus),-.75f,.013f,.97f,.87f,.61f);
+    Text(s,"PAD TO CHOOSE A STOP   /   CLICK TO ACT   /   MINUS FOR WORLD",-.96f,.009f,.73f,.84f,.85f);
+    if(s->save_failed)Text(s,"SAVE FAILED  /  PROGRESS IN MEMORY",-1.08f,.011f,1.f,.52f,.38f);
+    s->upload=true;
+}
+
 void DrawMap(State *s){
+    if(s->relief_view){DrawReliefRoad(s);return;}
     if(s->continent_view){DrawContinent(s);return;}
     const game::Session &session=s->session;
     const game::Frontier &f=session.frontier;
@@ -1079,6 +1159,11 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         const game::MenuCommand command=s->menu.Input(action.dt,action.y,
             action.primary,action.secondary,pointing,pointer_x,pointer_y,
             s->has_campaign,s->load_failed);
+        if(command==game::MenuCommand::WorldMap){
+            s->continent_view=true;
+            s->relief_view=false;
+            s->road_axis=0;
+        }
         if(command==game::MenuCommand::RetryLoad){
             LoadState(s);
             Draw(s);
@@ -1123,6 +1208,9 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         if(command==game::MenuCommand::StartNew ||
            (command==game::MenuCommand::Resume && !had_campaign)){
             s->session=game::Session(414u);
+            s->continent_view=true;
+            s->relief_view=s->world_relief=false;
+            s->road_axis=0;
             s->has_campaign=true;
             s->load_failed=false;
             SaveState(s);
@@ -1144,40 +1232,28 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     }
     // Closing a menu must not turn its last hover/release into a tactical
     // cursor move. The saved cursor survives until a new intentional aim.
-    if(!s->pointer_resume.Allow(pointing,pointer_x,pointer_y,
-                                click && !s->block_primary)){
+    const bool aim_allowed=s->pointer_resume.Allow(pointing,pointer_x,pointer_y,
+                                                   click && !s->block_primary);
+    if(!aim_allowed){
         action.pointer_x=action.pointer_y=-1;
     }
     if(pointing && game::Menu::MenuShortcut(pointer_x,pointer_y) && click){
-        s->menu.OpenPause(action.primary,action.secondary);
+        s->menu.OpenPause(action.primary,action.secondary,s->session.view==game::FrontMode::SectorMap);
         s->block_primary=true;
         s->secondary_hold=0;
         Draw(s);
         ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         return;
     }
-    // World scale is a true continent overview. Clicking its main body
-    // enters the existing fully interactive Hearthfall region, not a fake
-    // expedition into provinces without campaign state.
-    if(s->session.view==game::FrontMode::SectorMap &&
-       pointing && click && pointer_x>-.17f && pointer_x<.17f &&
-       pointer_y>.98f && pointer_y<1.14f){
-        s->continent_view=!s->continent_view;
+    if(s->session.view==game::FrontMode::SectorMap && pointing && click &&
+       !s->block_primary && ((s->relief_view && game::Menu::OrderShortcut(pointer_x,pointer_y)) ||
+       (!s->relief_view && std::fabs(pointer_x)<.17f && pointer_y>.98f && pointer_y<1.14f))){
+        s->continent_view=s->relief_view || !s->continent_view;
+        s->relief_view=false;
+        s->road_axis=0;
         s->block_primary=true;
         Draw(s);
-        ReverieNativeRequestFeedbackV1(s->host,
-            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-        return;
-    }
-    if(s->session.view==game::FrontMode::SectorMap &&
-       s->continent_view && pointing && click &&
-       pointer_x>-.95f && pointer_x<.95f &&
-       pointer_y>-.70f && pointer_y<.60f){
-        s->continent_view=false;
-        s->block_primary=true;
-        Draw(s);
-        ReverieNativeRequestFeedbackV1(s->host,
-            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         return;
     }
     // A deliberate command, not a timer. The main update path handles
@@ -1190,7 +1266,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         // only the logical Select action is suppressed downstream.
         s->block_primary=true;
     }
-    if(pointing && game::Menu::OrderShortcut(pointer_x,pointer_y) && click){
+    if(!s->relief_view && pointing && game::Menu::OrderShortcut(pointer_x,pointer_y) && click){
         if(s->session.view==game::FrontMode::SectorMap){
             s->menu.OpenOrders(false,static_cast<int>(s->session.action),
                                action.primary,action.secondary);
@@ -1217,7 +1293,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     if(action.secondary){
         s->secondary_hold+=std::max(0.f,std::min(.1f,action.dt));
         if(s->secondary_hold>=.65f){
-            s->menu.OpenPause(action.primary,true);
+            s->menu.OpenPause(action.primary,true,s->session.view==game::FrontMode::SectorMap);
             s->secondary_consumed=true;
             s->secondary_hold=0;
             s->block_primary=true;
@@ -1235,17 +1311,66 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         if(!action.primary)s->block_primary=false;
         action.primary=false;
     }
-    // Continental overview is navigation, never an order surface.
-    // A click (or controller select with no tracked pointer) opens the
-    // operational 16-sector map; it must not deploy, march or spend rations.
-    if(s->session.view==game::FrontMode::SectorMap && s->continent_view){
-        if(action.primary){
+    if(s->session.view==game::FrontMode::SectorMap && (s->continent_view || s->relief_view)){
+        const int axis=action.x>.55f || action.y<-.55f ? 1 :
+                       action.x<-.55f || action.y>.55f ? -1 : 0;
+        const bool new_axis=axis!=0 && axis!=s->road_axis;
+        s->road_axis=axis;
+        const bool new_aim=pointing && aim_allowed && (!s->road_pointer ||
+            std::fabs(pointer_x-s->road_x)>.025f || std::fabs(pointer_y-s->road_y)>.025f);
+        if(new_aim){
+            s->road_x=pointer_x;s->road_y=pointer_y;
+            s->road_pad=false;
+        }
+        s->road_pointer=pointing;
+        if(new_axis)s->road_pad=true;
+        if(s->relief_view){
+            const int hit=pointing?RoadHit(pointer_x,pointer_y):-1;
+            const int before=s->road_focus;
+            if(new_axis)s->road_focus=(before+axis+game::kReliefSites)%game::kReliefSites;
+            else if(new_aim && hit>=0)s->road_focus=hit;
+            if(action.secondary){
+                s->relief_view=false;s->continent_view=true;
+                Draw(s);
+            }else if(action.primary && click && (s->road_pad || !pointing || hit>=0)){
+                const bool moved=s->session.OrderRelief(s->road_focus);
+                if(moved){
+                    SaveState(s);
+                    if(s->session.view==game::FrontMode::Tactical)s->relief_view=false;
+                }
+                ReverieNativeRequestFeedbackV1(s->host,moved?
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+                Draw(s);
+            }else if(before!=s->road_focus)Draw(s);
+            return;
+        }
+        const bool before=s->world_relief;
+        bool destination=false;
+        if(pointing && std::fabs(pointer_x)<=.92f && std::fabs(pointer_y+1.012f)<=.073f){
+            if(std::fabs(pointer_x)>=.04f){
+                destination=true;
+                if(new_aim && !new_axis)s->world_relief=pointer_x>0;
+            }
+        }else if(pointing && std::fabs(pointer_x)<.95f && pointer_y>-.70f && pointer_y<.60f){
+            destination=true;
+            if(new_aim && !new_axis){
+                const int x=static_cast<int>(std::floor(pointer_x/.062f+15.f));
+                const int y=static_cast<int>(std::floor(10.f-(pointer_y+.045f)/.062f));
+                s->world_relief=false;
+                for(int i=1;i<game::kReliefSites;++i)
+                    if(game::kReliefRoad[i].x==x && game::kReliefRoad[i].y==y)s->world_relief=true;
+            }
+        }
+        if(new_axis)s->world_relief=axis>0;
+        if(action.primary && click && (destination || s->road_pad || !pointing)){
+            s->relief_view=s->world_relief;
             s->continent_view=false;
+            s->road_focus=s->session.frontier.relief_site();
+            s->road_pointer=false;s->road_pad=false;
             s->block_primary=true;
             Draw(s);
-            ReverieNativeRequestFeedbackV1(s->host,
-                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-        }
+            ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }else if(before!=s->world_relief)Draw(s);
         return;
     }
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;

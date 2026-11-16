@@ -55,7 +55,11 @@ readback, archived under:
 
 data/sitka/geography/generated/noaa-enc-chart-land-v1/
 
-## Remaining gameplay acceptance
+## Geographic activity in the native game, November 16, 2026
+
+The staged sixteen-tile archive now supplies a three-station chart survey within the unified native game. The chart displays four resident tiles around the cursor, checks the source vertex for each station in the rendering regression, and records completed observations in the fishing journal. The game awards harbor credits for each filed station. [Coordinates, controls, source scope and save compatibility](SITKA.md#crescent-harbor-chart-survey-and-practice-shore-november-16-2026).
+
+## Gameplay acceptance at the original import
 
 Source-masked land meshes are not yet a live multi-tile ReverieVR world.
 The native Sitka module still loads one sitka/coast/terrain.sitkam and

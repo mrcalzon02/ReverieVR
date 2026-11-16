@@ -14,7 +14,7 @@
 namespace reverie { namespace gumball {
 constexpr uint32_t kLaneCount=4096;
 constexpr unsigned kEnemySlots=24;
-enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
+enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated,Rescue,SignalLost,Homecoming,Credits };
 enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped, Deadline, SalvageLost };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
 enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort, Nib, Biff, Baff, Cinnamon, Sydney, Jules };
@@ -161,8 +161,11 @@ public:
         return std::max(.7f,1.55f+.16f*levels_[2]+ship_profile_.speed)
                *movement_multiplier();
     }
+    float flight_speed()const{
+        return move_speed()*(phase_==Phase::Rescue&&rescue_leg_==2?.65f:1.f);
+    }
     float pointer_move_speed()const{
-        return move_speed()*kFlightPointerSpeedFactor;
+        return flight_speed()*kFlightPointerSpeedFactor;
     }
     CastGuest route_guest(unsigned choice)const{
         if(choice>=3)return CastGuest::None;
@@ -184,6 +187,25 @@ public:
     uint32_t kills()const{return kills_;}
     uint32_t visited()const{return visited_;}
     uint32_t bosses()const{return bosses_;}
+    unsigned generals_defeated()const{
+        return (bosses_&1u)+((bosses_>>1)&1u)+((bosses_>>2)&1u)+((bosses_>>3)&1u);
+    }
+    bool is_rescue_route(unsigned choice)const{return bosses_==15u&&!king_rescued()&&choice==1;}
+    bool king_rescued()const{return rescue_leg_==3;}
+    uint8_t rescue_leg()const{return rescue_leg_;}
+    float rescue_window()const{return 12.f-rescue_elapsed_;}
+    float rescue_link()const{return rescue_link_;}
+    FlightAim rescue_target()const{
+        if(rescue_leg_==0)return {-1.20f,.35f,true}; // Parliament's fixed relay
+        if(rescue_leg_==1)return {1.14f+.24f*std::sin(rescue_elapsed_*.85f),-.55f,true};
+        return {.15f+.35f*std::sin(rescue_elapsed_*.65f),.47f,true}; // moving convoy
+    }
+    bool at_rescue_target()const{
+        const auto target=rescue_target();
+        const float dx=px_-target.x,dy=py_-target.y;
+        return dx*dx+dy*dy<=kRescueRadius*kRescueRadius;
+    }
+    static constexpr float kRescueRadius=.28f;
     int hp()const{return hp_;}
     int shield()const{return shield_;}
     int combo()const{return combo_;}
@@ -232,7 +254,7 @@ public:
         if(cash_<static_cast<uint32_t>(cost))return false;
         cash_-=static_cast<uint32_t>(cost);owned_weapons_|=1u<<id;weapon_=w;return true;
     }
-    int command_rank()const{return 1+static_cast<int>(kills_/25)+static_cast<int>(bosses_)*4;}
+    int command_rank()const{return 1+static_cast<int>(kills_/25)+static_cast<int>(generals_defeated())*4;}
     float player_x()const{return px_;}
     float player_y()const{return py_;}
     const std::array<Enemy,kEnemySlots>& enemies()const{return enemies_;}
@@ -251,9 +273,16 @@ public:
         const uint32_t step=37u+(Mix(seed_^node_^(choice*0x9E3779B9u))%69u);
         uint32_t target=sector*1024u+std::min(1023u,origin+step);
         if(origin==1023u&&sector<3u)target=(sector+1u)*1024u;
+        if(king_rescued()){
+            // Reopened civilian lanes visit the other three sectors. Each
+            // cleared sortie advances the chart without respawning a general.
+            const uint32_t nextSector=(sector+choice+1u)%4u;
+            const uint32_t address=Mix(seed_^node_^(choice<<19))%1023u;
+            target=nextSector*1024u+address;
+        }
         const uint32_t mix=Mix(seed_^target^(choice<<19));
         Lane result;result.id=target;
-        result.hazard=static_cast<uint8_t>(1u+(mix%5u)+sector);
+        result.hazard=static_cast<uint8_t>(1u+(mix%5u)+(king_rescued()?target/1024u:sector));
         result.reward=static_cast<uint8_t>(1u+(mix>>8)%5u);
         result.fortress=target%1024u==1023u;
         return result;
@@ -269,6 +298,11 @@ public:
     }
     bool launch(unsigned choice){
         if(phase_!=Phase::Chart||choice>=3||!ship_ready_)return false;
+        if(is_rescue_route(choice)){
+            phase_=Phase::Rescue;rescue_leg_=0;rescue_elapsed_=rescue_link_=0.f;
+            px_=0.f;py_=-.85f;slipstream_active_=false;
+            return true;
+        }
         destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
@@ -291,8 +325,21 @@ public:
     }
     void update(float dt,float sx,float sy,bool fire,bool pointerGuided=false,
                 const ShipAssembly* actualHull=nullptr){
-        if(phase_!=Phase::Flight||!std::isfinite(dt)||dt<=0.f)return;
+        if((phase_!=Phase::Flight&&phase_!=Phase::Rescue)||!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);
+        if(phase_==Phase::Rescue){
+            steer(dt,sx,sy,pointerGuided);
+            rescue_elapsed_=std::min(12.f,rescue_elapsed_+dt);
+            if(at_rescue_target()&&fire)rescue_link_+=dt;
+            else rescue_link_=0.f;
+            if(rescue_link_>=1.f){
+                ++rescue_leg_;rescue_elapsed_=rescue_link_=0.f;
+                if(king_rescued())phase_=Phase::Homecoming;
+            }else if(rescue_elapsed_>=12.f){
+                rescue_link_=0.f;phase_=Phase::SignalLost;
+            }
+            return;
+        }
         static const ShipAssembly kStarterHull{};
         elapsed_+=dt;
         if(mission_.time_limit>0.f&&elapsed_>mission_.time_limit){
@@ -316,15 +363,10 @@ public:
                 regen_credit_-=static_cast<float>(restored);
             }
         }
-        sx=std::isfinite(sx)?std::max(-1.f,std::min(1.f,sx)):0.f;
-        sy=std::isfinite(sy)?std::max(-1.f,std::min(1.f,sy)):0.f;
         slipstream_active_=false;
         for(const auto& enemy:enemies_)if(enemy.active&&enemy.kind==EnemyKind::Sydney)
             slipstream_active_=true;
-        const float speed=move_speed()*
-            (pointerGuided?kFlightPointerSpeedFactor:1.f);
-        px_=std::max(-1.9f,std::min(1.9f,px_+sx*dt*speed));
-        py_=std::max(-1.15f,std::min(kFlightTop,py_-sy*dt*speed));
+        steer(dt,sx,sy,pointerGuided);
         cooldown_-=dt;combo_clock_-=dt;
         if(combo_clock_<=0.f)combo_=0;
         if(fire&&cooldown_<=0.f){
@@ -637,12 +679,16 @@ public:
                 static_cast<uint32_t>(destination_.reward*12+max_combo_*2);
             cash_+=completion_bonus_;sortie_cash_+=completion_bonus_;
             node_=destination_.id;++visited_;
+            const uint32_t oldBosses=bosses_;
             if(destination_.fortress&&bossKilled_)bosses_|=1u<<(node_/1024u);
-            phase_=bosses_==15u?Phase::ArmadaDefeated:Phase::Won;
+            phase_=bosses_==15u&&oldBosses!=bosses_?Phase::ArmadaDefeated:Phase::Won;
         }
     }
     bool recover(){
-        if(phase_==Phase::Won||phase_==Phase::Lost||phase_==Phase::ArmadaDefeated){
+        if(phase_==Phase::Homecoming){phase_=Phase::Credits;return true;}
+        if(phase_==Phase::SignalLost){rescue_leg_=0;rescue_elapsed_=rescue_link_=0.f;}
+        if(phase_==Phase::Won||phase_==Phase::Lost||phase_==Phase::ArmadaDefeated
+           ||phase_==Phase::SignalLost||phase_==Phase::Credits){
             phase_=Phase::Chart;return true;
         }
         return false;
@@ -673,6 +719,7 @@ public:
         if(!restored.restore(supportLevels,
             static_cast<uint8_t>((s.support_state>>8u)&3u),
             static_cast<uint8_t>((s.support_state>>10u)&3u)))return false;
+        rescue_leg_=0;rescue_elapsed_=rescue_link_=0.f;
         seed_=s.seed;node_=s.node;visited_=s.visited;cash_=s.cash;
         kills_=s.kills;bosses_=s.bosses;
         for(unsigned i=0;i<4;++i)levels_[i]=s.levels[i];
@@ -710,6 +757,14 @@ public:
         return restore(migrated);
     }
 private:
+    void steer(float dt,float sx,float sy,bool pointerGuided){
+        sx=std::isfinite(sx)?std::max(-1.f,std::min(1.f,sx)):0.f;
+        sy=std::isfinite(sy)?std::max(-1.f,std::min(1.f,sy)):0.f;
+        const float speed=flight_speed()*
+            (pointerGuided?kFlightPointerSpeedFactor:1.f);
+        px_=std::max(-1.9f,std::min(1.9f,px_+sx*dt*speed));
+        py_=std::max(-1.15f,std::min(kFlightTop,py_-sy*dt*speed));
+    }
     friend class CampaignSave;
     uint32_t next(){rng_=Mix(rng_+0x9E3779B9u);return rng_;}
     unsigned rollKind(int spawn)const{
@@ -726,6 +781,8 @@ private:
             hp_=0;failure_=FailureReason::HullDestroyed;phase_=Phase::Lost;
         }
     }
+    uint8_t rescue_leg_=0;
+    float rescue_elapsed_=0.f,rescue_link_=0.f;
     Phase phase_=Phase::Chart;
     FailureReason failure_=FailureReason::None;
     uint32_t seed_=1,node_=0,visited_=0,cash_=100,kills_=0,bosses_=0,rng_=1;

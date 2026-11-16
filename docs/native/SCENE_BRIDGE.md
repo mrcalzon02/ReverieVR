@@ -178,3 +178,7 @@ The optional append-only host/input tails do not alter existing native ABI
 offsets, and existing modules keep their original sound queue.
 Device speaker/headphone spatialization and controller feel remain
 unverified until a physical headset run.
+
+### Test Chamber project reopening
+
+The project indicator in the workshop also opens the next slot. The module saves the complete project before recording its slot in the one-byte private `vr-workshop-last-project.v1` file. Launch reopens the last successfully saved project. Installations without a valid slot hint start at slot zero. A damaged remembered project enters the same recovery search as a damaged default project. A failed hint write leaves the project pending for retry and keeps the ordinary exit guard active.

@@ -1,3 +1,19 @@
+## Crescent Harbor chart survey and practice shore, November 16, 2026
+
+From shore, hold Volume Up and touch the right edge of the pad to open the survey. The pad moves the chart north, south, east and west. Follow the distance cue to the gold marker, release the pad and press Select within 18 chart metres. Each of the three entries records the sampled USGS elevation and adds 25 game credits to the harbor-office purse, subject to its existing cap. The log survives an exit, a headset graphics restart and a return from the office. A held Select cannot file twice. The same opening chord returns to fishing.
+
+| Station in filing order | NOAA ENC land area ID | UTM zone 8N easting / northing (m) | USGS 3DEP sample (m) |
+| --- | --- | --- | --- |
+| Crescent Harbor shore | 658620 | 479960 / 6323120 | 1.683 |
+| East islet | 658786 | 480396 / 6322868 | 2.266 |
+| West islet | 658651 | 479172 / 6322636 | 6.694 |
+
+The first sample is the closest triangulated grid vertex to the [Alaska DEC Crescent Harbor locator](https://dec.alaska.gov/Applications/SPAR/PublicMVC/CSP/SiteReport/24914). The islet samples are the closest triangulated grid vertices to interior representative points of their [archived NOAA land polygons](../../data/sitka/geography/generated/noaa-enc-chart-land-v1/noaa-enc-harbour-land.geojson). East and west are in-game labels. The native route checks the three source tile checksums and requires the player's target tile to be displayed before filing. The data comes from a 4 m land grid with an unresolved vertical datum. The survey grants chart observations and game credits. Geographic berth, water depth, pedestrian access and fishing permissions still require separate source work.
+
+The fictional practice bay now has a walkable circuit around the water. Follow the onshore pad cue, look down when the specimen appears, aim the controller and press Select. Twelve locations include empty shells, a crab molt, living shore animals, sea glass and driftwood. Living animals remain visible after observation. Walking the circuit visits six practice checkpoints. Return to the office, browse to **Register finds/tokens** and confirm. Registration satisfies the equipment and hull discovery prerequisites. The six visits also count toward training prerequisites. Equipment, hulls and training still cost the posted credits. The journal tracks practice and geographic sites separately.
+
+The same host save slot accepts the installed V5 journal and appends the chart and practice records in V6 on a successful save. An unreadable save still fails closed. The native module tests exercise all 12 tracked-controller interactions, six visits, desk registration, two fishing-line purchases with earned credits, the three chart payments, a failed write and relaunch. The geographic test verifies each station against a vertex referenced by the archived terrain triangles.
+
 ## Android integration range controls and camera, November 16, 2026
 
 Sitka uses the shell's head-relative tracking coordinates. At rest the headset is 1.59 m above dry ground. The controller ray targets the harbor desk, beach finds and fishing water from the same reference point as the two eye views. Beside the test berth, Select + Volume Up boards the skiff. The same chord docks it when the player is back within berth range and moving slowly. The seated position follows the hull behind the helm, while head orientation and stereo eye separation stay under headset control. Onshore walking leaves the rudder centered.

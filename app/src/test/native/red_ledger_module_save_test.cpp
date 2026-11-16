@@ -1,18 +1,64 @@
 #include "red_ledger_module.cpp"
 #include "featured_module_test_host.h"
 using Checkpoint=reverie::redledger::save::Checkpoint;
-static void Tap(ModuleState* state,WorkTarget target){
+static void Tap(ModuleState* state,WorkTarget target,const char *plaque=nullptr){
     const TargetBounds* bounds=nullptr;for(const auto& b:kWorkTargets)if(b.target==target)bounds=&b;
     audit::Check(bounds!=nullptr,"target exists");
     auto input=audit::Pointer(bounds->center[0],bounds->center[1],bounds->center[2]);
-    Update(state,&input);audit::Check(state->hovered_target==target,"actual ray focuses intended target");
+    if(plaque){
+        bool found=false;
+        for(const auto &sign:signs::kSigns)if(sign.room==static_cast<int>(state->market.room())&&
+                                                std::strcmp(sign.text,plaque)==0){
+            input=audit::Pointer(sign.x,sign.y,sign.z);found=true;break;
+        }
+        audit::Check(found,"room has the visible target plaque");
+    }
+    Update(state,&input);
+    if(state->hovered_target!=target)std::cerr<<"Tried "<<WorkTargetName(target)<<" but focused "<<WorkTargetName(state->hovered_target)<<"\n";
+    audit::Check(state->hovered_target==target,"actual ray focuses intended target");
     input.primary_down=1u;Update(state,&input);input.primary_down=0u;Update(state,&input);
 }
 static void Click(ModuleState* state){auto in=audit::Input();Update(state,&in);in.primary_down=1;Update(state,&in);in.primary_down=0;Update(state,&in);}
 static void Service(ModuleState* state){Tap(state,WorkTarget::CupStack);Tap(state,WorkTarget::Tap);Tap(state,WorkTarget::Patron);}
+static void PlayOpeningShift(const ReverieNativeHostV1 &host){
+    auto *state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state&&OnGlContextCreated(state)==1,"fresh opening shift");
+    const int opening=state->simulation.cash_cents();
+    Tap(state,WorkTarget::DoorStock,"STOCK");
+    Tap(state,WorkTarget::StockBuy);
+    const int cost=opening-state->simulation.cash_cents();
+    audit::Check(cost>0,"purchase wholesale stock");
+    Tap(state,WorkTarget::ToBar,"TO BAR");
+    int sales=0;
+    for(int n=0;n<4;++n){
+        if(!state->simulation.clean_cups())Tap(state,WorkTarget::WashStation);
+        Service(state);sales+=state->simulation.pending_payment_cents();
+        Tap(state,WorkTarget::Payment);
+    }
+    Tap(state,WorkTarget::DoorLiving,"ROOM");
+    Tap(state,WorkTarget::Bed,"SLEEP");
+    const auto &book=state->simulation.last_ledger();
+    audit::Check(state->ledger_page==LedgerPage::Accounts&&state->simulation.day()==2&&book.day==1&&
+                book.patrons_served==4&&book.supply_spend_cents==cost&&book.sales_cents==sales&&
+                book.closing_cash_cents==opening+sales-cost-book.debt_service_cents,"reconcile day one");
+    const int closing=book.closing_cash_cents;
+    audit::Check(PrepareExit(state)==1,"save closed shift");ReleaseGlContext(state);Destroy(state);
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state&&OnGlContextCreated(state)==1&&state->market.room()==trade::Room::Living&&
+                state->simulation.cash_cents()==closing,"reopen in living quarters with exact balance");
+    Tap(state,WorkTarget::Ledger);
+    audit::Check(state->ledger_page==LedgerPage::Accounts&&state->simulation.last_ledger().sales_cents==sales,
+                "last closed accounts accessible after restart");
+    audit::Capture(RenderEye,state,"red-ledger-closed-shift",1.2f,-.12f);
+    Tap(state,WorkTarget::Ledger);audit::Check(state->ledger_page==LedgerPage::Factions,"read faction accounts");
+    Tap(state,WorkTarget::Ledger);audit::Check(state->ledger_page==LedgerPage::Renovations,"return to renovations");
+    std::printf("PASS_RED_SHIFT open=%d supplies=%d sales=%d close=%d served=4\n",opening,cost,sales,closing);
+    ReleaseGlContext(state);Destroy(state);audit::saves.clear();
+}
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     audit::Check(argc==2,"capture directory argument");audit::output=argv[1];audit::GL context;auto host=audit::Host();
+    PlayOpeningShift(host);
     auto* state=static_cast<ModuleState*>(Create(&host));audit::Check(state&&!state->load_blocked,"fresh game");
     audit::Check(OnGlContextCreated(state)==1,"Red Ledger real GL");
     audit::Capture(RenderEye,state,"red-ledger-after-bar",1.2f,-.12f);

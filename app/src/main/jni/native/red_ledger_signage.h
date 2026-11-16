@@ -36,7 +36,7 @@ static const Sign kSigns[] = {
  {"TO STOCK",2.47f,0.72f,-2.81f,0.021f,2},
  {"LIVING QUARTERS",0.0f,1.30f,-2.88f,0.026f,2},
  {"LEDGER",0.85f,-0.20f,-0.64f,0.021f,2},
- {"SLEEP",1.35f,-0.62f,-1.07f,0.026f,2}
+ {"SLEEP",1.95f,-0.62f,-1.07f,0.026f,2}
 };
 inline void Quad(float *buffer, size_t &vertices,
                  float left,float bottom,float right,float top,float z,

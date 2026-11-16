@@ -62,6 +62,7 @@ struct ModuleState {
     std::vector<float> room_avatar_prefix;
     bool workshop_hud_dirty = true;
     bool save_failed=false,require_release=false;
+    size_t last_saved_slot=0;
     float save_retry=2.f;
 
     std::vector<uint8_t> rgba;
@@ -71,6 +72,13 @@ struct ModuleState {
 };
 
 
+constexpr char kLastProject[]="vr-workshop-last-project.v1";
+size_t ReadLastProject(const ReverieNativeHostV1* host){
+    uint8_t number=0;uint32_t size=0;
+    if(host->read_save(kLastProject,&number,sizeof(number),&size)==REVERIE_NATIVE_SAVE_OK
+        &&size==1&&number<reverie::authoring::kVrProjectSlots)return number;
+    return 0;
+}
 int ReadWorkshop(void* user,size_t slot,std::string& output){
     auto* state=static_cast<ModuleState*>(user);
     if(slot>=reverie::authoring::kVrProjectSlots)return -1;
@@ -98,8 +106,17 @@ bool WriteWorkshop(void* user,size_t slot,const std::string& data){
     if(slot>=reverie::authoring::kVrProjectSlots||
        data.size()>reverie::authoring::kVrSlotMaxBytes)return false;
     const std::string filename="vr-workshop-project-"+std::to_string(slot)+".rvproj";
-    return state->host->write_save(filename.c_str(),data.data(),
-        static_cast<uint32_t>(data.size()))==REVERIE_NATIVE_SAVE_OK;
+    if(state->host->write_save(filename.c_str(),data.data(),
+        static_cast<uint32_t>(data.size()))!=REVERIE_NATIVE_SAVE_OK)return false;
+    if(slot!=state->last_saved_slot){
+        // Publish the slot only after its complete project is on disk.
+        const auto number=static_cast<uint8_t>(slot);
+        if(state->host->write_save(kLastProject,&number,sizeof(number))!=REVERIE_NATIVE_SAVE_OK){
+            state->workshop.dirty=true;return false;
+        }
+        state->last_saved_slot=slot;
+    }
+    return true;
 }
 reverie::authoring::VrStore WorkshopStore(ModuleState* state){
     return {state,ReadWorkshop,WriteWorkshop};
@@ -186,8 +203,10 @@ void UpdateWorkshopHud(ModuleState* state){
             active?1.f:.77f,active?.79f:.9f,active?.37f:1.f,-2.62f);
     }
     const std::string project="PROJECT "+std::to_string(state->workshop.slot+1)+
-        " / "+std::to_string(reverie::authoring::kVrProjectSlots);
-    state->font.Fit(project.c_str(),.92f,1.15f,2.10f,.039f,.82f,.94f,.99f,-2.62f);
+        " / "+std::to_string(reverie::authoring::kVrProjectSlots)+"  /  NEXT";
+    state->font.Fit(project.c_str(),reverie::authoring::kVrProjectButtonX,
+        reverie::authoring::kVrProjectButtonY,reverie::authoring::kVrProjectButtonWidth,
+        .039f,.82f,.94f,.99f,-2.62f);
     const std::string object=state->workshop.scene.pieces.empty()?
         "NO OBJECT SELECTED" : ("SELECTED: "+
         state->workshop.scene.pieces[state->workshop.selected].id);
@@ -772,7 +791,8 @@ void *Create(
         }
     }
 
-    if(!state->workshop.Open(seed,WorkshopStore(state))){
+    state->last_saved_slot=ReadLastProject(host);
+    if(!state->workshop.Open(seed,WorkshopStore(state),state->last_saved_slot)){
         Log(state,REVERIE_NATIVE_LOG_ERROR,
             "VR workshop project save unreadable or exceeds safe limits.");
         delete state;return nullptr;

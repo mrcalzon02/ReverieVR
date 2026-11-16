@@ -234,6 +234,12 @@ public:
         return true;
     }
 
+    bool OnDisplayedTile(unsigned row,unsigned column)const{
+        if(row>=rows_||column>=cols_)return false;
+        const int index=int(row*cols_+column);
+        return std::find(committed_.begin(),committed_.end(),index)!=committed_.end();
+    }
+
     bool PendingGpuSwap() const{
         if(target_[0]<0||target_==committed_)return false;
         for(int index:target_)if(!Find(index))return false;

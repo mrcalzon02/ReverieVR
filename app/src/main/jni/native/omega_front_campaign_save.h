@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(9);w.U16(0); // v9 tracks liberated outposts and defensive battles
+        w.U16(10);w.U16(0); // v10 adds the Pilgrim Road party and its two deliveries
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -76,6 +76,9 @@ public:
         w.U16(f.liberated_mask_);
         w.U8(f.frontline_defense_?1:0);
         w.U8(f.last_frontline_defense_?1:0);
+        w.U8(static_cast<uint8_t>(f.relief_status_));
+        w.U8(f.relief_site_);
+        w.U8(f.relief_deliveries_);
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -92,7 +95,7 @@ public:
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
         const uint16_t schema=r.U16();
-        if((schema<1 || schema>9)||r.U16()!=0)return false;
+        if((schema<1 || schema>10)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
@@ -264,6 +267,15 @@ public:
                 for(int op=f.operation_;op<kHearthfallOperations;++op)
                     if(Frontier::TargetForOperation(op)==target)return false;
             }
+        }
+        if(schema>=10){
+            const unsigned status=r.U8(),site=r.U8(),delivered=r.U8();
+            if(status>2 || site>=kReliefSites || delivered>3 ||
+               (status==0 && (site!=0 || delivered!=0)) ||
+               (status==2 && (site!=0 || delivered!=3)))return false;
+            f.relief_status_=static_cast<Frontier::ReliefStatus>(status);
+            f.relief_site_=static_cast<uint8_t>(site);
+            f.relief_deliveries_=static_cast<uint8_t>(delivered);
         }
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;

@@ -20,6 +20,9 @@ namespace reverie { namespace classics { namespace save {
 constexpr uint32_t kVersion=1, kPageBytes=REVERIE_NATIVE_SAVE_MAX_BYTES;
 constexpr uint32_t kPages=64, kMaxBytes=kPageBytes*kPages;
 constexpr uint32_t kHeaderBytes=32;
+// Only Chutes & Ladders has a newer payload. The page store and manifest
+// still have the same format for all eight titles.
+constexpr uint32_t kChutesPayloadVersion=2;
 constexpr const char *kManifest="classic-match.v1";
 using BoardState=reverie::boardgames::State;
 struct Snapshot {
@@ -76,6 +79,11 @@ template<class W> inline void ArcadeCore(W &w,const State &s){
     w.Int(s.length);w.Int(s.heading);w.Int(s.desired);w.Int(s.food);
     for(int c:s.snake)w.Int(c);
     w.Int(s.position);w.Int(s.rival);w.Int(s.die);
+}
+template<class W> inline void ChutesRolls(W &w,const State &s){
+    for(const auto &roll:{s.playerRoll,s.cpuRoll}){
+        w.Byte(static_cast<uint8_t>(roll.from));w.Byte(static_cast<uint8_t>(roll.die));
+    }
 }
 inline void ReadArcade(Reader &r,int kind,State &s){
     s.game=static_cast<Game>(kind);s.seed=r.U32();s.score=r.Int();s.opponent=r.Int();
@@ -148,7 +156,16 @@ inline bool ValidateArcade(int kind,const State &s){
        !Range(s.position,0,100)||!Range(s.rival,0,100)||!Range(s.die,0,6))return false;
     for(int c:s.snake)if(!Range(c,-1,143))return false;
     if(kind==0)return s.score<=11&&s.finished==(s.score==11||s.opponent==11);
-    if(kind==2)return s.finished==(s.position==100||s.rival==100);
+    if(kind==2){
+        const auto validRoll=[](const State::Roll &roll,int tile){
+            // A migrated v1 match starts without either player's roll history.
+            if(roll.die==0)return roll.from==0;
+            return Range(roll.from,0,99)&&Range(roll.die,1,6)&&
+                   State::AdvanceChutes(roll.from,roll.die)==tile;
+        };
+        return s.finished==(s.position==100||s.rival==100)&&
+               validRoll(s.playerRoll,s.position)&&validRoll(s.cpuRoll,s.rival);
+    }
     if(s.score!=s.length-3||(s.desired+2)%4==s.heading)return false;
     std::array<bool,144> seen{};
     for(int i=0;i<s.length;++i){
@@ -161,7 +178,7 @@ inline bool ValidateBreakout(const Breakout &s){
     int remaining=0,earned=0;
     for(int i=0;i<Breakout::kBricks;++i){if(s.bricks[i]>1)return false;
         remaining+=s.bricks[i];if(!s.bricks[i])earned+=Breakout::BrickValue(i/14);}
-    if(!Real(s.paddle,-.771f,.771f)||!Real(s.ballX,-.941f,.941f)||
+    if(!Real(s.paddle,-s.PaddleLimit()-.001f,s.PaddleLimit()+.001f)||!Real(s.ballX,-.941f,.941f)||
        !Real(s.ballY,-1.f,.921f)||!Real(s.velocityX,-1.151f,1.151f)||
        !Real(s.velocityY,-1.151f,1.151f)||!Real(s.accumulator,0.f,.011f)||
        !Range(s.lives,0,3)||!Range(s.wall,1,2)||!Range(s.paddleHits,0,100000000)||
@@ -282,7 +299,10 @@ inline bool Encode(int kind,const State &game,const Breakout &breakout,
     if(kind<3?!ValidateArcade(kind,game):kind==6?!ValidateBreakout(breakout):!ValidateBoard(kind,board))return false;
     try{
         Writer body;
-        if(kind<3)ArcadeCore(body,game);
+        if(kind<3){
+            ArcadeCore(body,game);
+            if(kind==2)ChutesRolls(body,game);
+        }
         else if(kind==6)BreakoutCore(body,breakout);
         else{
             BoardCore(body,board);
@@ -304,7 +324,7 @@ inline bool Encode(int kind,const State &game,const Breakout &breakout,
         }
         if(!body.ok)return false;
         Writer header;for(char c:std::string("RVCLASS1"))header.Byte(static_cast<uint8_t>(c));
-        header.U32(kVersion);header.U32(static_cast<uint32_t>(kind));
+        header.U32(kind==2?kChutesPayloadVersion:kVersion);header.U32(static_cast<uint32_t>(kind));
         header.U32(static_cast<uint32_t>(body.bytes.size()));header.U32(0);
         header.U64(Hash(body.bytes.data(),body.bytes.size()));
         header.bytes.insert(header.bytes.end(),body.bytes.begin(),body.bytes.end());
@@ -315,12 +335,20 @@ inline bool Decode(int kind,const std::vector<uint8_t> &bytes,Snapshot &output){
     if(kind<0||kind>7||bytes.size()<kHeaderBytes||bytes.size()>kMaxBytes)return false;
     Reader header{bytes.data(),bytes.size()};
     for(char c:std::string("RVCLASS1"))if(header.Byte()!=static_cast<uint8_t>(c))return false;
-    if(header.U32()!=kVersion||header.U32()!=static_cast<uint32_t>(kind)||
+    const uint32_t version=header.U32();
+    if((version!=kVersion&&(kind!=2||version!=kChutesPayloadVersion))||
+       header.U32()!=static_cast<uint32_t>(kind)||
        header.U32()!=bytes.size()-kHeaderBytes||header.U32()!=0)return false;
     if(header.U64()!=Hash(bytes.data()+kHeaderBytes,bytes.size()-kHeaderBytes))return false;
     try{
         Snapshot candidate;Reader r{bytes.data()+kHeaderBytes,bytes.size()-kHeaderBytes};
-        if(kind<3)ReadArcade(r,kind,candidate.game);
+        if(kind<3){
+            ReadArcade(r,kind,candidate.game);
+            if(kind==2&&version==kChutesPayloadVersion){
+                candidate.game.playerRoll={r.Byte(),r.Byte()};
+                candidate.game.cpuRoll={r.Byte(),r.Byte()};
+            }
+        }
         else if(kind==6)ReadBreakout(r,candidate.breakout);
         else{
             ReadBoard(r,kind,candidate.board);
@@ -345,7 +373,10 @@ inline bool Decode(int kind,const std::vector<uint8_t> &bytes,Snapshot &output){
 // Only checkpoints encode/sort the complete snapshot, never an eye draw.
 inline uint64_t Fingerprint(int kind,const State &game,const Breakout &breakout,const BoardState &board){
     Fingerprinter f;f.Int(kind);
-    if(kind<3)ArcadeCore(f,game);
+    if(kind<3){
+        ArcadeCore(f,game);
+        if(kind==2)ChutesRolls(f,game);
+    }
     else if(kind==6)BreakoutCore(f,breakout);
     else{BoardCore(f,board);f.U32(static_cast<uint32_t>(board.goHistory.size()));
         f.U32(static_cast<uint32_t>(board.chessHistory.size()));f.U32(static_cast<uint32_t>(board.chessSanHistory.size()));

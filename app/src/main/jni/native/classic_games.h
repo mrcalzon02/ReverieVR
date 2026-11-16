@@ -28,7 +28,13 @@ struct State {
     float previous_paddle=0.f; // last simulated frame: includes headset pointer motion
     int length=3, heading=1, desired=1, food=0;
     std::array<int,kCells> snake{};
+    struct Roll {
+        int from=0, die=0;
+        bool Overshot() const { return from+die>100; }
+        int Landing() const { return Overshot()?from:from+die; }
+    };
     int position=0, rival=0, die=0;
+    Roll playerRoll{}, cpuRoll{};
     uint32_t Random() {
         seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;
         return seed;
@@ -59,7 +65,7 @@ struct State {
         length=3;heading=desired=1;
         snake.fill(-1);
         snake[0]=6*kGrid+5;snake[1]=6*kGrid+4;snake[2]=6*kGrid+3;
-        position=rival=die=0;
+        position=rival=die=0;playerRoll={};cpuRoll={};
         if(target==Game::Snake)NewFood();
     }
     void Direction(int target) {
@@ -71,8 +77,7 @@ struct State {
         if(game==Game::Pong){moving=true;return;}
         if(game==Game::Snake){moving=true;return;}
         if(!player_turn)return;
-        die=static_cast<int>(Random()%6u)+1;
-        position=AdvanceChutes(position,die);
+        RollToken(position,playerRoll);
         if(position==100)finished=true;
         player_turn=false;clock=0;
     }
@@ -86,6 +91,11 @@ struct State {
         if(tile<0||tile>=100||roll<1||roll>6||tile+roll>100)
             return tile;
         return Jump(tile+roll);
+    }
+    void RollToken(int &tile,Roll &roll) {
+        die=static_cast<int>(Random()%6u)+1;
+        roll={tile,die};
+        tile=AdvanceChutes(tile,die);
     }
     void Step(float seconds,float axis) {
         if(!std::isfinite(seconds)||seconds<=0)return;
@@ -164,8 +174,7 @@ struct State {
         } else if(!finished&&!player_turn) {
             clock+=dt;
             if(clock>=.72f) {
-                die=static_cast<int>(Random()%6u)+1;
-                rival=AdvanceChutes(rival,die);
+                RollToken(rival,cpuRoll);
                 if(rival==100)finished=true;
                 player_turn=true;clock=0;
             }

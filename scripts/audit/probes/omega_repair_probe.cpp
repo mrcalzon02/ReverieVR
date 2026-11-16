@@ -32,9 +32,88 @@ int32_t FaultRead(const char* slot,void* data,uint32_t capacity,uint32_t* size){
     return read_error?REVERIE_NATIVE_SAVE_ERROR:audit::Read(slot,data,capacity,size);
 }
 }
+static void Pad(State *s,float x,float y,bool click=false){
+    auto in=audit::Input();in.move_x=x;in.move_y=y;in.primary_down=click;
+    Update(s,&in);
+    auto release=audit::Input();Update(s,&release);
+}
+static void ReliefRoute(){
+    using Status=game::Frontier::ReliefStatus;
+    audit::GL gl;
+    auto host=audit::Host();
+    audit::saves.clear();
+    auto* s=static_cast<State*>(Create(&host));
+    audit::Check(s && GlStart(s)==1,"relief GL start");
+    Pad(s,0,0,true);Pad(s,0,0,true); // Title > campaign > begin
+    Pad(s,1,0);Pad(s,0,0,true);
+    audit::Check(s->relief_view,"pad opens Pilgrim Road");
+    const auto unopened=audit::writes;
+    Pad(s,0,0,true);
+    audit::Check(s->session.frontier.relief_status()==Status::AwaitingDispatch &&
+        audit::writes==unopened,"viewing remote manifest never ships supplies");
+    auto back=audit::Input();back.secondary_down=true;Update(s,&back);
+    back.secondary_down=false;Update(s,&back);
+    Pad(s,-1,0);Pad(s,0,0,true); // Hearthfall
+    Pad(s,1,0);Pad(s,0,0,true); // travel east from Hearthwell to Charter Gate
+    audit::Check(s->session.frontier.location()==7,"pad march to S008");
+    back.secondary_down=true;
+    for(int i=0;i<15;++i)Update(s,&back);
+    back.secondary_down=false;Update(s,&back);
+    audit::Check(s->menu.screen==game::MenuScreen::Pause,"long minus opens pause");
+    Pad(s,0,1);Pad(s,0,0,true); // wrap to World Map
+    audit::Check(s->continent_view && s->menu.screen==game::MenuScreen::Playing,"pad returns to continent");
+    Tap(s,.48f,-1.012f);
+    audit::Check(s->relief_view,"tracked pointer enters route");
+    const int rations=s->session.frontier.rations(),parts=s->session.frontier.salvage();
+    Tap(s,RoadX(0),RoadY(0)); // equip the separate detachment
+    audit::Check(s->session.frontier.relief_status()==Status::OnRoad &&
+        s->session.frontier.rations()==rations-4 && s->session.frontier.salvage()==parts-2,
+        "dispatch debits actual campaign inventory once");
+    auto hit=[&](int i){Tap(s,RoadX(i),RoadY(i));};
+    hit(2);
+    audit::Check(s->session.frontier.relief_site()==0,"no teleport to clinic");
+    hit(1);hit(2);hit(2);hit(2);
+    audit::Check(s->session.frontier.clinic_supplied() && !s->session.frontier.camp_supplied(),
+        "clinic delivered on location, camp pending");
+    const auto checksum=s->session.Checksum();
+    const auto frame=audit::Capture(Render,s,"omega-pilgrim-clinic",1.65f);
+    audit::Check(PrepareExit(s)==1,"exit after first delivery");
+    GlEnd(s);Destroy(s);
+    s=static_cast<State*>(Create(&host));
+    audit::Check(s && GlStart(s)==1 && s->session.Checksum()==checksum,"actual host reload mid-route");
+    Pad(s,0,0,true);Pad(s,0,0,true);
+    Tap(s,.48f,-1.012f);
+    audit::Check(s->road_focus==2 && frame==audit::Capture(Render,s,"omega-pilgrim-restored",1.65f),
+        "restored clinic, cargo and ledger reproduce stereo image");
+    // A stationary head ray stays on the clinic. Pad selection still moves the party.
+    auto in=audit::Pointer(RoadX(2),RoadY(2),kBoardZ);
+    Update(s,&in);in.move_x=-1;Update(s,&in);in.move_x=0;Update(s,&in);
+    in.primary_down=1;Update(s,&in);in.primary_down=0;Update(s,&in);
+    audit::Check(s->session.frontier.relief_site()==1,"pad selects Ford under idle clinic ray");
+    hit(3);hit(3);
+    audit::Check(s->session.frontier.camp_supplied(),"camp unload");
+    hit(1);hit(0);
+    const int trust=s->session.frontier.trust(),day=s->session.frontier.day();
+    hit(0);hit(0);
+    audit::Check(s->session.frontier.relief_status()==Status::Filed &&
+        s->session.frontier.relation(16)==10 && s->session.frontier.trust()==trust+6 &&
+        s->session.frontier.location()==7 && day==8 && s->session.frontier.day()==day,
+        "return and file once, six marches advance six strategic days");
+    audit::Capture(Render,s,"omega-pilgrim-filed",1.65f);
+    const auto done=s->session.Checksum();
+    GlEnd(s);Destroy(s);
+    s=static_cast<State*>(Create(&host));
+    audit::Check(s && s->session.Checksum()==done,"completed manifest persists");
+    Destroy(s);
+    std::puts("PASS actual Pilgrim Road dispatch, partial delivery, restore, return and one-time reward");
+}
+
 int main(int argc,char** argv){
     const int prior=OmegaPositiveLifecycle(argc,argv);
     if(prior)return prior;
+    const auto original_saves=audit::saves;
+    ReliefRoute();
+    audit::saves=original_saves;
     audit::GL context;
     auto host=audit::Host();host.read_save=FaultRead;
     auto* state=static_cast<State*>(Create(&host));

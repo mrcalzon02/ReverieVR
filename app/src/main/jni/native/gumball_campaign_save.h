@@ -19,18 +19,20 @@ public:
     static bool Encode(const Simulation& sim,const ShipAssembly& ship,Bytes* out){
         if(!out||!Valid(sim,ship))return false;
         Bytes bytes{};
-        std::memcpy(bytes.data(),"GUMFLY04",8);bytes[8]=4;
+        std::memcpy(bytes.data(),"GUMFLY05",8);bytes[8]=5;
         Writer archive{bytes};
         Simulation copy=sim;Ship3DSave hull=ship.snapshot();
         Fields(archive,copy,hull);
+        RescueFields(archive,copy);
         if(!archive.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
         *out=bytes;return true;
     }
     static bool Decode(Simulation* sim,ShipAssembly* ship,const uint8_t* bytes,size_t size){
-        if(!sim||!ship||!bytes||size!=kBytes||std::memcmp(bytes,"GUMFLY04",8)!=0
-            ||bytes[8]!=4||bytes[9]||bytes[10]||bytes[11])return false;
+        if(!sim||!ship||!bytes||size!=kBytes||bytes[9]||bytes[10]||bytes[11])return false;
+        const bool legacy=bytes[8]==4&&std::memcmp(bytes,"GUMFLY04",8)==0;
+        if(!legacy&&(bytes[8]!=5||std::memcmp(bytes,"GUMFLY05",8)!=0))return false;
         uint64_t hash=Hash(bytes,kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){
             if(bytes[i]!=static_cast<uint8_t>(hash))return false;
@@ -38,6 +40,9 @@ public:
         }
         Reader archive{bytes};Simulation candidate;Ship3DSave hull{};
         Fields(archive,candidate,hull);
+        if(legacy){
+            if(candidate.phase_>Phase::ArmadaDefeated)return false;
+        }else RescueFields(archive,candidate);
         if(!archive.ok)return false;
         // Reserved bytes must stay zero, not an ignored alternate state.
         for(size_t i=archive.at;i<kBytes-8;++i)if(bytes[i])return false;
@@ -118,6 +123,9 @@ private:
         for(auto& cell:ship.cells)a.U8(cell);
         for(auto& stock:ship.stock)a.U8(stock);
     }
+    template<class A>static void RescueFields(A& a,Simulation& s){
+        a.U8(s.rescue_leg_);a.F(s.rescue_elapsed_);a.F(s.rescue_link_);
+    }
     static bool Range(int value,int low,int high){return value>=low&&value<=high;}
     static bool Range(float value,float low,float high){return std::isfinite(value)&&value>=low&&value<=high;}
     static bool SameProfile(const ShipProfile& a,const ShipProfile& b){
@@ -126,9 +134,21 @@ private:
             &&a.demand==b.demand&&a.mounts==b.mounts&&a.muzzle_x==b.muzzle_x&&a.muzzle_y==b.muzzle_y;
     }
     static bool Valid(const Simulation& s,const ShipAssembly& ship){
-        if(static_cast<unsigned>(s.phase_)>4||static_cast<unsigned>(s.failure_)>5
+        if(s.phase_>Phase::Credits||static_cast<unsigned>(s.failure_)>5
             ||!s.seed_||s.node_>=kLaneCount||s.visited_>10000000u||s.cash_>100000000u
             ||s.kills_>100000000u||s.bosses_>15u)return false;
+        const bool rescue=s.phase_==Phase::Rescue;
+        const bool failed=s.phase_==Phase::SignalLost;
+        const bool ending=s.phase_==Phase::Credits||s.phase_==Phase::Homecoming;
+        if(s.rescue_leg_>3||!Range(s.rescue_elapsed_,0.f,12.f)||!Range(s.rescue_link_,0.f,1.f)
+           ||((rescue||failed||ending||s.rescue_leg_!=0)&&s.bosses_!=15u)
+           ||(ending&&!s.king_rescued())||((rescue||failed)&&s.king_rescued())
+           ||(s.phase_==Phase::ArmadaDefeated&&s.king_rescued()))return false;
+        if(failed&&(s.rescue_elapsed_!=12.f||s.rescue_link_!=0.f))return false;
+        if(rescue&&(s.rescue_elapsed_>=12.f||s.rescue_link_>=1.f
+                ||s.rescue_link_>s.rescue_elapsed_))return false;
+        if(!rescue&&!failed&&(s.rescue_elapsed_!=0.f||s.rescue_link_!=0.f
+                ||(s.rescue_leg_!=0&&!s.king_rescued())))return false;
         for(auto level:s.levels_)if(level>12u)return false;
         if((s.owned_weapons_&~7u)||(s.owned_weapons_&1u)==0u
             ||static_cast<unsigned>(s.weapon_)>2u||!s.owns_weapon(s.weapon_))return false;
@@ -143,7 +163,7 @@ private:
             if(s.mission_.permitted_escapes!=expected.permitted_escapes
                 ||s.mission_.required_salvage!=expected.required_salvage
                 ||s.mission_.time_limit!=expected.time_limit||s.mission_.bonus!=expected.bonus)return false;
-        }else if(s.phase_!=Phase::Chart)return false;
+        }else if(s.phase_!=Phase::Chart&&!rescue&&!failed&&!ending)return false;
         const auto& p=s.ship_profile_;
         if(!Range(p.hull,0,5000)||!Range(p.shield,0,3000)||!Range(p.speed,-.21f,10.f)
             ||!Range(p.pickup_radius,.12f,15.f)||!Range(p.mass,0,1000)

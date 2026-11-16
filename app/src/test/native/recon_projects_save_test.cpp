@@ -87,6 +87,17 @@ int main(){
         ForwardState patrol;patrol.choice=static_cast<uint8_t>(route);patrol=Restore(patrol);
         assert(patrol.simulation.BeginPatrol(static_cast<forward::Route>(route)));
         assert(!patrol.simulation.RefitAtBase());patrol.choice=0;patrol=Restore(patrol);
+        if(patrol.simulation.OnRidgeTrail()){
+            // The v2 travel checkpoint already offered immediate contact.
+            auto old=Bytes(patrol);old[8]=2;Rehash(old);
+            ForwardState migrated;assert(Checkpoint::Decode(&migrated,old.data(),old.size()));
+            assert(migrated.simulation.trail_position()==8 && !migrated.simulation.trail_notes() &&
+                   migrated.simulation.ReachContact());
+            for(int i=0;i<forward::Simulation::kRidgeExit;++i){
+                assert(patrol.simulation.WalkRidge(1));
+                patrol=Restore(patrol);
+            }
+        }
         assert(patrol.simulation.ReachContact());patrol.choice=static_cast<uint8_t>(decision);
         patrol=Restore(patrol);forward::ContactEvidence evidence;
         assert(patrol.simulation.InspectContact(&evidence));
@@ -99,7 +110,7 @@ int main(){
         assert(patrol.simulation.LastRouteIntel(taken)==debrief.information_value);
         assert(patrol.simulation.LastRouteIntel(other)==0);
         auto legacy=Bytes(patrol);legacy[8]=1;
-        std::fill(legacy.begin()+30,legacy.begin()+38,0);Rehash(legacy);
+        std::fill(legacy.begin()+30,legacy.begin()+41,0);Rehash(legacy);
         ForwardState migratedPatrol;
         assert(Checkpoint::Decode(&migratedPatrol,legacy.data(),legacy.size()));
         assert(Bytes(migratedPatrol)==Bytes(patrol));
@@ -113,7 +124,10 @@ int main(){
         assert(patrol.simulation.vehicle_condition()==100&&patrol.simulation.fuel_remaining()==20);
         patrol=Restore(patrol);
         assert(patrol.simulation.LastRouteIntel(taken)==debrief.information_value);
-        assert(patrol.simulation.BeginPatrol(other) && patrol.simulation.ReachContact());
+        assert(patrol.simulation.BeginPatrol(other));
+        if(patrol.simulation.OnRidgeTrail())
+            for(int i=0;i<forward::Simulation::kRidgeExit;++i)assert(patrol.simulation.WalkRidge(1));
+        assert(patrol.simulation.ReachContact());
         assert(patrol.simulation.ResolveContact(forward::Decision::Avoid) && patrol.simulation.ReturnToBase());
         forward::Debrief new_debrief;
         assert(patrol.simulation.FileDebrief(&new_debrief));
@@ -130,6 +144,11 @@ int main(){
     assert(empty.simulation.vehicle_condition()==50&&empty.simulation.fuel_remaining()==0);
     assert(!empty.simulation.BeginPatrol(forward::Route::MainRoad)&&!empty.simulation.BeginPatrol(forward::Route::RidgeBypass));
     empty=Restore(empty);const auto forwardBytes=Bytes(empty);
+    ForwardState badTrail;
+    auto badOffset=forwardBytes;badOffset[38]=9;Rehash(badOffset);
+    assert(!Checkpoint::Decode(&badTrail,badOffset.data(),badOffset.size()));
+    auto badNotes=forwardBytes;badNotes[40]=1;Rehash(badNotes);
+    assert(!Checkpoint::Decode(&badTrail,badNotes.data(),badNotes.size()));
     LanternState untouchedLantern;ForwardState untouchedForward;
     const auto originalLantern=Bytes(untouchedLantern),originalForward=Bytes(untouchedForward);
     for(size_t i=0;i<Checkpoint::kBytes;++i){

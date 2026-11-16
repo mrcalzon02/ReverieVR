@@ -76,6 +76,40 @@ public:
     int location() const {return location_;}
     int day() const {return day_;}
     int operation() const {return operation_;}
+    enum class ReliefStatus : uint8_t { AwaitingDispatch, OnRoad, Filed };
+    ReliefStatus relief_status() const {return relief_status_;}
+    int relief_site() const {return relief_site_;}
+    bool clinic_supplied() const {return (relief_deliveries_&1)!=0;}
+    bool camp_supplied() const {return (relief_deliveries_&2)!=0;}
+
+    // A small detachment carries its own cargo; the main party stays on its
+    // normal campaign map. Each march spends one strategic day.
+    bool ReliefOrder(int site){
+        if(site<0 || site>=kReliefSites || deployed_ ||
+           relief_status_==ReliefStatus::Filed)return false;
+        if(relief_status_==ReliefStatus::AwaitingDispatch){
+            if(site!=0 || location_!=7 || rations_<4 || salvage_<2)return false;
+            rations_-=4;
+            salvage_-=2;
+            relief_status_=ReliefStatus::OnRoad;
+            return true;
+        }
+        if(site!=relief_site_){
+            const ReliefSite &from=kReliefRoad[relief_site_], &to=kReliefRoad[site];
+            if(std::abs(from.x-to.x)+std::abs(from.y-to.y)!=1)return false;
+            relief_site_=static_cast<uint8_t>(site);
+            AdvanceDay();
+            return true;
+        }
+        if(site==2 && !clinic_supplied())relief_deliveries_|=1;
+        else if(site==3 && !camp_supplied())relief_deliveries_|=2;
+        else if(site==0 && relief_deliveries_==3){
+            relief_status_=ReliefStatus::Filed;
+            trust_=std::min(100,trust_+6);
+            AdjustRelation(16,10);
+        }else return false;
+        return true;
+    }
     int population() const {return population_;}
     int guards() const {return guards_;}
     int rations() const {return rations_;}
@@ -880,6 +914,7 @@ public:
         uint64_t h=UINT64_C(14695981039346656037);
         auto add=[&h](uint64_t v){for(int i=0;i<8;++i){h^=(v>>(i*8))&255u;h*=UINT64_C(1099511628211);}};
         add(seed_);add(location_);add(day_);add(operation_);add(guards_);
+        add(static_cast<unsigned>(relief_status_));add(relief_site_);add(relief_deliveries_);
         add(population_);add(rations_);add(salvage_);add(trust_);
         add(pump_health_);add(bridge_);add(morphology_epoch_);add(deployed_);
         add(convoy_source_+1);add(last_convoy_);add(last_convoy_source_+1);
@@ -907,6 +942,8 @@ public:
         return h;
     }
 private:
+    ReliefStatus relief_status_=ReliefStatus::AwaitingDispatch;
+    uint8_t relief_site_=0,relief_deliveries_=0;
     friend class CampaignSave;
     void AdjustRelation(int faction,int delta){
         if(faction<1||faction>kMajorFactions)return;
