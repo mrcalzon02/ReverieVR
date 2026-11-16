@@ -574,7 +574,7 @@ public:
                     // Area hazards keep their documented mission-plane rules.
                     if(std::fabs(s.x-px_)<(s.zone?.23f:
                        (s.mine?.21f:.20f))
-                       &&std::fabs(s.y-py_)<(s.mine?.19f:.19f)){
+                       &&std::fabs(s.y-py_)<((s.mine||s.bomb)?.19f:.16f)){
                         s.active=false;
                         damage(s.damage+static_cast<int>(destination_.hazard));
                     }
