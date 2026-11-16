@@ -19,3 +19,9 @@ The colored areas are interpolated elevation values — **not** confirmed shorel
 ![Actual source-backed Sitka native GLES2 two-eye coastline inspection](sitka-noaa-usgs-gles2-stereo.png)
 
 **Rendering proof:** Genuine C++ native Sitka renderer on Mesa EGL/GLES2, two different headset eyes. Real source-backed NOAA ENC chart-land geometry and USGS 3DEP elevations. It is a geometry-inspection mode inside the existing ReverieVR native game, not a separate APK, true camera footage, or verified marine sounding/2023 shoreline survey. Vertical datum unresolved; NOT FOR NAVIGATION. The original fishing/boat test range is preserved.
+
+## Real NOAA/USGS native stereo render
+
+![Actual source-backed Sitka native GLES2 two-eye coastline inspection](sitka-noaa-usgs-gles2-stereo.png)
+
+**Rendering proof:** Genuine C++ native Sitka renderer on Mesa EGL/GLES2, two different headset eyes. Real source-backed NOAA ENC chart-land geometry and USGS 3DEP elevations. It is a geometry-inspection mode inside the existing ReverieVR native game, not a separate APK, true camera footage, or verified marine sounding/2023 shoreline survey. Vertical datum unresolved; NOT FOR NAVIGATION. The original fishing/boat test range is preserved.
