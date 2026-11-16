@@ -8,3 +8,5 @@ Generated project artwork, screenshots, turntables and other visual review mater
 - [Breakwater visible trajectory and crisp horizon — actual native renderer](breakwater/coastal-rebuild/2026-11-06-clarity/README.md) — `breakwater/coastal-rebuild/2026-11-06-clarity`
 
 - [Sitka real USGS/NOAA native terrain GLES2 preview](sitka/geography/2026-11-13/README.md) — \`sitka/geography/2026-11-13\`
+
+- [Native games playability audit and 17 gameplay captures](native-games/2026-11-16/README.md)

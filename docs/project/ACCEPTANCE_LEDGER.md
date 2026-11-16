@@ -1,5 +1,7 @@
 ## 2026-11-08 — Native-game repairs, source and local execution
 
+Signed [Phone Test #2026](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2026-1) ships game commit `6e07e2791f44f92c1cd0b8388b6863e760497c03` for both ARM ABIs. Android 10 launched and rendered all 17 games. The installed hub passed all 14 instrumentation tests on a fresh emulator after the initial system-server crash. See the [per-title audit, gameplay frames and next acceptance steps](../gallery/native-games/2026-11-16/README.md).
+
 ## 2026-11-16 native lineup development
 
 The registry and native build definitions agree on 17 titles. Host module interaction and persistence checks cover classic board and paddle input, Guess the Door targeting, Red Ledger press rearming, Breakwater modal transitions, Gumball projectile interception, Omega campaign recovery, Sitka eye and controller placement, and both reconnaissance boards. Lantern now varies the photograph and correct assessment on repeat visits. Forward Detachment keeps the last filed result for each route. Test Chamber's existing workshop and storage paths were exercised. Reference-device control, legibility and sustained frame pacing are open.

@@ -1,5 +1,7 @@
 ## Native games development and audit — 2026-11-16
 
+Signed [Phone Test #2026](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2026-1) ships game commit `6e07e2791f44f92c1cd0b8388b6863e760497c03` for both ARM ABIs. Android 10 launched and rendered all 17 games. The installed hub passed all 14 instrumentation tests on a fresh emulator after the initial system-server crash. See the [per-title audit, gameplay frames and next acceptance steps](../gallery/native-games/2026-11-16/README.md).
+
 Continued development against the 17 entries of the unified ReverieVR native launcher. Changes cover persistent gameplay, board and paddle controls, menu input, arcade flight hit detection, dock/boat tracking and chart rendering. Both reconnaissance modules import their prior checkpoint format. The test range and NOAA/USGS inspection view still represent different Sitka experiences. The individual completion tracks from the November 8 audit remain in effect with the repairs recorded in the acceptance ledger and subsequent verification. Physical Galaxy S9 testing remains open.
 
 ## Sitka source-derived live 3D geography inspector — 2026-11-13 (validation pending)

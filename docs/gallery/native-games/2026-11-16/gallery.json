@@ -1,0 +1,351 @@
+{
+  "format": "reverievr-development-gallery-v1",
+  "source_commit": "6e07e2791f44f92c1cd0b8388b6863e760497c03",
+  "source_kind": "Production native module framebuffer reads from Mesa llvmpipe. Overview is a labeled contact sheet. Per-title PNGs preserve source pixels.",
+  "license": "ReverieVR and included game-content licenses apply. NOAA ENC / USGS 3DEP source attribution and licensed Lato typeface are retained by their respective assets.",
+  "assets": [
+    {
+      "file": "native-games-2026-11-16.jpg",
+      "bytes": 772221,
+      "sha256": "fc274dcb7d50f8a9af738139ba9c2f22dd7a8dcef6a01c194e0c80934a37dadc",
+      "size": [
+        1680,
+        2027
+      ],
+      "kind": "contact sheet"
+    },
+    {
+      "file": "between-deliveries-red-ledger.png",
+      "bytes": 243801,
+      "sha256": "d01d9571b9670c31e76a9016f042e28456fdd0ea3d0a7f9b764d19762e168ae9",
+      "size": [
+        960,
+        720
+      ],
+      "game": "between-deliveries-red-ledger",
+      "view": "left",
+      "caption": "Service counter after save recovery",
+      "capture": "checks/featured-final/red-ledger-recovered-left.ppm",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "breakwater-battery.png",
+      "bytes": 125408,
+      "sha256": "6fe8a6ec5bc28a78f4689f337d5d9fba5bda94b11802126900014f49511a2e9c",
+      "size": [
+        1280,
+        800
+      ],
+      "game": "breakwater-battery",
+      "view": "single turned shore view",
+      "caption": "Gunner view over the shoreline",
+      "capture": "action-captures/breakwater-shore.ppm",
+      "source_size": [
+        1280,
+        800
+      ],
+      "crop": null
+    },
+    {
+      "file": "omega-front.png",
+      "bytes": 57984,
+      "sha256": "728073fa61c1c73696326be7810663d62647d83b5dc434e0ad41ca8419b99e1a",
+      "size": [
+        960,
+        720
+      ],
+      "game": "omega-front",
+      "view": "left",
+      "caption": "Tactical battle view",
+      "capture": "action-captures/omega-tactical-left.ppm",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "gumball-armada.png",
+      "bytes": 64443,
+      "sha256": "8f207feb435e19ac3fde44a4a1ab4ed8dab57fdccdf96a9750e98fa3ece2d84c",
+      "size": [
+        960,
+        720
+      ],
+      "game": "gumball-armada",
+      "view": "left",
+      "caption": "Flight restored from a saved run",
+      "capture": "action-captures/gumball-flight-after-recreate-left.ppm",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "ministry-lantern-desk.png",
+      "bytes": 63894,
+      "sha256": "9f0e296a82828ca794553626a50a9f49c6477c04fb2c7aecc7bc88b16d4aeb52",
+      "size": [
+        960,
+        720
+      ],
+      "game": "ministry-lantern-desk",
+      "view": "left",
+      "caption": "River Crossing photo on a return visit",
+      "capture": "checks/recon-final/lantern-river-revisit-after-left.ppm",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "iron-sight-forward-detachment.png",
+      "bytes": 75376,
+      "sha256": "279fad81f781ba593dea074a702c2f7758143f14d210ea6e0814d11d8ea17ca1",
+      "size": [
+        960,
+        720
+      ],
+      "game": "iron-sight-forward-detachment",
+      "view": "left",
+      "caption": "Next patrol following the previous sortie",
+      "capture": "checks/recon-final/forward-next-patrol-after-left.ppm",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "guess-the-door.png",
+      "bytes": 109113,
+      "sha256": "1267985052ef02c58b3f0e7b5c7371c7c2699ecf05f8c1b3de6c4ce744ad2004",
+      "size": [
+        960,
+        720
+      ],
+      "game": "guess-the-door",
+      "view": "left",
+      "caption": "Second room with a door under inspection",
+      "capture": "classic-evidence/frames/guess-the-door-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "sitka.png",
+      "bytes": 3375,
+      "sha256": "75a60d04ab7137b7be5fac1f66f131f07e558e43350b10068f3eb3a28a3cb47a",
+      "size": [
+        256,
+        256
+      ],
+      "game": "sitka",
+      "view": "left",
+      "caption": "Skiff underway at the helm",
+      "capture": "sitka-captures/sitka-moving-helm.png",
+      "source_size": [
+        512,
+        256
+      ],
+      "crop": [
+        0,
+        0,
+        256,
+        256
+      ]
+    },
+    {
+      "file": "procedural-test-chamber.png",
+      "bytes": 853006,
+      "sha256": "d4759abf26381bfa46cb59d3dc5de4d72163b0ccafe778728f5b1315ed943942",
+      "size": [
+        960,
+        720
+      ],
+      "game": "procedural-test-chamber",
+      "view": "left",
+      "caption": "Workshop in edit mode",
+      "capture": "checks/test-chamber-edit-left.ppm",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-chess.png",
+      "bytes": 284367,
+      "sha256": "3d68c35cde1002332db71fdd3ebb1cb449219358227559cf8972411b5a61a363",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-chess",
+      "view": "left",
+      "caption": "Black d7 selected with two legal moves",
+      "capture": "classic-evidence/frames/classic-chess-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-go.png",
+      "bytes": 55254,
+      "sha256": "ec836d36f7d5ffb0751150556580ca2b0cbaa3f3c3b0282b2d79fc48125f48eb",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-go",
+      "view": "left",
+      "caption": "Opening placement and CPU reply",
+      "capture": "classic-evidence/frames/classic-go-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-checkers.png",
+      "bytes": 43353,
+      "sha256": "e61e07f41c84a26141c9fe66f73b7f906dacfd67ae50adad88e536e23a9388ac",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-checkers",
+      "view": "left",
+      "caption": "Opening turn and CPU reply",
+      "capture": "classic-evidence/frames/classic-checkers-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-reversi.png",
+      "bytes": 51277,
+      "sha256": "a3a25ca4a3782a29fa9f9db78c4534a7b0f2aba75220ebe36a1d3a4e3c75611a",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-reversi",
+      "view": "left",
+      "caption": "Opening placement, flip and CPU reply",
+      "capture": "classic-evidence/frames/classic-reversi-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-pong.png",
+      "bytes": 26355,
+      "sha256": "10dd60673305418099987954550e75eb6e077855f89ebc8e18f33b7782927b2e",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-pong",
+      "view": "left",
+      "caption": "Rally with the paddle steered upward",
+      "capture": "classic-evidence/frames/classic-pong-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-snake.png",
+      "bytes": 30553,
+      "sha256": "1dd37aaffa25c2ba4b7528e451c6ebbab7848f9dba0d80876dec4a70aba402d5",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-snake",
+      "view": "left",
+      "caption": "First upward move from the starting row",
+      "capture": "classic-evidence/frames/classic-snake-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-breakout.png",
+      "bytes": 41687,
+      "sha256": "114ad168e876b255a67a269f0c0f779ae7b948828fa82602d8c034d1cdaeb95d",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-breakout",
+      "view": "left",
+      "caption": "First serve with the paddle steered right",
+      "capture": "classic-evidence/frames/classic-breakout-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "classic-chutes-ladders.png",
+      "bytes": 72805,
+      "sha256": "775538af03f6fa787a2c52ddeeb0a6fabefe61be9fce3241881f4b7a715fc14a",
+      "size": [
+        960,
+        720
+      ],
+      "game": "classic-chutes-ladders",
+      "view": "left",
+      "caption": "Player and CPU on square three after one round",
+      "capture": "classic-evidence/frames/classic-chutes-ladders-left.png",
+      "source_size": [
+        960,
+        720
+      ],
+      "crop": null
+    },
+    {
+      "file": "sitka-chart-land.png",
+      "bytes": 42225,
+      "sha256": "6489580a48b2a810674184858da35755f5f3ba9eb33d51a9e8298d1337650569",
+      "size": [
+        512,
+        256
+      ],
+      "view": "stereo",
+      "caption": "Charted land with source elevation shading"
+    },
+    {
+      "file": "omega-campaign-recovery.png",
+      "bytes": 39377,
+      "sha256": "12e0b30e4c0f3b272f9cdc0a600a04e12f0d6ca07dfd9e660e276acd1aa6ee7b",
+      "size": [
+        960,
+        720
+      ],
+      "view": "left",
+      "caption": "Retry loading the original campaign"
+    }
+  ]
+}

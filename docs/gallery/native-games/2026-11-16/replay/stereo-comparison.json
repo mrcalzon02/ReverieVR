@@ -1,0 +1,225 @@
+{
+  "source_commit": "6e07e2791f44f92c1cd0b8388b6863e760497c03",
+  "verified_included_repo_files": [
+    "app/src/main/jni/native/breakwater_font_atlas.h",
+    "app/src/main/jni/native/classic_board_cpu.h",
+    "app/src/main/jni/native/classic_board_games.h",
+    "app/src/main/jni/native/classic_breakout.h",
+    "app/src/main/jni/native/classic_chess_board_ui.h",
+    "app/src/main/jni/native/classic_chess_book.h",
+    "app/src/main/jni/native/classic_chess_move_tween.h",
+    "app/src/main/jni/native/classic_chess_panel_layout.h",
+    "app/src/main/jni/native/classic_chess_reference.h",
+    "app/src/main/jni/native/classic_chess_sprite_atlas.h",
+    "app/src/main/jni/native/classic_chess_study.h",
+    "app/src/main/jni/native/classic_chess_wood_atlas.h",
+    "app/src/main/jni/native/classic_games.h",
+    "app/src/main/jni/native/classic_games_module.cpp",
+    "app/src/main/jni/native/classic_games_save.h",
+    "app/src/main/jni/native/classic_pong_dynamics.h",
+    "app/src/main/jni/native/classic_vector_art.h",
+    "app/src/main/jni/native/guess_the_door_game.h",
+    "app/src/main/jni/native/guess_the_door_module.cpp",
+    "app/src/main/jni/native/guess_the_door_save.h",
+    "app/src/main/jni/native/reverie_native_flat_mesh.h",
+    "app/src/main/jni/native/reverie_native_gl_state.h",
+    "app/src/main/jni/native/reverie_native_gl_utils.h",
+    "app/src/main/jni/native/reverie_native_lato_text.h",
+    "app/src/main/jni/native/reverie_native_math.h",
+    "app/src/main/jni/native/reverie_native_module.h",
+    "app/src/main/jni/native/reverie_native_sdk.h",
+    "scripts/audit/probes/audit_host.h"
+  ],
+  "guess_the_door_initial_seed": "06198D461957185D",
+  "frames": [
+    {
+      "registry_id": "classic-pong",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "f95d951a820a4af368b557044be57b005fd16a80f51d6b39d5c3ac9db30b6f8e",
+          "prior_pixel_sha256": "f95d951a820a4af368b557044be57b005fd16a80f51d6b39d5c3ac9db30b6f8e",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "ec5eec5143e92ee2a5bab3793f6b4c321d0da8533f20b35ec0460de2f9705a30",
+          "prior_pixel_sha256": "ec5eec5143e92ee2a5bab3793f6b4c321d0da8533f20b35ec0460de2f9705a30",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-snake",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "1c896040c4d0f1a48c384c460edc0f8721eed56a2dee3674028e788f540a749f",
+          "prior_pixel_sha256": "1c896040c4d0f1a48c384c460edc0f8721eed56a2dee3674028e788f540a749f",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "98e7a97071fd9d257fee97b8b71c51b7243a65975500bed60ba49a9685396fde",
+          "prior_pixel_sha256": "98e7a97071fd9d257fee97b8b71c51b7243a65975500bed60ba49a9685396fde",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-chutes-ladders",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "5e024f05972b14c86c421b3653261c58e4ff3371d4bcb608fc1969e23ff1bdc9",
+          "prior_pixel_sha256": "5e024f05972b14c86c421b3653261c58e4ff3371d4bcb608fc1969e23ff1bdc9",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "ea31c14fb94d27edadd32f69958813ad4ddacbb5c6949dc1692312009ef02c36",
+          "prior_pixel_sha256": "ea31c14fb94d27edadd32f69958813ad4ddacbb5c6949dc1692312009ef02c36",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-checkers",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "028e41a8a8d3edc3bb16b7bcc2db78e98923d8e9a4396a6fcd69a52faa7fad80",
+          "prior_pixel_sha256": "028e41a8a8d3edc3bb16b7bcc2db78e98923d8e9a4396a6fcd69a52faa7fad80",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "89bcda0af0c3550117d35ee64e5fe59150dfb96e18658d24c621b5ea82a57c30",
+          "prior_pixel_sha256": "89bcda0af0c3550117d35ee64e5fe59150dfb96e18658d24c621b5ea82a57c30",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-go",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "dd0e5a4e7824d582c8093e26d7cb3a629ae081258f7d45701d7ad7be7b2ac555",
+          "prior_pixel_sha256": "dd0e5a4e7824d582c8093e26d7cb3a629ae081258f7d45701d7ad7be7b2ac555",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "47f1b8977c52f665b850f211c4a5a8017b84deca0397a3199409972b77352f47",
+          "prior_pixel_sha256": "47f1b8977c52f665b850f211c4a5a8017b84deca0397a3199409972b77352f47",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-chess",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "c7de39b88f749c5e3848a3ef6105ef2695c4604f0910716f10ed1b83d2f66e14",
+          "prior_pixel_sha256": "c7de39b88f749c5e3848a3ef6105ef2695c4604f0910716f10ed1b83d2f66e14",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "5839d4ec970eb3daf7ad3db6682b05075305fb793fcaf6623890d7dc3f6c4fdb",
+          "prior_pixel_sha256": "5839d4ec970eb3daf7ad3db6682b05075305fb793fcaf6623890d7dc3f6c4fdb",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-breakout",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "e1d76b16d075aae4c1933824fc613856be4d8cc3e41639e0eb2814104da5a0c3",
+          "prior_pixel_sha256": "e1d76b16d075aae4c1933824fc613856be4d8cc3e41639e0eb2814104da5a0c3",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "5c3475d243ae8ceca13c3d650eb0911bdf81848ae549a5b4ae794a6a520e408b",
+          "prior_pixel_sha256": "5c3475d243ae8ceca13c3d650eb0911bdf81848ae549a5b4ae794a6a520e408b",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "classic-reversi",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "da025a2cde1a3d2408f8f0bfce4edb326743c6088924cca23323adbea0d139c6",
+          "prior_pixel_sha256": "da025a2cde1a3d2408f8f0bfce4edb326743c6088924cca23323adbea0d139c6",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "6cbed626315ef48ce5a4bd2614e4c22bd5b9882652a87d44bbdf9d621fe24695",
+          "prior_pixel_sha256": "6cbed626315ef48ce5a4bd2614e4c22bd5b9882652a87d44bbdf9d621fe24695",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    },
+    {
+      "registry_id": "guess-the-door",
+      "eyes": {
+        "left": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "60439f6dc924ebb394f2559d5c752756657596744433d13a884dba07636a99a9",
+          "prior_pixel_sha256": "60439f6dc924ebb394f2559d5c752756657596744433d13a884dba07636a99a9",
+          "pixel_identical": true,
+          "changed_bbox": null
+        },
+        "right": {
+          "width": 960,
+          "height": 720,
+          "replay_pixel_sha256": "43274f72d03844d68bb732db2844b8e4a32df19c9144502ea1461bdfa9d7ca5a",
+          "prior_pixel_sha256": "43274f72d03844d68bb732db2844b8e4a32df19c9144502ea1461bdfa9d7ca5a",
+          "pixel_identical": true,
+          "changed_bbox": null
+        }
+      }
+    }
+  ]
+}
