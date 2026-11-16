@@ -617,6 +617,9 @@ public:
                     break;
                 }
             }
+            // Stop this frame immediately on terminal damage: no later
+            // friendly projectile, loot or completion can run postmortem.
+            if(phase_!=Phase::Flight)return;
         }
         const uint32_t scavenged=salvage_.update(dt,px_,py_,ship_profile_.pickup_radius);
         cash_+=scavenged;sortie_cash_+=scavenged;
@@ -715,6 +718,11 @@ private:
         invulnerable_=.36f;regen_delay_=2.4f;regen_credit_=0.f;
         const int absorbed=std::min(shield_,amount);
         shield_-=absorbed;hp_-=amount-absorbed;combo_=0;combo_clock_=0;hurt_flash_=.28f;
+        // A terminal hull strike is a state transition, not a deferred
+        // post-projectile check. Clamp for valid loss checkpoints.
+        if(hp_<=0){
+            hp_=0;failure_=FailureReason::HullDestroyed;phase_=Phase::Lost;
+        }
     }
     Phase phase_=Phase::Chart;
     FailureReason failure_=FailureReason::None;

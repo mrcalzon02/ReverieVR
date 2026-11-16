@@ -172,6 +172,35 @@ int main(){
            &&hostileVictim.hp()==beforeHull-(35-beforeShield));
     assert(std::fabs(HostileShotDepth(-.85f)+2.55f)<.0001f);
     assert(HostileShotDepth(1.f)<HostileShotDepth(-.85f));
+    // Lethal hostile XYZ contact must finish the sortie immediately, once.
+    // XY-identical but depth-separated misses must not start the loss path.
+    Simulation fatalHostile(81);
+    assert(fatalHostile.launch(0));
+    const int freshHull=fatalHostile.hp();
+    const uint32_t cashBeforeLoss=fatalHostile.cash();
+    assert(!fatalHostile.receive_hostile_segment(
+        hostileHull,hostileFarA,hostileFarB,500));
+    assert(fatalHostile.phase()==Phase::Flight&&fatalHostile.hp()==freshHull);
+    assert(fatalHostile.receive_hostile_segment(
+        hostileHull,hostileNearA,hostileNearB,500));
+    assert(fatalHostile.hp()==0&&fatalHostile.shield()==0);
+    assert(fatalHostile.phase()==Phase::Lost);
+    assert(fatalHostile.failure()==FailureReason::HullDestroyed);
+    const uint32_t firedAtLoss=fatalHostile.shots_fired();
+    const float elapsedAtLoss=fatalHostile.elapsed();
+    assert(!fatalHostile.receive_hostile_segment(
+        hostileHull,hostileNearA,hostileNearB,500));
+    fatalHostile.update(.05f,0.f,0.f,true);
+    assert(fatalHostile.phase()==Phase::Lost&&fatalHostile.hp()==0);
+    assert(fatalHostile.shots_fired()==firedAtLoss);
+    assert(fatalHostile.elapsed()==elapsedAtLoss);
+    assert(fatalHostile.cash()==cashBeforeLoss);
+    assert(!fatalHostile.launch(0));
+    assert(fatalHostile.recover()&&fatalHostile.phase()==Phase::Chart);
+    assert(!fatalHostile.recover());
+    assert(fatalHostile.launch(0)&&fatalHostile.phase()==Phase::Flight);
+    assert(fatalHostile.hp()==freshHull);
+    assert(fatalHostile.failure()==FailureReason::None);
     // Actual Simulation player bolts have a continuous forward/depth path,
     // derived from checkpointed Y so restoring a sortie cannot lose Z state.
     Simulation volumeFlight(4);
