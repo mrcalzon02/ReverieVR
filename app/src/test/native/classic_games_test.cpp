@@ -2,6 +2,7 @@
 #include "classic_breakout.h"
 #include "classic_board_games.h"
 #include "classic_board_cpu.h"
+#include "classic_games_save.h"
 #include <thread>
 #include "reverie_native_flat_mesh.h"
 #include "classic_vector_art.h"
@@ -129,6 +130,66 @@ static void TestChessChooseSideOverlaysAndCaptures() {
     }
     assert(stale.chessHumanColor==1 && stale.ply==0);
     assert(stale.ChessHumanTurn());
+}
+
+// A pending pre-reset reply must not be applied to the same-color replacement
+// game, even after that new game is serialized and loaded from the real
+// Classic Chess save codec. Its fresh CPU reply must still be a legal ply.
+static void TestChessCpuResetSaveReload() {
+    namespace save=reverie::classics::save;
+    using reverie::boardgames::CpuWorker;
+    using reverie::boardgames::State;
+    using reverie::boardgames::ValidChessCpuTransition;
+    using reverie::chessui::ScreenIndex;
+    using reverie::chessui::ScreenSquare;
+
+    save::Snapshot checkpoint;
+    checkpoint.board.StartChessGame(-1); // Human Black, CPU White opens.
+    CpuWorker abandoned;
+    assert(abandoned.Start(checkpoint.board));
+    const uint32_t oldSerial=checkpoint.board.chessGameSerial;
+    checkpoint.board.StartChessGame(-1); // SAME color, new match.
+    assert(checkpoint.board.chessGameSerial!=oldSerial);
+    assert(checkpoint.board.ply==0 && !checkpoint.board.ChessHumanTurn());
+
+    std::vector<uint8_t> bytes;
+    assert(save::Encode(5,checkpoint.game,checkpoint.breakout,
+                        checkpoint.board,bytes));
+    save::Snapshot loaded;
+    assert(save::Decode(5,bytes,loaded));
+    State &board=loaded.board;
+    assert(board.chessHumanColor==-1 && board.chessGameSerial!=oldSerial);
+    assert(board.ply==0 && board.cells==checkpoint.board.cells);
+    const auto deadline=std::chrono::steady_clock::now()+
+                        std::chrono::seconds(10);
+    while(abandoned.Busy()) {
+        assert(std::chrono::steady_clock::now()<deadline);
+        assert(!abandoned.Poll(board)); // Old result is NEVER committed.
+        std::this_thread::yield();
+    }
+    assert(board.ply==0 && board.chessSanHistory.empty());
+
+    const State resumed=board;
+    CpuWorker fresh;
+    assert(fresh.Start(board));
+    bool applied=false;
+    while(fresh.Busy()) {
+        assert(std::chrono::steady_clock::now()<deadline);
+        applied=fresh.Poll(board);
+        if(!applied)std::this_thread::yield();
+    }
+    assert(applied && !fresh.Busy());
+    assert(ValidChessCpuTransition(resumed,board));
+    assert(board.ply==1 && board.ChessHumanTurn());
+    assert(board.chessSanHistory.size()==1);
+    assert(board.lastFrom>=0 && board.lastTo>=0);
+    assert(resumed.cells[board.lastFrom]>0 && board.cells[board.lastTo]>0);
+    // The Black-side display maps the committed CPU ply to both screen
+    // coordinates without mirroring or dropping the moving piece.
+    const auto source=ScreenSquare(board.lastFrom,-1);
+    const auto target=ScreenSquare(board.lastTo,-1);
+    assert(ScreenIndex(source.first,source.second,-1)==board.lastFrom);
+    assert(ScreenIndex(target.first,target.second,-1)==board.lastTo);
 }
 
 static void TestChessStudyLibrary() {
@@ -1545,6 +1606,7 @@ int main() {
     ladder.Press();
     assert(!ladder.finished&&ladder.position==0&&ladder.rival==0);
     TestChessChooseSideOverlaysAndCaptures();
+    TestChessCpuResetSaveReload();
     TestChessStudyLibrary();
     TestBoardGames();
     TestReversi();
