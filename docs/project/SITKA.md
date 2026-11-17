@@ -1,3 +1,7 @@
+## Skiff throttle and docking Select ownership — November 16, 2026
+
+The native Sitka game keeps trackpad throttle input under the launched skiff; a held Select during a throttle drag does not cast. Boarding/docking with Select + Volume Up now also latches Select until it is released. Releasing Volume Up first must not reuse the docking press as a fishing cast on shore. A fresh Select after release still casts at a verified water target, and cancellation still works. The actual `sitka_starter_loop_test.cpp` Create/Update regression covers the skiff throttle, docking release ordering, genuine new cast, and existing save/reopen route. This is source and host-runtime behavior, not evidence of physical Galaxy S9 controller feel or geography acceptance.
+
 ## Crescent Harbor chart survey and practice shore, November 16, 2026
 
 From shore, hold Volume Up and touch the right edge of the pad to open the survey. The pad moves the chart north, south, east and west. Follow the distance cue to the gold marker, release the pad and press Select within 18 chart metres. Each of the three entries records the sampled USGS elevation and adds 25 game credits to the harbor-office purse, subject to its existing cap. The log survives an exit, a headset graphics restart and a return from the office. A held Select cannot file twice. The same opening chord returns to fishing.

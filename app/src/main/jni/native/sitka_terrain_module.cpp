@@ -100,6 +100,9 @@ struct State {
     std::vector<reverie::sitka::CitySite> city_sites;
     reverie::sitka::TerrainGl beach_gl;
     bool beach_dirty=false,beach_primary_latched=false;
+    // A docking/select chord owns its press until Select is released.
+    // Releasing Volume Up first must not turn that held press into a cast.
+    bool boat_primary_latched=false;
     uint64_t beach_visible_mask=0u;
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
@@ -1033,6 +1036,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         !state->harbor_shop.open()&&
         !state->harbor_shop.consumes_primary()&&
         input->primary_down!=0u&&input->secondary_down!=0u;
+    if (!input->primary_down) state->boat_primary_latched=false;
+    else if (boat_chord) state->boat_primary_latched=true;
     // Boat simulation advances first. This is the AUTHORITATIVE world pose
     // once launched, not a camera projection or the headset's temporary
     // editor focus. The same bathymetry cache backs movement, sounder and
@@ -1201,7 +1206,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         !(state->skiff&&state->skiff->Active());
     const auto event=state->fishing.Update(input->delta_seconds,
         fishing_control&&!state->beach_primary_latched&&
-            input->primary_down!=0u,
+            !state->boat_primary_latched&&input->primary_down!=0u,
         fishing_control&&input->secondary_down!=0u,
         target.valid,target.depth_metres);
     if(event.journal_changed&&!state->fishing.Flush(Store(state)))

@@ -321,7 +321,14 @@ int main(){
     player.primary_down=1u;Update(range,&player);
     assert(range->skiff->Active());
     player.primary_down=player.secondary_down=0u;player.move_y=-1.f;
-    for(int n=0;n<52;++n)Update(range,&player);
+    // Trackpad throttle drag and even a depressed Select during that drag
+    // belong to the skiff; neither is a fresh fishing cast.
+    for(int n=0;n<52;++n){
+        player.primary_down=(n>=8&&n<16)?1u:0u;
+        Update(range,&player);
+        assert(range->fishing.fishing.phase==FishingPhase::Ready);
+    }
+    player.primary_down=0u;
     assert(range->skiff->Pose().east>range->skiff->LaunchPoint().east+1.);
     assert(range->skiff->Pose().heading==range->skiff->LaunchPoint().heading);
     assert(range->walk_session->pose().x==onshore.x);
@@ -330,6 +337,22 @@ int main(){
     player.primary_down=player.secondary_down=1u;Update(range,&player);
     assert(!range->skiff->Active());
     assert(range->walk_session->pose().x==onshore.x);
+    // Releasing Volume Up before Select must not convert the docking
+    // chord's already-held primary press into a fishing cast at this ray.
+    player.secondary_down=0u;Update(range,&player);
+    assert(range->fishing.fishing.phase==FishingPhase::Ready);
+    assert(range->boat_primary_latched);
+    // A deliberate NEW press after release casts exactly once, and the
+    // normal cancel action restores Ready without inventing a catch.
+    player.primary_down=0u;Update(range,&player);
+    assert(!range->boat_primary_latched);
+    player.primary_down=1u;Update(range,&player);
+    assert(range->fishing.fishing.phase==FishingPhase::Waiting);
+    Update(range,&player);
+    assert(range->fishing.fishing.phase==FishingPhase::Waiting);
+    player.primary_down=0u;player.secondary_down=1u;Update(range,&player);
+    assert(range->fishing.fishing.phase==FishingPhase::Ready);
+    player.secondary_down=0u;Update(range,&player);
     assert(PrepareExit(range)==1);
     Destroy(range);
     assert(!saved.empty());
