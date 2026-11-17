@@ -29,7 +29,24 @@ static void PlayPremiumPendingReceipt(const ReverieNativeHostV1 &host) {
     const int cash=state->simulation.cash_cents(), beer=state->simulation.beer_units();
     const int drink=state->market.stock_drink(1), snack=state->market.stock_snack(0);
     audit::Check(drink>0&&snack>0,"premium receipt: real stocked inventory");
-    Tap(state,WorkTarget::DrinkChoice);Tap(state,WorkTarget::SnackChoice);
+    // The two choice knobs sit behind the nearer cup stack from a centered
+    // origin ray. Aim from a reachable tracked-controller position instead.
+    const auto choose=[&](WorkTarget target){
+        const auto bounds=std::find_if(std::begin(kWorkTargets),std::end(kWorkTargets),
+            [target](const TargetBounds& b){return b.target==target;});
+        audit::Check(bounds!=std::end(kWorkTargets),"premium choice target exists");
+        auto input=audit::Input();
+        input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+        input.pointer_origin[0]=bounds->center[0];
+        input.pointer_origin[1]=bounds->center[1];
+        input.pointer_origin[2]=bounds->center[2]+0.45f;
+        input.pointer_direction[2]=-1.f;
+        Update(state,&input);
+        audit::Check(state->hovered_target==target,"premium choice ray focuses intended knob");
+        input.primary_down=1u;Update(state,&input);
+        input.primary_down=0u;Update(state,&input);
+    };
+    choose(WorkTarget::DrinkChoice);choose(WorkTarget::SnackChoice);
     audit::Check(state->market.drink()==1&&state->market.snack()==0,
                  "premium receipt: pointer selects branded products");
     Service(state);
