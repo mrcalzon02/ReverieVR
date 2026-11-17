@@ -169,6 +169,7 @@ jobs:
           python -m unittest discover -s scripts/sitka -p 'test_shore_catalog.py' -v
           python -m unittest discover -s scripts/sitka -p 'test_prepare_osm_waterfront.py' -v
           python -m unittest discover -s scripts/sitka -p 'test_sitka_source_photography.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_archived_3dep_integrity.py' -v
 
   verify-sitka-streaming:
     name: Sitka 8 km boat seabed lazy-load, LOD and transition stress
