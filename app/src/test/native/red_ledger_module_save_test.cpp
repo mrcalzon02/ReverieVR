@@ -20,6 +20,78 @@ static void Tap(ModuleState* state,WorkTarget target,const char *plaque=nullptr)
 }
 static void Click(ModuleState* state){auto in=audit::Input();Update(state,&in);in.primary_down=1;Update(state,&in);in.primary_down=0;Update(state,&in);}
 static void Service(ModuleState* state){Tap(state,WorkTarget::CupStack);Tap(state,WorkTarget::Tap);Tap(state,WorkTarget::Patron);}
+// Native module regression: a served premium drink/snack and its unpaid
+// receipt persist together across Create/Destroy; collection stays exactly once.
+static void PlayPremiumPendingReceipt(const ReverieNativeHostV1 &host) {
+    audit::saves.clear();
+    auto *state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state&&OnGlContextCreated(state)==1,"premium receipt: initial GLES2 module");
+    const int cash=state->simulation.cash_cents(), beer=state->simulation.beer_units();
+    const int drink=state->market.stock_drink(1), snack=state->market.stock_snack(0);
+    audit::Check(drink>0&&snack>0,"premium receipt: real stocked inventory");
+    Tap(state,WorkTarget::DrinkChoice);Tap(state,WorkTarget::SnackChoice);
+    audit::Check(state->market.drink()==1&&state->market.snack()==0,
+                 "premium receipt: pointer selects branded products");
+    Service(state);
+    const int owed=state->simulation.pending_payment_cents();
+    audit::Check(owed>0&&state->simulation.cash_cents()==cash&&
+                 state->market.stock_drink(1)==drink-1&&state->market.stock_snack(0)==snack-1&&
+                 state->simulation.beer_units()==beer&&state->simulation.patrons_remaining()==4,
+                 "premium receipt: exactly one drink and snack consumed without early payment");
+    audit::Check(!IsTargetAvailable(state,WorkTarget::DoorStock)&&
+                 !IsTargetAvailable(state,WorkTarget::Patron)&&
+                 IsTargetAvailable(state,WorkTarget::Payment),
+                 "premium receipt: no second service or stockroom while payment owed");
+    const auto unpaid=audit::saves.at(kSaveSlot);
+    audit::Check(PrepareExit(state)==1,"premium receipt: unpaid checkpoint durable");
+    ReleaseGlContext(state);Destroy(state);
+
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state&&OnGlContextCreated(state)==1&&!state->load_blocked&&
+                 state->simulation.cash_cents()==cash&&
+                 state->simulation.pending_payment_cents()==owed&&
+                 state->market.stock_drink(1)==drink-1&&state->market.stock_snack(0)==snack-1&&
+                 state->simulation.beer_units()==beer&&state->simulation.patrons_remaining()==4&&
+                 audit::saves.at(kSaveSlot)==unpaid,
+                 "premium receipt: reload retains exactly the unpaid stock and balance");
+    audit::Capture(RenderEye,state,"red-ledger-premium-owed",1.2f,-.12f);
+    Tap(state,WorkTarget::Payment);
+    audit::Check(state->simulation.cash_cents()==cash+owed&&
+                 state->simulation.pending_payment_cents()==0&&
+                 state->simulation.patrons_remaining()==3,
+                 "premium receipt: first collection credits one receipt and advances patron");
+    const auto paid=audit::saves.at(kSaveSlot);
+    const auto target=std::find_if(std::begin(kWorkTargets),std::end(kWorkTargets),
+        [](const TargetBounds& b){return b.target==WorkTarget::Payment;});
+    audit::Check(target!=std::end(kWorkTargets),"premium receipt: physical till target");
+    auto input=audit::Pointer(target->center[0],target->center[1],target->center[2]);
+    Update(state,&input);input.primary_down=1;Update(state,&input);
+    input.primary_down=0;Update(state,&input);
+    audit::Check(!IsTargetAvailable(state,WorkTarget::Payment)&&
+                 state->simulation.cash_cents()==cash+owed&&
+                 state->simulation.pending_payment_cents()==0&&audit::saves.at(kSaveSlot)==paid,
+                 "premium receipt: second physical till press cannot pay again");
+    Tap(state,WorkTarget::DoorStock,"STOCK");Tap(state,WorkTarget::StockNext);
+    audit::Check(state->market.offer()==1&&state->market.stock_drink(1)==drink-1&&
+                 state->market.stock_snack(0)==snack-1,
+                 "premium receipt: stockroom displays depleted branded SKU");
+    audit::Capture(RenderEye,state,"red-ledger-premium-stock",1.2f,-.12f);
+    audit::Check(PrepareExit(state)==1,"premium receipt: paid stockroom save durable");
+    ReleaseGlContext(state);Destroy(state);
+
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state&&OnGlContextCreated(state)==1&&!state->load_blocked&&
+                 state->market.room()==trade::Room::Stockroom&&state->market.offer()==1&&
+                 state->simulation.cash_cents()==cash+owed&&state->simulation.pending_payment_cents()==0&&
+                 state->simulation.patrons_remaining()==3&&
+                 state->market.stock_drink(1)==drink-1&&state->market.stock_snack(0)==snack-1&&
+                 state->simulation.beer_units()==beer,
+                 "premium receipt: paid amount, depleted stock and room survive second recreate");
+    std::printf("PASS_RED_PREMIUM_PENDING paid=%d cash=%d stock=%d snack=%d patrons=3\n",
+                owed,state->simulation.cash_cents(),state->market.stock_drink(1),
+                state->market.stock_snack(0));
+    ReleaseGlContext(state);Destroy(state);audit::saves.clear();
+}
 static void PlayOpeningShift(const ReverieNativeHostV1 &host){
     auto *state=static_cast<ModuleState*>(Create(&host));
     audit::Check(state&&OnGlContextCreated(state)==1,"fresh opening shift");
@@ -179,6 +251,7 @@ int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     audit::Check(argc==2,"capture directory argument");audit::output=argv[1];audit::GL context;auto host=audit::Host();
     ReadPreviousBooks(host);
+    PlayPremiumPendingReceipt(host);
     PlayOpeningShift(host);
     PlayDistrictAccount(host);
     auto* state=static_cast<ModuleState*>(Create(&host));audit::Check(state&&!state->load_blocked,"fresh game");

@@ -121,6 +121,27 @@ jobs:
           done
           echo 'PASS: Red Ledger functional patrons, trade and stock'
 
+      - name: Execute Red Ledger native EGL/GLES2 receipt and checkpoint lifecycle
+        shell: bash
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dri
+          mkdir -p validation/red-ledger/module
+          g++ -std=c++17 -O1 -Wall -Wextra -Wpedantic \
+            -Iapp/src/main/jni/native -Iapp/src/test/native \
+            app/src/test/native/red_ledger_module_save_test.cpp \
+            app/src/main/jni/native/red_ledger_simulation.cpp \
+            app/src/main/jni/native/procedural_material_atlas.cpp \
+            app/src/main/jni/native/red_ledger_static_geometry.cpp \
+            -lEGL -lGLESv2 -lz -o "$RUNNER_TEMP/red-ledger-module"
+          "$RUNNER_TEMP/red-ledger-module" validation/red-ledger/module | tee validation/red-ledger/module.log
+          grep -F 'PASS_RED_PREMIUM_PENDING' validation/red-ledger/module.log
+
   guess-the-door:
     name: Guess the Door deterministic clues, levers and maze gameplay
     runs-on: ubuntu-latest
