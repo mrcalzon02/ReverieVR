@@ -54,7 +54,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         VirtualOutput primary=VirtualOutput.joystickButton(0);
         float[] direction={0,0,-1},origin={-2,0,0};
         try(Pbuffer egl=new Pbuffer();
-            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,false,
+            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,true,
                 new ReveriePreferences(InstrumentationRegistry.getInstrumentation().getContext()))) {
             assertTrue(game.start("guess-the-door"));
             assertTrue(game.onSurfaceCreated());
@@ -611,7 +611,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         File save=new File(home,"sitka/sitka-fishing-v1.sav");
         VirtualInputBus bus=new VirtualInputBus();
         try(Pbuffer egl=new Pbuffer();
-            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),bus,false,new ReveriePreferences(tests))) {
+            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),bus,true,new ReveriePreferences(tests))) {
             class DockControls {
                 long now=System.nanoTime();
                 final float[] origin={0,0,0},direction={0,0,-1};
@@ -677,7 +677,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         long now=System.nanoTime();
         byte[] victory=null;
         try(Pbuffer egl=new Pbuffer();
-            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,false,
+            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,true,
                 new ReveriePreferences(tests));
             DataInputStream trace=new DataInputStream(new BufferedInputStream(new GZIPInputStream(
                 tests.getAssets().open("breakwater-cadet.bwc"))))) {
