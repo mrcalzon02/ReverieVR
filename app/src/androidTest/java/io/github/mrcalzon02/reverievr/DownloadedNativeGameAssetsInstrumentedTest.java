@@ -47,7 +47,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
 
     @Test public void guessTheDoorSpeaksOnTheSecondRightLever() throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
-        File home=new File(app.getCacheDir(),"guess-voice-"+System.nanoTime());
+        File sandbox=new File(app.getCacheDir(),"guess-voice-"+System.nanoTime());
+        File home=new File(sandbox,"native-modules");
         assertTrue(home.mkdirs());
         File save=new File(home,"guess-the-door/maze-v1.bin");
         VirtualInputBus controls=new VirtualInputBus();
@@ -56,7 +57,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         try(Pbuffer egl=new Pbuffer();
             NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,true,
                 new ReveriePreferences(InstrumentationRegistry.getInstrumentation().getContext()))) {
-            assertTrue(game.start("guess-the-door"));
+            if(!game.start("guess-the-door"))fail("Guess launch: "+game.getLastError());
             assertTrue(game.onSurfaceCreated());
             long now=System.nanoTime();
             for(int attempt=0;attempt<2;attempt++){
@@ -81,7 +82,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             assertFalse("Holding the lever cannot repeat speech",breakwaterHasCue(game.drainSoundCues(),48));
             assertTrue(game.prepareForExit());
             assertEquals("Voice encounter recorded in the real maze slot",1,Files.readAllBytes(save.toPath())[24]);
-        } finally {remove(home);}
+        } finally {remove(sandbox);}
         android.media.MediaMetadataRetriever decoder=new android.media.MediaMetadataRetriever();
         try(android.content.res.AssetFileDescriptor asset=app.getResources().openRawResourceFd(R.raw.guess_lever_crunk)){
             decoder.setDataSource(asset.getFileDescriptor(),asset.getStartOffset(),asset.getLength());
@@ -606,7 +607,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
     @Test public void sitkaCrescentFloatDeliverySurvivesRelaunchAndPaysOnce() throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
         Context tests=InstrumentationRegistry.getInstrumentation().getContext();
-        File home=new File(app.getCacheDir(),"sitka-crescent-"+System.nanoTime());
+        File sandbox=new File(app.getCacheDir(),"sitka-crescent-"+System.nanoTime());
+        File home=new File(sandbox,"native-modules");
         assertTrue(home.mkdirs());
         File save=new File(home,"sitka/sitka-fishing-v1.sav");
         VirtualInputBus bus=new VirtualInputBus();
@@ -617,7 +619,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 final float[] origin={0,0,0},direction={0,0,-1};
                 final VirtualOutput select=VirtualOutput.joystickButton(0),secondary=VirtualOutput.joystickButton(1);
                 void open() {
-                    assertTrue("Cannot launch installed Sitka",game.start("sitka"));
+                    if(!game.start("sitka"))fail("Sitka launch: "+game.getLastError());
                     assertTrue("Cannot create Sitka GLES2 resources",game.onSurfaceCreated());
                     now=System.nanoTime();
                 }
@@ -660,14 +662,15 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             dock.reopen();
             dock.handoff();assertArrayEquals(paid,crescentJournal(save,4));
             Log.i(TAG,"PASS Sitka installed Crescent delivery: Float 2, four handoffs, two relaunches, 60 credits once");
-        } finally {remove(home);}
+        } finally {remove(sandbox);}
     }
 
     @Test public void breakwaterCadetCampaignReachesSavedVictoryThroughControllerInputs()
             throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
         Context tests=InstrumentationRegistry.getInstrumentation().getContext();
-        File home=new File(app.getCacheDir(),"breakwater-campaign-"+System.nanoTime());
+        File sandbox=new File(app.getCacheDir(),"breakwater-campaign-"+System.nanoTime());
+        File home=new File(sandbox,"native-modules");
         assertTrue(home.mkdirs());
         File save=new File(home,"breakwater-battery/breakwater-run-1-v2.bin");
         VirtualInputBus controls=new VirtualInputBus();
@@ -682,7 +685,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             DataInputStream trace=new DataInputStream(new BufferedInputStream(new GZIPInputStream(
                 tests.getAssets().open("breakwater-cadet.bwc"))))) {
             assertEquals("Controller recording version",0x42574331,trace.readInt());
-            assertTrue(game.start("breakwater-battery"));
+            if(!game.start("breakwater-battery"))fail("Breakwater launch: "+game.getLastError());
             assertTrue(game.onSurfaceCreated());
             for(int event=trace.readUnsignedByte();event!=20;event=trace.readUnsignedByte()) {
                 if(event<8) {
@@ -703,7 +706,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 } else if(event==17) {
                     game.releaseSurface();
                     game.stop();
-                    assertTrue(game.start("breakwater-battery"));
+                    if(!game.start("breakwater-battery"))fail("Breakwater launch: "+game.getLastError());
                     assertTrue(game.onSurfaceCreated());
                     reopens++;
                 } else if(event==18 || event==19) {
@@ -724,7 +727,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 victory,Files.readAllBytes(save.toPath()));
             Log.i(TAG,"PASS Breakwater installed campaign: "+waves+" waves, "+frames+
                 " controller updates, "+reopens+" reopens, "+losses+" earned retry");
-        } finally {remove(home);}
+        } finally {remove(sandbox);}
     }
 
     // This test drives the actual installed JNI Breakwater game and reads
