@@ -59,6 +59,38 @@ int main(){
     assert(restored.frontier.parleyed(7));
     Tap(restored,true);
     assert(restored.rejected && restored.frontier.Checksum()==after_parley);
+    // Save/reload preserves observed terrain, paid surveys and diplomatic
+    // history separately. Merely scouting S008 must not expose its neighbors.
+    assert(campaign.frontier.intelligence(3)==Intelligence::Unknown);
+    assert(campaign.frontier.intelligence(11)==Intelligence::Unknown);
+    assert(campaign.frontier.intelligence(0)==Intelligence::Unknown);
+    for(int sector=0;sector<kFrontierSectors;++sector){
+        assert(restored.frontier.intelligence(sector)==campaign.frontier.intelligence(sector));
+        assert(restored.frontier.parleyed(sector)==campaign.frontier.parleyed(sector));
+    }
+    assert(restored.frontier.intelligence(5)==Intelligence::Terrain);
+    assert(restored.frontier.intelligence(7)==Intelligence::Surveyed);
+    const auto paid_survey=restored.frontier.Checksum();
+    assert(!restored.frontier.Scout(7)); // no free second survey on reload
+    assert(restored.frontier.Checksum()==paid_survey);
+    // Only a real march to Charter Gate reveals adjacent Old Relay/S012
+    // terrain; distant Chalkwatch and the Rust Orchard remain unobserved.
+    Session marched(999);
+    assert(CampaignSave::Decode(&marched,bytes.data(),bytes.size()));
+    assert(marched.frontier.Travel(7));
+    assert(marched.frontier.intelligence(3)==Intelligence::Terrain);
+    assert(marched.frontier.intelligence(11)==Intelligence::Terrain);
+    assert(marched.frontier.intelligence(0)==Intelligence::Unknown);
+    assert(marched.frontier.intelligence(8)==Intelligence::Unknown);
+    assert(marched.frontier.intelligence(7)==Intelligence::Surveyed);
+    assert(marched.frontier.parleyed(7) && !marched.frontier.parleyed(3));
+    CampaignSave::Bytes marched_bytes{};
+    assert(CampaignSave::Encode(marched,&marched_bytes));
+    Session marched_reload(123);
+    assert(CampaignSave::Decode(&marched_reload,marched_bytes.data(),marched_bytes.size()));
+    assert(marched_reload.Checksum()==marched.Checksum());
+    for(int sector=0;sector<kFrontierSectors;++sector)
+        assert(marched_reload.frontier.intelligence(sector)==marched.frontier.intelligence(sector));
     // Existing schema 2 imports safely with no fabricated scouting history.
     Session old(414);
     assert(CampaignSave::Encode(old,&bytes));
