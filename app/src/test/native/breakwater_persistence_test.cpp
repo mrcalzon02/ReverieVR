@@ -71,6 +71,41 @@ void FinishWave(State* state) {
     assert(state->campaign.phase()==Phase::Shop ||
            state->campaign.phase()==Phase::Victory);
 }
+
+bool MountedGunInScene(State* state,WeaponKind kind) {
+    // Inspect the CPU triangles that PrepareFrame really submits to GLES,
+    // including the live battery position. Do not mistake the miniature rack
+    // preview or a changed HUD label for the player's mounted cannon.
+    const auto station=defense::At(state->campaign.location(),
+                                   state->defense_points.current);
+    std::vector<float> model;
+    gunmesh::Build([&](float x0,float y0,float z0,
+                       float x1,float y1,float z1,
+                       float x2,float y2,float z2,
+                       float,float,float) {
+        const float points[]={
+            x0+station.x,y0+station.y,z0+station.z,
+            x1+station.x,y1+station.y,z1+station.z,
+            x2+station.x,y2+station.y,z2+station.z};
+        model.insert(model.end(),points,points+9);
+    },kind,state->gun_direction,state->flash);
+    constexpr size_t kProbeVertices=60u;
+    if(model.size()<kProbeVertices*3u ||
+       state->mesh.size()<kProbeVertices*6u)return false;
+    for(size_t start=0;start+kProbeVertices*6u<=state->mesh.size();start+=6u) {
+        bool matching=true;
+        for(size_t v=0;v<kProbeVertices && matching;++v) {
+            for(size_t axis=0;axis<3u;++axis) {
+                if(std::abs(state->mesh[start+v*6u+axis]-
+                            model[v*3u+axis])>.0001f) {
+                    matching=false;break;
+                }
+            }
+        }
+        if(matching)return true;
+    }
+    return false;
+}
 }
 
 int main() {
@@ -224,6 +259,59 @@ int main() {
     state->combat_input.Release();
     Interact(state,machine,true); // final combat loadout before earned save
     assert(state->campaign.selected_weapon()==WeaponKind::MachineGun);
+
+    // End-to-end purchased rack acceptance uses real Update -> PrepareFrame,
+    // not direct Campaign::SelectWeapon or a model-preview-only assertion.
+    // The visible mounted triangles must change on the very selecting frame.
+    auto step_rack=[&](uint8_t id) {
+        auto sample=rack_input(id);
+        sample.delta_seconds=.016f;
+        Update(state,&sample); // release previous press and hover over the rack
+        sample.primary_down=1u;
+        Update(state,&sample); // one actual module input-frame selection
+        assert(PrepareFrame(state)==1);
+    };
+    auto idle_rack=rack_input(0);
+    idle_rack.delta_seconds=.016f;
+    Update(state,&idle_rack);
+    assert(PrepareFrame(state)==1);
+    assert(MountedGunInScene(state,WeaponKind::MachineGun));
+    assert(!MountedGunInScene(state,WeaponKind::HeavyGun));
+
+    const auto ammo_before_rack=state->campaign.magazine_left();
+    step_rack(1);
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(MountedGunInScene(state,WeaponKind::HeavyGun));
+    assert(!MountedGunInScene(state,WeaponKind::MachineGun));
+    assert(state->flash==0.f && state->campaign.magazine_left()>0);
+
+    step_rack(2); // locked Flak consumes Select but cannot swap mount or fire
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(!state->campaign.owns_weapon(WeaponKind::Flak));
+    assert(MountedGunInScene(state,WeaponKind::HeavyGun));
+    assert(!MountedGunInScene(state,WeaponKind::Flak));
+    assert(state->flash==0.f);
+
+    auto live_fire=rack_input(0);
+    live_fire.pointer_direction[0]=0.f;
+    live_fire.pointer_direction[1]=0.f;
+    live_fire.pointer_direction[2]=-1.f;
+    live_fire.delta_seconds=.016f;
+    Update(state,&live_fire); // release the locked rack press
+    const auto heavy_ammo=state->campaign.magazine_left();
+    live_fire.primary_down=1u;
+    Update(state,&live_fire); // same selected mount must actually fire
+    assert(state->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(state->campaign.magazine_left()+1u==heavy_ammo);
+    assert(state->flash>0.f);
+    assert(PrepareFrame(state)==1);
+    assert(MountedGunInScene(state,WeaponKind::HeavyGun));
+
+    step_rack(0); // return to saved machine-gun loadout without free ammo
+    assert(state->campaign.selected_weapon()==WeaponKind::MachineGun);
+    assert(state->campaign.magazine_left()==ammo_before_rack);
+    assert(MountedGunInScene(state,WeaponKind::MachineGun));
+    assert(!MountedGunInScene(state,WeaponKind::HeavyGun));
     FinishWave(state);
     assert(state->campaign.phase()==Phase::Shop && state->round_summary);
     assert(Stored(0).selected_weapon()==WeaponKind::MachineGun);
