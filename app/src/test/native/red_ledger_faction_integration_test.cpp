@@ -1,6 +1,7 @@
 #include "red_ledger_simulation.h"
 #include "red_ledger_trade.h"
 #include "red_ledger_renovations.h"
+#include "red_ledger_save.h"
 #include <array>
 #include <algorithm>
 #include <cassert>
@@ -125,5 +126,58 @@ int main() {
     assert(visitor.pending_payment_cents()==expected);
     assert(visitor.CollectPayment());
     assert(visitor.cash_cents()==2200+expected);
-    std::cout<<"Red Ledger trade and v4 renovations: paid upgrades, revenue and save OK\n";
+
+    // Exercise a real premium drink sale through all three live economy parts:
+    // stock consumption, outstanding receipt, and the checked whole-game save.
+    // Restoring an unpaid sale must permit one collection, never a second.
+    Simulation shift;
+    trade::Trade shelf;
+    const auto* customer=shift.current_patron();
+    assert(customer!=nullptr);
+    const int32_t starting_cash=shift.cash_cents();
+    const int starting_beer=shift.beer_units();
+    assert(shelf.SelectDrink(shift.beer_units())&&shelf.drink()==1);
+    const int starting_stock=shelf.stock_drink(1);
+    const auto sale_quote=trade::RateService(customer->kind,shelf.drink(),shelf.snack());
+    assert(shift.TakeCleanCup()&&shift.FillSpecialDrink());
+    assert(shelf.ConsumeDrink());
+    assert(shelf.stock_drink(1)==starting_stock-1);
+    assert(shift.beer_units()==starting_beer);
+    assert(shift.ServeHeldCup());
+    assert(shift.ApplyServicePremium(sale_quote.cents,sale_quote.reputation));
+    shelf.RecordService(customer->kind);
+    const int32_t owed=shift.pending_payment_cents();
+    assert(owed==customer->drink_price_cents+sale_quote.cents&&owed>0);
+    assert(shift.cash_cents()==starting_cash);
+
+    save::State unpaid{};
+    unpaid.simulation=shift;
+    unpaid.market=shelf;
+    save::Checkpoint::Bytes before_payment{};
+    assert(save::Checkpoint::Encode(unpaid,&before_payment));
+    save::State resumed_unpaid{};
+    assert(save::Checkpoint::Decode(&resumed_unpaid,before_payment.data(),
+                                   before_payment.size())==save::Checkpoint::Format::Checked);
+    assert(resumed_unpaid.market.stock_drink(1)==starting_stock-1);
+    assert(resumed_unpaid.simulation.pending_payment_cents()==owed);
+    assert(resumed_unpaid.simulation.cash_cents()==starting_cash);
+    assert(resumed_unpaid.simulation.CollectPayment());
+    assert(resumed_unpaid.simulation.cash_cents()==starting_cash+owed);
+    assert(resumed_unpaid.simulation.pending_payment_cents()==0);
+    assert(!resumed_unpaid.simulation.CollectPayment());
+    assert(!resumed_unpaid.simulation.ServeHeldCup());
+    assert(resumed_unpaid.simulation.cash_cents()==starting_cash+owed);
+
+    save::Checkpoint::Bytes after_payment{};
+    assert(save::Checkpoint::Encode(resumed_unpaid,&after_payment));
+    save::State resumed_paid{};
+    assert(save::Checkpoint::Decode(&resumed_paid,after_payment.data(),
+                                   after_payment.size())==save::Checkpoint::Format::Checked);
+    assert(resumed_paid.market.stock_drink(1)==starting_stock-1);
+    assert(resumed_paid.simulation.pending_payment_cents()==0);
+    assert(resumed_paid.simulation.cash_cents()==starting_cash+owed);
+    assert(resumed_paid.simulation.patrons_remaining()==3);
+    assert(!resumed_paid.simulation.CollectPayment());
+    assert(resumed_paid.simulation.cash_cents()==starting_cash+owed);
+    std::cout<<"Red Ledger trade and v6 sale checkpoint: stock, receipt and duplicate collection guarded\n";
 }
