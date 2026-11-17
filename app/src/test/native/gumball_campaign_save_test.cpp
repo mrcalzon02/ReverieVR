@@ -88,7 +88,57 @@ static void CampaignFromNewGame(){
     std::printf("PASS cold start to credits: %d sorties, %u clears, %u kills, %u generals, postgame intercept open\n",
                 attempts,game.visited(),game.kills(),game.generals_defeated());
 }
+
+static void ShipyardSortieTransaction(){
+    // Shipyard armor spends finite parts stock; the Blaster is a paid upgrade.
+    // Their identities must stay atomic across flight, return and reload.
+    ShipAssembly fitted;
+    const auto previous=fitted.snapshot();
+    assert(fitted.edit(4,2,2,Part::Armor)==ShipEdit::Placed);
+    const auto armored=fitted.snapshot();
+    assert(armored.checksum!=previous.checksum&&fitted.ready());
+    assert(fitted.stock(Part::Armor)+1u==previous.stock[static_cast<unsigned>(Part::Armor)]);
+    Simulation game(0xC0FFEEu);
+    assert(game.configure_ship_profile(fitted.profile(),fitted.ready()));
+    const uint32_t startingCash=game.cash();
+    const uint32_t price=static_cast<uint32_t>(game.price(Upgrade::Blaster));
+    assert(price>0u&&startingCash>=price&&game.buy(Upgrade::Blaster));
+    const uint32_t paidCash=game.cash();
+    assert(paidCash==startingCash-price&&game.level(Upgrade::Blaster)==1);
+    assert(game.launch(0)&&game.phase()==Phase::Flight);
+    assert(!game.buy(Upgrade::Blaster)&&game.cash()==paidCash);
+    for(unsigned i=0;i<80u;++i)game.update(.025f,0.f,0.f,false,false,&fitted);
+    assert(game.phase()==Phase::Flight);
+    const auto flight=Bytes(game,fitted);
+    Simulation resumed;ShipAssembly restoredHull;
+    assert(CampaignSave::Decode(&resumed,&restoredHull,flight.data(),flight.size()));
+    assert(Bytes(resumed,restoredHull)==flight);
+    const auto restoredShape=restoredHull.snapshot();
+    assert(std::memcmp(&armored,&restoredShape,sizeof(armored))==0);
+    assert(resumed.level(Upgrade::Blaster)==1&&resumed.cash()==paidCash);
+    assert(resumed.ship_profile().hull==fitted.profile().hull);
+    // Intentionally idle through real enemy/escape rules. A failed sortie
+    // must neither refund the upgrade nor restore the pre-edit ship.
+    for(unsigned i=0;i<12000u&&resumed.phase()==Phase::Flight;++i)
+        resumed.update(.035f,0.f,0.f,false,false,&restoredHull);
+    assert(resumed.phase()==Phase::Lost&&resumed.cash()==paidCash);
+    assert(resumed.recover()&&resumed.phase()==Phase::Chart);
+    const auto returned=Bytes(resumed,restoredHull);
+    Simulation docked;ShipAssembly dockHull;
+    assert(CampaignSave::Decode(&docked,&dockHull,returned.data(),returned.size()));
+    const auto dockShape=dockHull.snapshot();
+    assert(std::memcmp(&armored,&dockShape,sizeof(armored))==0);
+    assert(docked.level(Upgrade::Blaster)==1&&docked.cash()==paidCash);
+    assert(!docked.buy(Upgrade::Blaster));
+    assert(Bytes(docked,dockHull)==returned);
+    assert(docked.configure_ship_profile(dockHull.profile(),dockHull.ready()));
+    assert(docked.launch(1)&&docked.ship_profile().hull==fitted.profile().hull);
+    assert(docked.level(Upgrade::Blaster)==1&&docked.cash()==paidCash);
+    std::cout<<"PASS Gumball paid Blaster and stocked armor survive sortie, return, reload and relaunch without duplicate debit\n";
+}
+
 int main(){
+    ShipyardSortieTransaction();
     CampaignFromNewGame();
     ShipAssembly ship;
     assert(ship.edit(4,2,2,Part::Armor)==ShipEdit::Placed);
