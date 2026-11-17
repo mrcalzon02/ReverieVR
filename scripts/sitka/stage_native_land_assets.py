@@ -126,6 +126,11 @@ def write_assets(output, source=SOURCE):
         for row, col, name, size, crc, verts, tris, east, north in records:
             lines.append(f"{row} {col} {name} {size} {crc} {verts} {tris} {east} {north}")
         (stage/"sitka/coast/index.txt").write_text("\n".join(lines)+"\n", encoding="ascii")
+        deck = ROOT / "data/sitka/geography/crescent-harbor/crescent-deck.sitkam"
+        deck_bytes = deck.read_bytes()
+        if digest(deck_bytes) != "4ebb973ec00a7cb2c07f14eab88a10faa20235c64daeaa114e737ed81973c007":
+            raise ValueError("Crescent Harbor municipal dock mesh changed")
+        (stage/"sitka/coast/crescent-deck.sitkam").write_bytes(deck_bytes)
         stage.rename(output)
         return {"source": str(source), "tiles": len(records),
                 "native_index": "sitka/coast/index.txt",

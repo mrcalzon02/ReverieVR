@@ -58,5 +58,12 @@ int main() {
     assert(!LoadJournal("SITKA-FISH-2\n",restored));
     assert(f.Cast(true,5.f));f.Step(NAN,false,false);f.Step(99.f,false,true);
     assert(f.phase==FishingPhase::Ready);
+    // Literal V6 journal from the previous fieldwork format, including the
+    // last surveyed site and all twelve registered practice specimens.
+    const std::string previous="SITKA-FISH-6\n5482442\n175\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n"
+        "0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n1\n0\n0\n1\n0\n3\n4095\n4095\n63\n";
+    Journal imported;
+    assert(LoadJournal(previous,imported)&&imported.chart_stations==3&&imported.practice_submitted==4095);
+    assert(imported.credits==175&&!imported.at_crescent&&!imported.crescent_cm&&!imported.crescent_job);
     std::cout<<"Sitka fishing simulation, upgrades, save and rejection PASS\n";
 }

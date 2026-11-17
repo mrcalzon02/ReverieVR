@@ -57,6 +57,41 @@ static void InspectLoupe(State *s,audit::GL &gl){
     audit::Check(s->cropX==4 && s->cropY==6,"old input prefix preserves inspection");
     std::puts("PASS Lantern loupe: all 64 framebuffer cells matched original evidence; no report or save on pan");
 }
+static void CompareExposures(State *s,const sim::Photograph &first) {
+    audit::Check(s->hasPrior && s->prior.pixels==first.pixels &&
+                 s->prior.sector==s->photo.sector,"the archived film is from the first river sortie");
+    auto aim=audit::Pointer(0,kPhotoY-.17f,kPhotoZ);
+    const auto writes=audit::writes;
+    Update(s,&aim);
+    audit::Check(s->cropX==4 && s->cropY==6 && s->viewDirty && audit::writes==writes,
+                 "aim moves both loupes to the same region without a per-frame write");
+    constexpr float scale=1.45f;
+    audit::Capture(Render,s,"lantern-river-film-comparison",scale);
+    int differences=0;
+    for(int side=0;side<2;++side){
+        const auto eye=audit::Eye(side,scale);
+        audit::Check(Render(s,&eye)==1,"comparison eye rendered");
+        for (int y=0;y<8;++y)for (int x=0;x<8;++x){
+            const int bit=1<<(s->cropX+x);
+            const int row=s->cropY+y;
+            const bool previous=(first.pixels[row]&bit)!=0, current=(s->photo.pixels[row]&bit)!=0;
+            if(previous!=current)++differences;
+            for(int plate=0;plate<2;++plate){
+                const float wx=(plate==0?-kLoupeX:kLoupeX)+(x-3.5f)*2*kPhotoPixel;
+                const float wy=kPhotoY+(3.5f-y)*2*kPhotoPixel;
+                const int px=static_cast<int>((1+(wx+eye.view[12])*eye.projection[0]/-kPhotoZ)*audit::GL::width*.5f);
+                const int py=static_cast<int>((1+wy*eye.projection[5]/-kPhotoZ)*audit::GL::height*.5f);
+                uint8_t rgba[4]{};
+                glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgba);
+                audit::Check((rgba[0]>130)==(plate==0?previous:current),
+                             "rendered comparison cell matches its own filed or current exposure");
+            }
+        }
+    }
+    audit::Check(differences>0,"compared region contains a visible change");
+    std::printf("PASS_LANTERN_PAIR samples=256 changed_cells_per_eye=%d crop=%d,%d\n",
+                differences/2,s->cropX,s->cropY);
+}
 #endif
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);audit::Check(argc==2,"capture directory argument");audit::output=argv[1];
@@ -102,6 +137,14 @@ int main(int argc,char** argv){
     Cycle(s);audit::Check(audit::writes==before_writes,"rocker leaves single-action screen and storage alone");
     Click(s);s=Recreate(s,&host,"lantern-river-revisit");
     audit::Check(s->photo.pixels!=photo.pixels,"the revisited river has a different deck");
+    CompareExposures(s,photo);
+    const auto priorCompare=audit::saves;
+    audit::reject_writes=true;
+    audit::Check(PrepareExit(s)==0 && audit::saves==priorCompare,"failed inspection checkpoint preserves prior file");
+    audit::reject_writes=false;
+    s=Recreate(s,&host,"lantern-river-registered-pair");
+    audit::Check(s->cropX==4 && s->cropY==6 && s->hasPrior && !s->viewDirty,
+                 "the inspected region and both plates reopen");
     Click(s);audit::Check(s->simulation.credibility()==7 && s->result.operational_effect==1,
         "filing no contact on the intact crossing produces a favorable report");
     std::puts("PASS_LANTERN cumulative trust=5 effect=3; all four phases/evidence/choice/results recreated exactly");

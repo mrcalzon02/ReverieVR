@@ -19,6 +19,7 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
         const struct Entry {const char* path;uint32_t limit;} exact[]={
             {"sitka/coast/terrain.sitkam",10000000u},
             {"sitka/coast/index.txt",16384u},
+            {"sitka/coast/crescent-deck.sitkam",131072u},
             {"sitka/lighting/sitka.properties",4096u},
             {"sitka/weather/sitka.properties",4096u},
             {"sitka/water/sitka.water",2000000u},

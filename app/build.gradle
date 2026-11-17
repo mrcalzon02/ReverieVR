@@ -184,6 +184,7 @@ def stageSitkaGeographyAssets = tasks.register(
 ) {
     sourceFiles.from(rootProject.fileTree(
         "data/sitka/geography/generated/noaa-enc-chart-land-v1"))
+    sourceFiles.from(rootProject.file("data/sitka/geography/crescent-harbor/crescent-deck.sitkam"))
     sourceFiles.from(rootProject.file("scripts/sitka/stage_native_land_assets.py"))
     outputDirectory.set(layout.buildDirectory.dir("generated/sitkaGeographyAssets"))
 }

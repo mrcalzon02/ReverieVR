@@ -23,7 +23,7 @@ int main(){
     }
     // Preserve exactly the supported previous composite shapes; the old
     // base has no retrospective checksum guarantee, which the record states.
-    for(size_t size:{save::Checkpoint::kLegacySize,save::Checkpoint::kPayloadSize}){
+    for(size_t size:{save::Checkpoint::kLegacySize,save::Checkpoint::kPreviousPayloadSize}){
         assert(save::Checkpoint::Decode(&restored,bytes.data()+save::Checkpoint::kHeaderSize,size)
             ==save::Checkpoint::Format::Legacy);
         assert(restored.simulation.cash_cents()==game.simulation.cash_cents());

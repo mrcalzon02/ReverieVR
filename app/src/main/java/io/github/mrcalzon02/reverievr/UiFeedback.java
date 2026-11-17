@@ -22,7 +22,7 @@ final class UiFeedback implements AutoCloseable {
     private final ControllerSpringSound controllerSpringSound =
         new ControllerSpringSound();
     private final NativeCombatSound combatSound = new NativeCombatSound();
-    private final RedLedgerSound redLedgerSound;
+    private final NativeGameSamples gameSamples;
     private BreakwaterAudio breakwaterAudio;
     private volatile boolean lifecycleActive = true;
     private volatile boolean nativeSessionActive;
@@ -39,7 +39,7 @@ final class UiFeedback implements AutoCloseable {
     UiFeedback(Context context) {
         Context application = context == null ? null : context.getApplicationContext();
         audioContext = application == null ? context : application;
-        redLedgerSound = new RedLedgerSound(context);
+        gameSamples = new NativeGameSamples(context);
         audioManager =
             context == null
                 ? null
@@ -130,13 +130,13 @@ final class UiFeedback implements AutoCloseable {
             // Even a stop/start collapsed into one UI turn resets old voices.
             controllerSpringSound.stop();
             combatSound.stop();
-            redLedgerSound.stop();
+            gameSamples.stop();
             stopTone();
             if (breakwaterAudio != null) breakwaterAudio.setSessionActive(false);
             appliedNativeSessionGeneration = sessionGeneration;
         } else if (suspended || !active || !focusAllowed) {
             combatSound.stop();
-            redLedgerSound.stop();
+            gameSamples.stop();
             stopTone();
         }
         if (breakwater && breakwaterAudio == null)
@@ -233,12 +233,12 @@ final class UiFeedback implements AutoCloseable {
     void airstrike() { nativeFeedback(NativeModuleRuntime.FEEDBACK_AIRSTRIKE); }
 
     void nativeSoundCue(int cueId) {
-        if (cueId < 1 || cueId > BreakwaterAudioPolicy.LAST_NATIVE_CUE) return;
+        if ((cueId < 1 || cueId > BreakwaterAudioPolicy.LAST_NATIVE_CUE) && !NativeGameSamples.supports(cueId)) return;
         postAudio(true, () -> {
             if (breakwaterSessionActive) {
                 if (breakwaterAudio != null) breakwaterAudio.playNativeCue(cueId, 1f, 1f);
-            } else if (cueId >= RedLedgerSound.FIRST_CUE && cueId <= RedLedgerSound.LAST_CUE) {
-                redLedgerSound.playCue(cueId);
+            } else if (NativeGameSamples.supports(cueId)) {
+                gameSamples.playCue(cueId);
             } else if (cueId <= 21) {
                 combatSound.playNativeCue(cueId);
             }
@@ -264,7 +264,7 @@ final class UiFeedback implements AutoCloseable {
         audioGeneration++;
         controllerSpringSound.stop();
         combatSound.stop();
-        redLedgerSound.stop();
+        gameSamples.stop();
         stopTone();
         if (breakwaterAudio != null) breakwaterAudio.pauseForLifecycle();
     }
@@ -399,7 +399,7 @@ final class UiFeedback implements AutoCloseable {
         mainHandler.removeCallbacksAndMessages(null);
         controllerSpringSound.close();
         combatSound.close();
-        redLedgerSound.close();
+        gameSamples.close();
         if (breakwaterAudio != null) breakwaterAudio.close();
         if (toneGenerator != null) {
             toneGenerator.release();

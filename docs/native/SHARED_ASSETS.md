@@ -2,6 +2,10 @@
 
 **Implemented in source; APK/headset acceptance pending.** ReverieVR's common `native/shared/v1/` contains sixteen compact owner-generated surface textures, three curated BWM1 models, and four PSX-style panoramic horizon textures. These are actual reusable *asset bytes*, not an imaginary common GPU texture memory across different native applications. The source-authoritative manifest `shared-assets/catalog-v1.json` gives each asset a stable logical ID, exact relative path, Git blob hash and license/consumer metadata.
 
+## Sitka municipal dock geometry
+
+The registered Sitka module can read `sitka/coast/crescent-deck.sitkam` through one exact private asset grant, capped at 131,072 bytes. The signed package stages its SHA-256-checked mesh alongside the 16 NOAA/USGS tiles. The horizontal dock footprints come from the City and Borough of Sitka. The two workboats, cargo activity, deck height and water treatment are authored game content. [Crescent Harbor source and route](../../data/sitka/geography/crescent-harbor/README.md)
+
 ## Current runtime contract
 
 - The single ReverieVR APK packages each common file **once**. The host's existing read-only `read_asset` callback resolves it from verified game content or APK baseline; module access is explicitly allowlisted in `reverie_native_shared_asset_catalog.h`. Game IDs outside that opt-in list receive zero access. No new ABI, Java permission, remote endpoint, second APK or dynamic library loader.

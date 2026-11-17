@@ -1,0 +1,36 @@
+{
+  "provider": "NOAA Office of Coast Survey",
+  "archive_url": "https://www.charts.noaa.gov/ENCs/US5AK2NE.zip",
+  "archive_sha256": "c23989bf6cf1c6c1360a0cd8b10a1390c0c5cea63a4d550683c6d579eb8afd02",
+  "cell": "ENC_ROOT/US5AK2NE/US5AK2NE.000",
+  "cell_sha256": "2c7ce84c0084acc3a49e22b2f3db909991280a4be8dec2f28615af2ec9de5240",
+  "retrieved_utc": "2026-11-17",
+  "edition": 3,
+  "issue_date": "20260302",
+  "compilation_scale": 12000,
+  "DSPM_HDAT": 2,
+  "DSPM_SDAT": 12,
+  "DSPM_DUNI": 1,
+  "horizontal_datum": "WGS84",
+  "sounding_datum": "Mean lower low water",
+  "depth_units": "metres",
+  "soundg": {
+    "RCID": 6330,
+    "LNAM": "0226AA147BE7DC34",
+    "SORDAT": "201101",
+    "SORIND": "US,US,graph,Chart 17327",
+    "longitude": -135.3286259,
+    "latitude": 57.0501578,
+    "DEPTH": 3.9,
+    "epsg32608_east": 480063.584,
+    "epsg32608_north": 6323017.253
+  },
+  "depare": {
+    "RCID": 1428,
+    "LNAM": "022622B9FA4A159F",
+    "DRVAL1": 3.6,
+    "DRVAL2": 5.4
+  },
+  "enc_direct_url": "https://encdirect.noaa.gov/arcgis/rest/services/encdirect/enc_harbour/MapServer/76/query?objectIds=13758887&outFields=*&returnGeometry=true&f=pjson",
+  "enc_direct_objectid": 13758887
+}

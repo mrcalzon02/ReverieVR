@@ -64,7 +64,7 @@ void LogLine(int32_t level,const char* tag,const char* message) {
 }
 
 int main(int argc,char** argv){
-    assert(argc==3);
+    assert(argc>=3&&argc<=5);
     asset_root=argv[1];
     const char* capture=argv[2];
     const EGLDisplay display=eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -175,27 +175,30 @@ int main(int argc,char** argv){
     projection[11]=-1.f;
     projection[14]=-(2.f*30.f*.10f)/(30.f-.10f);
     std::vector<uint8_t> rgba(512u*256u*4u);
-    glEnable(GL_SCISSOR_TEST);
-    for(int i=0;i<2;i++){
-        glViewport(i*256,0,256,256);
-        glScissor(i*256,0,256,256);
-        glDepthMask(GL_TRUE);
-        glClearColor(0.f,0.f,0.f,1.f);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        ReverieNativeEyeV1 eye{};
-        eye.struct_size=sizeof(eye);
-        eye.eye_index=static_cast<uint32_t>(i);
-        for(int k=0;k<4;k++)eye.view[k*5]=1.f;
-        std::copy(projection,projection+16,eye.projection);
-        eye.projection[8]=i==0?.025f:-.025f;
-        eye.view[12]=i==0?.025f:-.025f;
-        assert(RenderEye(state,&eye));
-    }
-    glDisable(GL_SCISSOR_TEST);
-    glFinish();
-    assert(glGetError()==GL_NO_ERROR);
-    glReadPixels(0,0,512,256,GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
-    assert(glGetError()==GL_NO_ERROR);
+    auto draw_eyes=[&]{
+        glEnable(GL_SCISSOR_TEST);
+        for(int i=0;i<2;i++){
+            glViewport(i*256,0,256,256);
+            glScissor(i*256,0,256,256);
+            glDepthMask(GL_TRUE);
+            glClearColor(0.f,0.f,0.f,1.f);
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+            ReverieNativeEyeV1 eye{};
+            eye.struct_size=sizeof(eye);
+            eye.eye_index=static_cast<uint32_t>(i);
+            for(int k=0;k<4;k++)eye.view[k*5]=1.f;
+            std::copy(projection,projection+16,eye.projection);
+            eye.projection[8]=i==0?.025f:-.025f;
+            eye.view[12]=i==0?.025f:-.025f;
+            assert(RenderEye(state,&eye));
+        }
+        glDisable(GL_SCISSOR_TEST);
+        glFinish();
+        assert(glGetError()==GL_NO_ERROR);
+        glReadPixels(0,0,512,256,GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+        assert(glGetError()==GL_NO_ERROR);
+    };
+    draw_eyes();
     std::array<size_t,2> colored{{0u,0u}};
     std::array<std::array<bool,256>,2> red_levels{};
     for(unsigned y=0;y<256u;++y)for(unsigned x=0;x<512u;++x){
@@ -210,15 +213,18 @@ int main(int argc,char** argv){
     assert(colored[0]>100u&&colored[1]>100u);
     for(const auto& levels:red_levels)
         assert(std::count(levels.begin(),levels.end(),true)>8);
-    std::ofstream ppm(capture,std::ios::binary);
-    assert(ppm.good());
-    ppm<<"P6\n512 256\n255\n";
-    for(int y=255;y>=0;--y)for(unsigned x=0;x<512u;++x){
-        const size_t at=(size_t(y)*512u+x)*4u;
-        ppm.write(reinterpret_cast<const char*>(rgba.data()+at),3);
-    }
-    ppm.close();
-    assert(ppm.good());
+    auto write_capture=[&](const char* path){
+        std::ofstream ppm(path,std::ios::binary);
+        assert(ppm.good());
+        ppm<<"P6\n512 256\n255\n";
+        for(int y=255;y>=0;--y)for(unsigned x=0;x<512u;++x){
+            const size_t at=(size_t(y)*512u+x)*4u;
+            ppm.write(reinterpret_cast<const char*>(rgba.data()+at),3);
+        }
+        ppm.close();
+        assert(ppm.good());
+    };
+    write_capture(capture);
     for(unsigned i=0;i<reverie::sitka::kChartStations;++i){
         if(i)fly_to(reverie::sitka::kSurveyRoute[i]);
         // On the last site, exercise the same recoverable failure as Android exit.
@@ -247,13 +253,107 @@ int main(int argc,char** argv){
     state=static_cast<State*>(Create(&host));assert(state&&state->chart_route);
     assert(state->fishing.fishing.journal.chart_stations==3);
     assert(state->fishing.fishing.journal.credits==175);
-    Destroy(state);
+    assert(OnGlCreated(state));
+    // Start through the advertised shore controls. A held click cannot deliver twice.
+    input={};input.struct_size=sizeof(input);input.delta_seconds=.05f;
+    input.secondary_down=1;input.move_x=-1;Update(state,&input);Update(state,&input);
+    assert(OnCrescent(*state));
+    input.secondary_down=0;input.move_x=0;
+    auto step=[&](float axis){input.move_y=axis;Update(state,&input);};
+    auto select=[&]{input.primary_down=1;step(0);step(0);input.primary_down=0;step(0);};
+    auto walk_to=[&](float meters){
+        for(int i=0;i<1500;++i){
+            const float distance=meters-state->fishing.fishing.journal.crescent_cm*.01f;
+            if(std::abs(distance)<.08f)break;
+            step(std::clamp(-distance/.2f,-1.f,1.f));
+        }
+        assert(std::abs(meters-state->fishing.fishing.journal.crescent_cm*.01f)<.08f);
+        step(0);assert(PrepareFrame(state));
+    };
+    auto stage=[&]{return state->fishing.fishing.journal.crescent_job;};
+    step(0);select();assert(stage()==1);select();assert(stage()==1);
+    const auto& stops=reverie::sitka::CrescentDistances();
+    walk_to(stops[4]);assert(state->chart_caption.find("BERTH 2-4")!=std::string::npos);
+    draw_eyes();if(argc>=4)write_capture(argv[3]);
+    select();assert(stage()==2);
+    walk_to(stops[4]+12.f);const auto midway=state->fishing.fishing.journal.crescent_cm;
+    Pause(state);ReleaseGl(state);Destroy(state);
+    state=static_cast<State*>(Create(&host));
+    assert(state&&OnCrescent(*state)&&stage()==2&&state->fishing.fishing.journal.crescent_cm==midway);
+    assert(OnGlCreated(state));step(0);assert(PrepareFrame(state));
+    walk_to(stops.back());select();assert(stage()==3);select();assert(stage()==3);
+    walk_to(0);fail_write=true;select();assert(stage()==4&&PrepareExit(state)==0);
+    assert(state->fishing.fishing.journal.credits==235);
+    fail_write=false;assert(PrepareExit(state));select();assert(stage()==4);
+    assert(state->fishing.fishing.journal.credits==235);
+    ReleaseGl(state);Destroy(state);
+    state=static_cast<State*>(Create(&host));assert(state&&OnCrescent(*state)&&stage()==4);
+    assert(state->fishing.fishing.journal.credits==235);
+    assert(OnGlCreated(state));step(0);assert(PrepareFrame(state));
+    using namespace reverie::sitka;
+    auto phase=[&]{return state->fishing.fishing.phase;};
+    select();assert(phase()==FishingPhase::Ready); // the paid gangway is dry
+    walk_to(CrescentCastMark());
+    select();assert(phase()==FishingPhase::Waiting&&state->fishing.fishing.depth==3.9f);
+    const uint32_t stance=state->fishing.fishing.journal.crescent_cm;
+    // A cast freezes walking. Cancel once and cast again from the same mark.
+    step(-1);assert(state->fishing.fishing.journal.crescent_cm==stance);
+    input.secondary_down=1;step(0);input.secondary_down=0;step(0);
+    assert(phase()==FishingPhase::Ready&&state->fishing.fishing.journal.total==0u);
+    input.primary_down=1;step(0);
+    for(unsigned i=0;i<200&&phase()!=FishingPhase::Bite;++i)step(0);
+    assert(phase()==FishingPhase::Bite);step(0);assert(phase()==FishingPhase::Bite);
+    input.primary_down=0;step(0);input.primary_down=1;step(0);
+    assert(phase()==FishingPhase::Reeling);
+    for(int i=0;i<22;++i)step(0);
+    const auto loaded_line=state->chart_caption;
+    const auto reeled=state->fishing.fishing.reel;
+    input.primary_down=0;step(0);step(0);
+    assert(state->chart_caption!=loaded_line&&state->fishing.fishing.reel==reeled);
+    draw_eyes();if(argc>=5)write_capture(argv[4]);
+    fail_write=true;
+    for(unsigned tick=0;tick<1400&&phase()==FishingPhase::Reeling;++tick){
+        input.primary_down=tick%10<6;step(0);
+    }
+    assert(phase()==FishingPhase::Landed&&PrepareExit(state)==0);
+    const unsigned species=unsigned(state->fishing.fishing.hooked);
+    assert(state->fishing.fishing.journal.total==1&&state->fishing.fishing.journal.fish_inventory[species]==1);
+    fail_write=false;assert(PrepareExit(state));
+    ReleaseGl(state);Destroy(state);
+    state=static_cast<State*>(Create(&host));assert(state&&OnCrescent(*state));
+    assert(phase()==FishingPhase::Ready&&state->fishing.fishing.journal.fish_inventory[species]==1);
+    assert(state->fishing.fishing.journal.crescent_cm==stance);
+    input.primary_down=0;input.secondary_down=1;input.move_x=-1;Update(state,&input);Update(state,&input);
+    assert(!state->geo_view&&!state->fishing.fishing.journal.at_crescent);
+    input={};input.struct_size=sizeof(input);input.delta_seconds=.05f;
+    input.listener_valid=1;input.listener_right[0]=1.f;
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_origin[1]=-.34f;
+    for(unsigned i=0;i<200;++i){
+        const auto pos=state->walk_session->pose();
+        const float dx=-6.f-pos.x,dz=-pos.z,d=std::hypot(dx,dz);
+        if(d<.09f)break;
+        input.move_x=dx/d;input.move_y=dz/d;Update(state,&input);
+    }
+    input.move_x=0;
+    const auto pos=state->walk_session->pose();
+    const float dx=-5.f-pos.x,dz=-pos.z,d=std::hypot(dx,dz);
+    input.pointer_direction[0]=dx/d;input.pointer_direction[2]=dz/d;
+    select();assert(state->harbor_shop.open());
+    select();assert(state->fishing.fishing.journal.fish_inventory[species]==0);
+    assert(state->fishing.fishing.journal.credits==235u+kFishCreditAwards[species]);
+    assert(PrepareExit(state));Destroy(state);
+    std::cout<<"PASS real 3.9 m Float 2 cast -> "<<kFishNames[species]<<" -> restored creel -> "
+             <<kFishCreditAwards[species]<<" CR at office; cancellation, held hook, reel and failed save.\n";
+    std::cout<<"PASS Crescent gangway -> berth 2-4 -> berth 2-10 -> gangway: "
+             <<stops.back()<<" m each way, saved mid-walk at "<<midway
+             <<" cm, paid 60 once after write retry.\n";
     assert(eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT));
     assert(eglDestroyContext(display,context));
     assert(eglDestroySurface(display,surface));
     assert(eglTerminate(display));
     std::cout<<"PASS genuine Sitka USGS/NOAA 16-tile source: live native Create, "
              <<"four tile GPU swap, two stereoscopic GLES2 previews, "
-             <<"three surveyed sites, V5/V6 journal and retry; colored pixels "<<colored[0]
+             <<"three surveyed sites, V5 import and V7 dock journal retry; colored pixels "<<colored[0]
              <<" / "<<colored[1]<<"\n";
 }

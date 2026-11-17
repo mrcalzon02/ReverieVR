@@ -41,7 +41,7 @@ public final class BreakwaterAudioBackendHarness {
     }
     private static void scenario(String name, Runnable test) {
         Handler.reset(); SoundPool.reset(); ReverieLog.messages.clear();
-        NativeCombatSound.played.clear(); RedLedgerSound.played.clear(); ToneGenerator.tones.clear();
+        NativeCombatSound.played.clear(); NativeGameSamples.played.clear(); ToneGenerator.tones.clear();
         try {
             test.run();
             check(SoundPool.totalLive() == 0, name + " leaked a playing voice");

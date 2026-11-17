@@ -420,11 +420,18 @@ final class NativeModuleRuntime implements AutoCloseable {
         float[] listenerPosition,
         float[] listenerRight
     ) {
+        return updateAt(pointerKind,pointerOrigin,pointerDirection,listenerPosition,listenerRight,System.nanoTime());
+    }
+
+    // The emulator replay supplies recorded frame times on the same input path.
+    synchronized int updateAt(
+        int pointerKind,float[] pointerOrigin,float[] pointerDirection,
+        float[] listenerPosition,float[] listenerRight,long now
+    ) {
         if (handle == 0L || isPaused()) {
             return 0;
         }
 
-        long now = System.nanoTime();
         float deltaSeconds =
             (now - lastUpdateNanos)
                 / 1_000_000_000.0f;

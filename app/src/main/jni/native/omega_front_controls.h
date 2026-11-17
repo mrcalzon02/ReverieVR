@@ -77,7 +77,9 @@ public:
         // then enemy AI, then objectives). No frame time can ever advance it.
         if(in.commit_turn && !turn_down_) {
             if(!paused && battle.result()==Result::Active) {
-                battle.Step();rejected=false;changed=true;
+                battle.Step();
+                if(selected>=0 && !battle.unit(selected)->alive())selected=-1;
+                rejected=false;changed=true;
             }else{
                 rejected=true;changed=true;
             }
@@ -112,6 +114,11 @@ public:
             // quietly discard a deliberately chosen Repair/Attack order.
             selected=occupant;return true;
         }
+        if(occupant>=0 && occupant!=selected &&
+           battle.unit(occupant)->side==Side::Hearthwell){
+            selected=occupant;
+            return true;
+        }
         // Clicking the selected soldier must activate a self-targeted
         // repair/resupply order, not silently deselect the unit.
         if(mode==CommandMode::Repair)return battle.QueueRepair(selected);
@@ -119,13 +126,7 @@ public:
         if(occupant==selected) { selected=-1;return true; }
         const Unit* actor=battle.unit(selected);
         if(!actor || !actor->alive()) {selected=-1;return false;}
-        if(mode==CommandMode::Move) {
-            if(occupant>=0) {
-                const Unit* u=battle.unit(occupant);
-                if(u && u->side==Side::Hearthwell) {selected=occupant;return true;}
-            }
-            return battle.QueueMove(selected,cursor_x,cursor_y);
-        }
+        if(mode==CommandMode::Move)return battle.QueueMove(selected,cursor_x,cursor_y);
         if(mode==CommandMode::Attack) return battle.QueueAttack(selected,occupant);
         return false;
     }

@@ -18,6 +18,8 @@ import android.util.Log;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.zip.CRC32;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.junit.Test;
@@ -41,6 +44,53 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public final class DownloadedNativeGameAssetsInstrumentedTest {
     private static final String TAG="GameContentIntegration";
+
+    @Test public void guessTheDoorSpeaksOnTheSecondRightLever() throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File home=new File(app.getCacheDir(),"guess-voice-"+System.nanoTime());
+        assertTrue(home.mkdirs());
+        File save=new File(home,"guess-the-door/maze-v1.bin");
+        VirtualInputBus controls=new VirtualInputBus();
+        VirtualOutput primary=VirtualOutput.joystickButton(0);
+        float[] direction={0,0,-1},origin={-2,0,0};
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,false,
+                new ReveriePreferences(InstrumentationRegistry.getInstrumentation().getContext()))) {
+            assertTrue(game.start("guess-the-door"));
+            assertTrue(game.onSurfaceCreated());
+            long now=System.nanoTime();
+            for(int attempt=0;attempt<2;attempt++){
+                origin[0]=attempt==0?-2:2;
+                game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now+=50000000L);
+                controls.applyDigital(primary,true);
+                game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now+=50000000L);
+                controls.applyDigital(primary,false);
+                for(int i=0;i<100;i++)
+                    game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now+=50000000L);
+                if(Files.readAllBytes(save.toPath())[16]==1)break;
+            }
+            assertEquals("Actual first room cleared",1,Files.readAllBytes(save.toPath())[16]);
+            origin[0]=2;
+            game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now+=50000000L);
+            game.drainSoundCues();
+            controls.applyDigital(primary,true);
+            game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now+=50000000L);
+            assertTrue("Second-room right lever emits the voice cue through JNI",breakwaterHasCue(game.drainSoundCues(),48));
+            controls.applyDigital(primary,false);
+            game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now+=50000000L);
+            assertFalse("Holding the lever cannot repeat speech",breakwaterHasCue(game.drainSoundCues(),48));
+            assertTrue(game.prepareForExit());
+            assertEquals("Voice encounter recorded in the real maze slot",1,Files.readAllBytes(save.toPath())[24]);
+        } finally {remove(home);}
+        android.media.MediaMetadataRetriever decoder=new android.media.MediaMetadataRetriever();
+        try(android.content.res.AssetFileDescriptor asset=app.getResources().openRawResourceFd(R.raw.guess_lever_crunk)){
+            decoder.setDataSource(asset.getFileDescriptor(),asset.getStartOffset(),asset.getLength());
+            long duration=Long.parseLong(decoder.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION));
+            assertTrue("Packaged lever voice lasts two seconds",duration>=2000 && duration<=2150);
+            Log.i(TAG,"PASS Guess the Door installed right-lever speech, encounter save and WAV duration "+duration+" ms");
+        } finally {decoder.release();}
+    }
+
 
     private static class Pbuffer implements AutoCloseable {
         final EGLDisplay display;
@@ -544,6 +594,138 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         atlas.recycle();
     }
 
+
+    private static int[] crescentJournal(File save,int stage) throws IOException {
+        String[] lines=new String(Files.readAllBytes(save.toPath()),StandardCharsets.US_ASCII).split("\n");
+        assertTrue("Missing Crescent journal fields",lines.length>=40 && lines[0].startsWith("SITKA-FISH-"));
+        assertEquals("Delivery handoff",stage,Integer.parseInt(lines[37]));
+        assertEquals("Player remains on the municipal dock",1,Integer.parseInt(lines[39]));
+        return new int[]{Integer.parseInt(lines[2]),Integer.parseInt(lines[38])};
+    }
+
+    @Test public void sitkaCrescentFloatDeliverySurvivesRelaunchAndPaysOnce() throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context tests=InstrumentationRegistry.getInstrumentation().getContext();
+        File home=new File(app.getCacheDir(),"sitka-crescent-"+System.nanoTime());
+        assertTrue(home.mkdirs());
+        File save=new File(home,"sitka/sitka-fishing-v1.sav");
+        VirtualInputBus bus=new VirtualInputBus();
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),bus,false,new ReveriePreferences(tests))) {
+            class DockControls {
+                long now=System.nanoTime();
+                final float[] origin={0,0,0},direction={0,0,-1};
+                final VirtualOutput select=VirtualOutput.joystickButton(0),secondary=VirtualOutput.joystickButton(1);
+                void open() {
+                    assertTrue("Cannot launch installed Sitka",game.start("sitka"));
+                    assertTrue("Cannot create Sitka GLES2 resources",game.onSurfaceCreated());
+                    now=System.nanoTime();
+                }
+                void step(float x,float y,boolean pressed,boolean chord) {
+                    game.setSitkaWalkTouchpad(x,y,true);
+                    bus.applyDigital(select,pressed);
+                    bus.applyDigital(secondary,chord);
+                    now+=50000000L;
+                    game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,origin,direction,null,null,now);
+                }
+                void handoff() {step(0,0,true,false);step(0,0,true,false);step(0,0,false,false);}
+                void walk(float y,int frames) {for(int i=0;i<frames;i++)step(0,y,false,false);}
+                void reopen() {
+                    assertTrue("Sitka could not checkpoint the dock walk",game.prepareForExit());
+                    game.releaseSurface();game.stop();open();
+                }
+                void capture(String filename) throws IOException {
+                    assertTrue(game.prepareFrame());
+                    omegaFrame(game,new File(app.getFilesDir(),filename));
+                }
+            }
+            DockControls dock=new DockControls();
+            dock.open();
+            dock.step(-1,0,false,true);dock.step(-1,0,false,true);dock.step(0,0,false,false);
+            int start=crescentJournal(save,0)[0];
+            dock.handoff();assertEquals(start,crescentJournal(save,1)[0]);
+            dock.walk(-1,403); // 80.6 m from the gangway to Float 2, berth 2-4.
+            dock.capture("sitka-crescent-float-2.png");
+            dock.handoff();int[] atFloat=crescentJournal(save,2);
+            assertEquals(start,atFloat[0]);assertEquals(8060,atFloat[1]);
+            dock.walk(-1,60);
+            dock.reopen();
+            assertEquals("Mid-route distance persisted in centimetres",9260,crescentJournal(save,2)[1]);
+            dock.walk(-1,170); // The deck stops at berth 2-10.
+            dock.handoff();assertEquals(start,crescentJournal(save,3)[0]);
+            dock.walk(1,630);
+            dock.handoff();int[] paid=crescentJournal(save,4);
+            assertEquals(start+60,paid[0]);assertEquals(0,paid[1]);
+            dock.capture("sitka-crescent-receipt.png");
+            dock.reopen();
+            dock.handoff();assertArrayEquals(paid,crescentJournal(save,4));
+            Log.i(TAG,"PASS Sitka installed Crescent delivery: Float 2, four handoffs, two relaunches, 60 credits once");
+        } finally {remove(home);}
+    }
+
+    @Test public void breakwaterCadetCampaignReachesSavedVictoryThroughControllerInputs()
+            throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context tests=InstrumentationRegistry.getInstrumentation().getContext();
+        File home=new File(app.getCacheDir(),"breakwater-campaign-"+System.nanoTime());
+        assertTrue(home.mkdirs());
+        File save=new File(home,"breakwater-battery/breakwater-run-1-v2.bin");
+        VirtualInputBus controls=new VirtualInputBus();
+        VirtualOutput primary=VirtualOutput.joystickButton(0),secondary=VirtualOutput.joystickButton(1);
+        float[] origin={0,0,0},direction=new float[3];
+        int waves=0,reopens=0,losses=0,frames=0;
+        long now=System.nanoTime();
+        byte[] victory=null;
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime game=new NativeModuleRuntime(home,app.getAssets(),controls,false,
+                new ReveriePreferences(tests));
+            DataInputStream trace=new DataInputStream(new BufferedInputStream(new GZIPInputStream(
+                tests.getAssets().open("breakwater-cadet.bwc"))))) {
+            assertEquals("Controller recording version",0x42574331,trace.readInt());
+            assertTrue(game.start("breakwater-battery"));
+            assertTrue(game.onSurfaceCreated());
+            for(int event=trace.readUnsignedByte();event!=20;event=trace.readUnsignedByte()) {
+                if(event<8) {
+                    controls.applyDigital(primary,(event&1)!=0);
+                    controls.applyDigital(secondary,(event&2)!=0);
+                    for(int axis=0;axis<3;axis++)direction[axis]=trace.readFloat();
+                    now+=(event&4)!=0?100000000L:50000000L;
+                    game.updateAt(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,
+                        origin,direction,null,null,now);
+                    frames++;
+                } else if(event==16) {
+                    waves++;
+                    byte[] earned=Files.readAllBytes(save.toPath());
+                    assertEquals("Expected earned checkpoint at wave "+waves,88,earned.length);
+                    for(int offset:new int[]{16,20,24,28,80})
+                        assertEquals("Wave "+waves+" checkpoint offset "+offset,
+                            trace.readUnsignedByte(),breakwaterSaveWord(earned,offset));
+                } else if(event==17) {
+                    game.releaseSurface();
+                    game.stop();
+                    assertTrue(game.start("breakwater-battery"));
+                    assertTrue(game.onSurfaceCreated());
+                    reopens++;
+                } else if(event==18 || event==19) {
+                    assertTrue(game.prepareFrame());
+                    String name=event==18?"breakwater-campaign-loss.png":"breakwater-campaign-victory.png";
+                    omegaFrame(game,new File(app.getFilesDir(),name));
+                    if(event==18)losses++;
+                    else victory=Files.readAllBytes(save.toPath());
+                } else fail("Unknown Breakwater input record "+event);
+            }
+            assertEquals("Unexpected trailing campaign input",-1,trace.read());
+            assertEquals(366,waves);
+            assertEquals(4,reopens);
+            assertEquals(1,losses);
+            assertNotNull(victory);
+            assertEquals("Final checkpoint marks a victory",1,breakwaterSaveWord(victory,80));
+            assertArrayEquals("Choosing an empty slot must preserve the win",
+                victory,Files.readAllBytes(save.toPath()));
+            Log.i(TAG,"PASS Breakwater installed campaign: "+waves+" waves, "+frames+
+                " controller updates, "+reopens+" reopens, "+losses+" earned retry");
+        } finally {remove(home);}
+    }
 
     // This test drives the actual installed JNI Breakwater game and reads
     // GLES2 pixels. A purchased gun must be selectable through its physical

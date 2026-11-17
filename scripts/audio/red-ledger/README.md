@@ -3,7 +3,7 @@
 Run `./scripts/audio/verify-red-ledger-lifecycle.sh` with Java 17 or newer. An
 optional checkout argument selects production sources and their actual WAV files.
 
-The runner compiles the production `RedLedgerSound`, `UiFeedback`,
+The runner compiles the production `NativeGameSamples`, `UiFeedback`,
 `BreakwaterAudio`, `BreakwaterAudioPolicy`, and `MusicVolumePolicy`. Its named
 Android platform doubles supply resource IDs, asynchronous load completion,
 bounded SoundPool streams, monotonic time, and UI callbacks. It reads the actual

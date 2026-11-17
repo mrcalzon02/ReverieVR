@@ -1,3 +1,9 @@
+## Hearthfall regional outcome and tactical queues
+
+All six operations can be carried from a fresh campaign to a regional report using controller input. The report shows what happened at Ashrail Yard, Charter Gate and Caravan Ford, reads current treaty obligations and shows the state of the waterworks and settlement. Close it to keep playing, or open it again from the pause menu. Once a tactical save is resumed, a filed battle report returns the commander to the local sector map.
+
+Select another friendly unit in any order mode to switch units. Its readout shows health, ammunition and queued orders. **Modes → Clear Unit Orders** withdraws only its pending commands and saves the change without spending a turn. The recorded campaign takes the Charter Gate accord and plays the five other operations on the board. It closes and reopens the White Orchard engagement after turn 20. The replay lives in `scripts/audit/probes/omega_hearthfall_replay.cpp` and `omega_hearthfall_replay.txt`.
+
 # Omega Front — Hearthfall Strategy and Tactical Implementation
 
 ## Continental world surface and deliberate tactical turns — 2026-10-28

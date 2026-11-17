@@ -241,6 +241,13 @@ public:
             snack_stock_[offer_-kDrinks]+=kSnackCatalog[offer_-kDrinks].units;
         return true;
     }
+    bool SupplyGrocer(int faction, int units) {
+        if (faction < 0 || faction >= kSnacks || units <= 0 || snack_stock_[faction] < units)
+            return false;
+        snack_stock_[faction] -= units;
+        if (favor_[faction] < 100000) ++favor_[faction];
+        return true;
+    }
     void RecordService(PatronKind patron) {
         const int faction=FactionFor(patron);
         const ServiceBonus bonus=RateService(patron,chosen_drink_,chosen_snack_);

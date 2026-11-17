@@ -810,3 +810,5 @@ The hosted `breakwater-battery` renderer now requests a 6000m far plane only for
 ## Sitka private starter loop — 2026-11-07
 
 The unregistered source-only Sitka module uses the existing host-normalized input, save and feedback services for on-foot office interactions, retained inventory sales and find registration. Its private save format is now clean-start `SITKA-FISH-5`; no old-save migration is required. One Update advances transactions; eye rendering only presents cached Lato text, including fishing phase/tension and save errors. The new real-module fixtures exercise input/save and stereo/context recreation locally. This introduces no ABI or generic host-service changes and does not admit Sitka as packaged/playable content. Full scope and remaining world/character/boat gates: `docs/records/2026-11-07-sitka-starter-harbor-loop.md`.
+
+The Guess the Door right-lever encounter emits recorded one-shot cue 48 once per maze. The Android sample bank owns decode, playback and lifecycle interruption. [Game and recording](../project/GUESS_THE_DOOR.md)

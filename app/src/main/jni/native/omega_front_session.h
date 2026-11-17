@@ -124,6 +124,18 @@ public:
         primary_=in.primary;secondary_=in.secondary;
         return changed;
     }
+    bool ClearSelectedOrders(){
+        const int id=tactical.selected;
+        if(view!=FrontMode::Tactical || !tactical.battle.queued(id) ||
+           !tactical.battle.CancelOrders(id)){
+            tactical.rejected=true;
+            return false;
+        }
+        *frontier.current_battle()=tactical.battle;
+        tactical.rejected=false;
+        ++tactical.issued;
+        return true;
+    }
     bool OrderRelief(int site){
         if(view!=FrontMode::SectorMap || !frontier.ReliefOrder(site))return false;
         ++orders;

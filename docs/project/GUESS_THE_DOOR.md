@@ -76,6 +76,10 @@ and pack approved pairs into one small texture atlas, admit
 only exact paths in the game's bounded asset scope, and confirm
 GLES2 stereo rendering and Device reference performance.
 
+## Spoken lever cue
+
+Pulling the right lever in room two plays the captioned “Pull the lever, Crunk!” once per maze. The 2.073-second mono WAV is synthesized from the game text with CMU Flite’s SLT voice, normalized to −16 LUFS and bundled at 22,050 Hz. Cue 48 uses the shell’s recorded-sample bank. Pause, focus loss and module exit stop the clip. The journal keeps the encounter flag across relaunch. [Packaged WAV](../../app/src/main/res/raw/guess_lever_crunk.wav)
+
 ## Sound
 The native host's existing Red Ledger metal, door, click and drawer
 cues are requested for lever, opening, temporary footsteps and pit;
@@ -93,5 +97,5 @@ sample is included.
    Development-only gallery launch; verify legacy games unchanged.
 3. Test slow transitions, gaze tooltip, lever targeting, audio
    and shell Quick Menu on Galaxy S9 + Daydream controller.
-4. Integrate checked source-door atlases and licensed audio speech,
+4. Integrate checked source-door atlases and original footstep and pit Foley,
    then run stereo, accessibility, FPS, battery and thermal tests.

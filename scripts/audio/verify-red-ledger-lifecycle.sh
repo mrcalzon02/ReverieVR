@@ -24,12 +24,12 @@ task_java_files() {
 TASK_COMMON=()
 while IFS= read -r -d '' TASK_FILE; do
   # Compile the real bank instead of the existing routing-only double.
-  [[ "$TASK_FILE" == */reverievr/RedLedgerSound.java ]] && continue
+  [[ "$TASK_FILE" == */reverievr/NativeGameSamples.java ]] && continue
   TASK_COMMON+=("$TASK_FILE")
 done < <(task_java_files "$TASK_SCRIPT_DIR/common")
 mapfile -d '' -t TASK_HARNESS < <(task_java_files "$TASK_SCRIPT_DIR/red-ledger")
 TASK_PRODUCTION=()
-for TASK_CLASS in UiFeedback RedLedgerSound BreakwaterAudio BreakwaterAudioPolicy MusicVolumePolicy; do
+for TASK_CLASS in UiFeedback NativeGameSamples BreakwaterAudio BreakwaterAudioPolicy MusicVolumePolicy; do
   TASK_PRODUCTION+=("$TASK_SOURCE_DIR/$TASK_CLASS.java")
 done
 "${TASK_JAVAC[@]}" -source 17 -target 17 -Xlint:-options -encoding UTF-8 \

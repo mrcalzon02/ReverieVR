@@ -527,3 +527,5 @@ services without changing any ABI field or asset-read permissions.
 Native clue/route logic is deterministic; the source prototype has
 only a caption Easter egg, not an audible voice line. Mechanist image
 assets are not yet packaged or drawn.
+
+Guess the Door requests one-shot sound cue 48 for its captioned lever line. Android preloads its bundled recording into the shared sample bank.

@@ -395,6 +395,8 @@ void Sfx(State* s,unsigned events){
     // hinged door, short mechanical footfalls. No ripped movie audio.
     if(events&reverie::doors::LeverSound)
         ReverieNativeRequestSoundV1(s->host,REVERIE_NATIVE_SOUND_RED_LEDGER_METAL);
+    if(events&reverie::doors::LeverVoice)
+        ReverieNativeRequestSoundV1(s->host,REVERIE_NATIVE_SOUND_GUESS_LEVER_VOICE);
     if(events&reverie::doors::DoorSound)
         ReverieNativeRequestSoundV1(s->host,REVERIE_NATIVE_SOUND_RED_LEDGER_DOOR);
     if(events&reverie::doors::StepSound)

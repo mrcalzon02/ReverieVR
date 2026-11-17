@@ -9,16 +9,16 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Real RedLedgerSound, UiFeedback and Breakwater bank; only Android edges are
+/** Real NativeGameSamples, UiFeedback and Breakwater bank; only Android edges are
  * named platform doubles. WAV metadata comes from the actual repository files.
  * This does not claim Android decoder, physical audio, focus or device results. */
 public final class RedLedgerAudioLifecycleHarness {
     private static final String[] FILES={"red_ledger_click.wav", "red_ledger_metal.wav",
         "red_ledger_coins.wav", "red_ledger_book.wav", "red_ledger_door.wav",
-        "red_ledger_drawer.wav"};
+        "red_ledger_drawer.wav", "guess_lever_crunk.wav"};
     private static final int[] RESOURCES={R.raw.red_ledger_click, R.raw.red_ledger_metal,
         R.raw.red_ledger_coins, R.raw.red_ledger_book, R.raw.red_ledger_door,
-        R.raw.red_ledger_drawer};
+        R.raw.red_ledger_drawer, R.raw.guess_lever_crunk};
     private static final long[] DURATION_MS=new long[FILES.length];
     private static int checks, scenarios;
 
@@ -196,13 +196,13 @@ public final class RedLedgerAudioLifecycleHarness {
         }
     }
     private static void closeAndStaleDecode() {
-        RedLedgerSound bank=new RedLedgerSound(new Context());
+        NativeGameSamples bank=new NativeGameSamples(new Context());
         SoundPool pool=SoundPool.instances.get(0);
         SoundPool.completeAllLoads();
         bank.close(); bank.close(); Handler.drain(); bank.playCue(27);
         check(pool.releaseCalls==1 && pool.plays.isEmpty(),
             "idempotent close rejects late decode and later playback");
-        RedLedgerSound unavailable=new RedLedgerSound(null);
+        NativeGameSamples unavailable=new NativeGameSamples(null);
         unavailable.playCue(27); unavailable.close(); unavailable.close();
     }
     private static void naturalCompletion() {
@@ -251,6 +251,15 @@ public final class RedLedgerAudioLifecycleHarness {
         scenario("asynchronous decode during pause", RedLedgerAudioLifecycleHarness::pendingDecode);
         scenario("bounded retry after platform stop failure", RedLedgerAudioLifecycleHarness::failedStopRetry);
         scenario("idempotent close and stale decode", RedLedgerAudioLifecycleHarness::closeAndStaleDecode);
+        scenario("maze lever speech", () -> {
+            try(Fixture f=new Fixture()) {
+                f.start("guess-the-door");
+                f.play(NativeGameSamples.GUESS_LEVER_VOICE);
+                check(f.ledger.liveCount()==1,"maze speech routed to the shared recorded bank");
+                f.ui.pauseForLifecycle();
+                check(f.ledger.liveCount()==0,"pause stops speech");
+            }
+        });
         scenario("natural sample completion", RedLedgerAudioLifecycleHarness::naturalCompletion);
         System.out.println("Red Ledger real-source lifecycle harness: "+scenarios+" scenarios, "
             +checks+" checks passed; named Android platform double, no device claim.");

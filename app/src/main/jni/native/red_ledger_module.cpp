@@ -162,7 +162,8 @@ struct ProductGlResource {
     GLsizei vertex_count = 0;
 };
 
-enum class LedgerPage { Renovations, Accounts, Factions };
+enum class LedgerPage { Renovations, Accounts, Factions, District };
+using GroceryAccount = reverie::redledger::district::GroceryAccount;
 
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
@@ -170,6 +171,7 @@ struct ModuleState {
     trade::Trade market;
     property::Renovations renovations;
     clientele::State clientele;
+    GroceryAccount grocery;
     int hovered_offer = -1;
     LedgerPage ledger_page=LedgerPage::Renovations;
     bool save_dirty = false;
@@ -242,7 +244,7 @@ void Log(
 }
 
 const char *WorkTargetName(
-    WorkTarget target
+    WorkTarget target, LedgerPage page=LedgerPage::Renovations
 ) {
     switch (target) {
         case WorkTarget::CupStack:
@@ -273,8 +275,8 @@ const char *WorkTargetName(
         case WorkTarget::StockBuy: return "purchase selected wholesale stock";
         case WorkTarget::DrinkChoice: return "choose next available drink";
         case WorkTarget::SnackChoice: return "choose next available snack";
-        case WorkTarget::UpgradeNext: return "next property renovation";
-        case WorkTarget::UpgradeBuy: return "purchase property renovation";
+        case WorkTarget::UpgradeNext: return page==LedgerPage::District?"next grocery supplier":"next property renovation";
+        case WorkTarget::UpgradeBuy: return page==LedgerPage::District?"dispatch grocery order":"purchase property renovation";
         case WorkTarget::Bed: return "rest and close the day";
         case WorkTarget::None:
         default:
@@ -366,9 +368,11 @@ bool IsTargetAvailable(
                 && simulation.dirty_cups() > 0;
 
         case WorkTarget::Ledger:
+            return room==trade::Room::Living && hands_free;
         case WorkTarget::UpgradeNext:
         case WorkTarget::UpgradeBuy:
-            return room==trade::Room::Living && hands_free;
+            return room==trade::Room::Living && hands_free &&
+                   (state->ledger_page!=LedgerPage::District || simulation.day()>=state->grocery.next_day());
 
         case WorkTarget::BeerOrder:
         case WorkTarget::CupOrder:
@@ -551,7 +555,7 @@ bool SaveState(ModuleState *state) {
     state->save_retry_seconds=1.0f;
     using reverie::redledger::save::Checkpoint;
     const reverie::redledger::save::State snapshot{
-        state->simulation,state->market,state->renovations,state->clientele};
+        state->simulation,state->market,state->renovations,state->clientele,state->grocery};
     Checkpoint::Bytes bytes{};
     const bool ok=ReverieNativeHostSupportsSaveV1(state->host)
         &&Checkpoint::Encode(snapshot,&bytes)
@@ -590,6 +594,11 @@ bool LoadState(ModuleState *state) {
     }
     state->simulation=restored.simulation;state->market=restored.market;
     state->renovations=restored.renovations;state->clientele=restored.clientele;
+    state->grocery=restored.district;
+    if (state->market.room()==trade::Room::Living &&
+        (state->simulation.day()==8 || state->simulation.day()==GroceryAccount::kOpeningDay ||
+         state->grocery.last_dispatch==static_cast<uint32_t>(state->simulation.day())))
+        state->ledger_page=LedgerPage::District;
     state->load_blocked=false;state->save_failed=false;state->status_dirty=true;
     // Preserve checked current/previous supported composite saves. Once read
     // successfully, upgrade their envelope without discarding a pending write.
@@ -683,15 +692,25 @@ bool ActivateWorkTarget(
             switch(state->ledger_page){
                 case LedgerPage::Renovations: state->ledger_page=LedgerPage::Accounts;break;
                 case LedgerPage::Accounts: state->ledger_page=LedgerPage::Factions;break;
-                case LedgerPage::Factions: state->ledger_page=LedgerPage::Renovations;break;
+                case LedgerPage::Factions: state->ledger_page=LedgerPage::District;break;
+                case LedgerPage::District: state->ledger_page=LedgerPage::Renovations;break;
             }
             changed=true;
             break;
         case WorkTarget::UpgradeNext:
+            if (state->ledger_page==LedgerPage::District) {
+                state->grocery.selected=(state->grocery.selected+1)%trade::kFactions;
+                changed=true;
+                break;
+            }
             changed=state->renovations.next();
             state->ledger_page=LedgerPage::Renovations;
             break;
         case WorkTarget::UpgradeBuy:
+            if (state->ledger_page==LedgerPage::District) {
+                changed=state->grocery.dispatch(simulation,state->market,state->renovations,state->clientele);
+                break;
+            }
             changed=state->renovations.buy(&simulation,state->market);
             if(changed)state->ledger_page=LedgerPage::Renovations;
             break;
@@ -700,7 +719,9 @@ bool ActivateWorkTarget(
             simulation.CloseDay();
             changed=simulation.day()!=today;
             if (changed) {
-                state->ledger_page=LedgerPage::Accounts;
+                state->grocery.close_shift(simulation.last_ledger());
+                state->ledger_page=(today==7 || simulation.day()==GroceryAccount::kOpeningDay)
+                    ? LedgerPage::District : LedgerPage::Accounts;
                 state->clientele.next_day(
                     state->renovations.tier(property::Walls)+
                     state->renovations.tier(property::Floor)+
@@ -782,7 +803,7 @@ bool ActivateWorkTarget(
     Log(
         state,
         REVERIE_NATIVE_LOG_DEBUG,
-        WorkTargetName(target)
+        WorkTargetName(target,state->ledger_page)
     );
     ReverieNativeRequestFeedbackV1(
         state->host,
@@ -1712,6 +1733,49 @@ void DrawCup(
     }
 }
 
+void DistrictPage(const ModuleState &state, char (&rows)[6][96]) {
+    const GroceryAccount &book=state.grocery;
+    int day=state.simulation.day();
+    if (day<GroceryAccount::kOpeningDay) {
+        std::snprintf(rows[0],96,day<=7?"GRIGORY / OPENING WEEK":"GRIGORY / WEEK ONE REVIEW");
+        if (book.incomplete_books) std::snprintf(rows[1],96,"EARLY ENVELOPES / RECORD INCOMPLETE");
+        else std::snprintf(rows[1],96,"PROTECTION RECEIPTS %u OF 3",unsigned(book.envelopes_paid));
+        if (day<=7) std::snprintf(rows[2],96,"PAY THE BAR ENVELOPE ON DAYS 1, 4, 7");
+        else std::snprintf(rows[2],96,book.first_fee()?"FIRST DISTRICT INVOICE / 100C WITHHELD":
+                                                        "FIRST DISTRICT INVOICE / NO DEDUCTION");
+        std::snprintf(rows[3],96,"HIS WARNING / KNOW WHOSE DRINK YOU POUR");
+        std::snprintf(rows[4],96,"DAY 61 / 4 SALES AND AN INTERIOR TIER");
+        std::snprintf(rows[5],96,"LEDGER / RENOVATIONS");
+        return;
+    }
+    std::snprintf(rows[0],96,"KIRIL / MININSKA GROCERY");
+    if (day < book.next_day()) {
+        std::snprintf(rows[1],96,"RECEIPT %u / DAY %u",book.deliveries,book.last_dispatch);
+        std::snprintf(rows[2],96,"DELIVERED 3 / %s",trade::kSnackCatalog[book.last_supplier].name);
+        std::snprintf(rows[3],96,"PAID %dC / SUPPLIER FAVOR +1",
+                      book.proceeds(book.last_supplier,book.deliveries==1));
+        std::snprintf(rows[4],96,"NEXT ORDER DAY %d",book.next_day());
+        std::snprintf(rows[5],96,"LEDGER / RENOVATIONS");
+        return;
+    }
+    const auto &snack=trade::kSnackCatalog[book.selected];
+    std::snprintf(rows[1],96,"ORDER / 3 %s",snack.name);
+    std::snprintf(rows[2],96,"STOCK %d / PAYS %dC",state.market.stock_snack(book.selected),
+                  book.proceeds(book.selected,!book.deliveries));
+    if (state.clientele.services()<GroceryAccount::kMinimumServices || !book.improved(state.renovations)) {
+        std::snprintf(rows[3],96,"NEED 4 SALES AND 1 INTERIOR TIER");
+        std::snprintf(rows[4],96,"SALES %d / INTERIOR %s",state.clientele.services(),
+                      book.improved(state.renovations)?"READY":"NEEDED");
+        std::snprintf(rows[5],96,"LEDGER / RENOVATIONS    DOOR / BAR");
+        return;
+    } else {
+        std::snprintf(rows[3],96,state.market.stock_snack(book.selected)<GroceryAccount::kLot?
+                                   "BUY A SNACK LOT IN THE STOCKROOM":"PACK FROM YOUR STOCK / SUPPLIER FAVOR +1");
+        if (!book.deliveries && book.first_fee()) std::snprintf(rows[4],96,"FIRST PAY INCLUDES 100C DEDUCTION");
+    }
+    std::snprintf(rows[5],96,"LEFT / SUPPLIER    RIGHT / DISPATCH");
+}
+
 // Format the real state-dependent economy and room-sign text once per
 // change. Geometry supplies physical backplates; Lato supplies true glyphs.
 void RefreshStatusBoard(ModuleState *state) {
@@ -1793,7 +1857,9 @@ void RefreshStatusBoard(ModuleState *state) {
                 market.favor(2),market.favor(3));
             std::snprintf(rows[4],sizeof(rows[4]),"505:%d 606:%d",
                 market.favor(4),market.favor(5));
-            std::snprintf(rows[5],sizeof(rows[5]),"LEDGER / RENOVATIONS");
+            std::snprintf(rows[5],sizeof(rows[5]),"LEDGER / DISTRICT BOOK");
+        }else if(state->ledger_page==LedgerPage::District){
+            DistrictPage(*state,rows);
         } else {
             const int category=state->renovations.category();
             const int tier=state->renovations.tier(category);
@@ -1834,6 +1900,14 @@ void RefreshStatusBoard(ModuleState *state) {
         const float width=std::strlen(sign.text)*6.f*sign.pixel;
         state->uiFont.Fit(sign.text,sign.x,sign.y,width,
             sign.pixel*1.65f,.97f,.93f,.76f,sign.z+0.008f);
+    }
+    if (room==trade::Room::Living) {
+        const bool district=state->ledger_page==LedgerPage::District;
+        const bool ordering=sim.day()>=state->grocery.next_day();
+        if (!district || ordering) {
+            state->uiFont.Fit(district?"SUPPLIER":"CATEGORY",-1.32f,-.33f,.43f,.024f,1.f,.94f,.79f,-.97f);
+            state->uiFont.Fit(district?"DISPATCH":"BUY",-.52f,-.33f,.43f,.024f,1.f,.94f,.79f,-.97f);
+        }
     }
     if(activeRoom==1){
         // Stockroom physical catalog labels belong to the same font batch.

@@ -1142,3 +1142,28 @@ Both headset eye view matrices are translated by the selected location after the
 Terrain audit: the original three coastal maps shared a central 24x20 grid and large pieces of the same bunker. This change provides four real per-location outer contour functions: rounded Shingle Bay dunes, flatter Iron Quay terraces, jagged Blackcap basalt shoulders and stepped Stormwatch shoreline. The shared inner infantry lane is intentionally unchanged to preserve physical targeting and landfall, so this does not yet amount to fully distinct surveyed coastlines across the entire playable approach. The existing map-specific piers, rocks, rear landscapes and storm-break assets remain.
 
 New host regression covers all 12 site points, actual finite 3D markers, quick double-click and lost-focus behavior, per-location 3D heights, translated controller origins, rotated stereo view matrices, and elevated cannon/muzzle trajectory. Gameplay, visual and Android CI workflows include the new test, but host success cannot replace real Galaxy S9 comfort/performance verification.
+
+## Four-theater campaign continuation
+
+A wave debrief names the next coast, day or night, and wave. Clearing the last wave of a theater announces the transfer. After a loss, select **Retry Wave** to restore the shop checkpoint for that wave, including the loadout, credits and hull that entered it. A win offers **Save Slots**, which keeps the completed campaign while opening another slot. On either result, **New Run** requires a second press on the same button before clearing the current slot.
+
+The controller replay in `scripts/audit/probes/breakwater_full_campaign.cpp` begins on an empty Cadet slot and uses the production module's input, purchases, combat, storage and renderer. It reached all 366 waves across Shingle Bay, Iron Quay, Blackcap Island and Stormwatch Point. The first defeat on wave 214 returned to the earned checkpoint. Each theater transfer survived a fresh module instance, and the final victory survived reopening and starting a game in a different slot.
+
+To repeat from the repository root on a GLES2/EGL host, run the following commands.
+
+```sh
+mkdir -p /tmp/breakwater-frames
+c++ -O2 -std=c++17 -Iscripts/audit/probes -Iapp/src/main/jni/native \
+    scripts/audit/probes/breakwater_full_campaign.cpp app/src/main/jni/native/breakwater_campaign.cpp \
+    -lEGL -lGLESv2 -lz -o /tmp/breakwater-campaign
+EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 /tmp/breakwater-campaign /tmp/breakwater-frames
+```
+
+The scripted player reads model positions to steer, accelerates the simulation clock and renders both eyes at milestones. Host replays using the production module finished all four difficulty settings. Cadet cleared 366 waves with one retry, Regular 410 with none, Veteran 454 with three, and Siege 498 with none. Each reopened its three theater transfers and final victory. Pass `--tier 0`, `--tier 1`, `--tier 2` or `--tier 3` to select a difficulty. The Android controller recording covers Cadet. Headset feel and sustained reference-device frame pacing remain open.
+
+The Android hub instrumentation reads the recorded controller inputs from its test APK, drives the normal Java input bus and JNI module, and checks the on-disk wave on every advance. To regenerate the test fixture, pass a second output path to the host replay and gzip that recording.
+
+```sh
+EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1 /tmp/breakwater-campaign /tmp/breakwater-frames /tmp/breakwater.inputs
+gzip -n -9 -c /tmp/breakwater.inputs > app/src/androidTest/assets/breakwater-cadet.bwc
+```

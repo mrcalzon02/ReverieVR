@@ -45,11 +45,16 @@ int main(){
     LanternState tour;
     const lantern::Assessment first[]={lantern::Assessment::VehicleColumn,lantern::Assessment::NoContact,lantern::Assessment::BridgeDamage};
     const lantern::Assessment second[]={lantern::Assessment::NoContact,lantern::Assessment::VehicleColumn,lantern::Assessment::NoContact};
-    std::array<lantern::Photograph,3> first_images;
+    std::array<lantern::Photograph,3> first_images,previous_images;
     for(unsigned visit=0;visit<3;++visit)for(unsigned i=0;i<3;++i){
         assert(tour.simulation.AssignRecon(static_cast<lantern::Sector>(i)));
         tour=Restore(tour);assert(tour.simulation.CompleteRecon());tour=Restore(tour);
         const auto photo=*tour.simulation.photo();
+        lantern::Photograph archived;
+        assert(tour.simulation.previous_exposure(&archived)==(visit>0));
+        if(visit)assert(archived.sector==photo.sector && archived.pixels==previous_images[i].pixels &&
+                        archived.clarity==previous_images[i].clarity);
+        previous_images[i]=photo;
         if(visit==0)first_images[i]=photo;
         else assert((photo.pixels==first_images[i].pixels)==(visit==2));
         lantern::ReportResult grade;
@@ -74,13 +79,23 @@ int main(){
     good=Restore(good);assert(good.simulation.last_report()->credibility_delta==3);
     const auto lanternBytes=Bytes(good);
     // V1 used the same photographed scenes and a zero reserved tail.
-    auto oldPhoto=lanternBytes;oldPhoto[8]=1;oldPhoto[65]=0;Rehash(oldPhoto);
+    auto oldPhoto=lanternBytes;oldPhoto[8]=1;std::fill(oldPhoto.begin()+65,oldPhoto.begin()+69,0);Rehash(oldPhoto);
     LanternState migrated;
     assert(Checkpoint::Decode(&migrated,oldPhoto.data(),oldPhoto.size()));
     assert(migrated.simulation.credibility()==6 && migrated.simulation.operational_effect()==4);
     assert(migrated.simulation.evidence_photo()->pixels==good.simulation.evidence_photo()->pixels);
     assert(migrated.simulation.NextSortie() && migrated.simulation.AssignRecon(lantern::Sector::RiverCrossing));
     assert(migrated.simulation.CompleteRecon() && migrated.simulation.photo()->pixels!=good.simulation.evidence_photo()->pixels);
+    auto v2=lanternBytes;v2[8]=2;std::fill(v2.begin()+66,v2.begin()+69,0);Rehash(v2);
+    assert(Checkpoint::Decode(&migrated,v2.data(),v2.size()));
+    assert(migrated.simulation.NextSortie() && migrated.simulation.AssignRecon(lantern::Sector::RailApproach));
+    assert(migrated.simulation.CompleteRecon());
+    lantern::Photograph priorRail;
+    assert(migrated.simulation.previous_exposure(&priorRail) && priorRail.pixels==first_images[0].pixels);
+    auto noHistory=lanternBytes;noHistory[66]=0;Rehash(noHistory);
+    assert(!Checkpoint::Decode(&migrated,noHistory.data(),noHistory.size()));
+    auto badCrop=lanternBytes;badCrop[67]=9;Rehash(badCrop);
+    assert(!Checkpoint::Decode(&migrated,badCrop.data(),badCrop.size()));
     auto badMask=lanternBytes;badMask[65]=8;Rehash(badMask);
     assert(!Checkpoint::Decode(&migrated,badMask.data(),badMask.size()));
     for(unsigned route=0;route<2;++route)for(unsigned decision=0;decision<3;++decision){

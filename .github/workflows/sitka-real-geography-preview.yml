@@ -49,10 +49,18 @@ jobs:
           "${RUNNER_TEMP}/sitka-geo-native" \
             "${RUNNER_TEMP}/sitka-geographic-assets" \
             "${RUNNER_TEMP}/sitka-genuine-stereo.ppm" \
+            "${RUNNER_TEMP}/sitka-crescent-dock.ppm" \
+            "${RUNNER_TEMP}/sitka-crescent-cast.ppm" \
             | tee "${RUNNER_TEMP}/sitka-geographic-render.log"
           python3 scripts/sitka/encode_native_geography_capture.py \
             "${RUNNER_TEMP}/sitka-genuine-stereo.ppm" \
             "${RUNNER_TEMP}/sitka-genuine-stereo.png"
+          python3 scripts/sitka/encode_native_geography_capture.py \
+            "${RUNNER_TEMP}/sitka-crescent-dock.ppm" \
+            "${RUNNER_TEMP}/sitka-crescent-dock.png"
+          python3 scripts/sitka/encode_native_geography_capture.py \
+            "${RUNNER_TEMP}/sitka-crescent-cast.ppm" \
+            "${RUNNER_TEMP}/sitka-crescent-cast.png"
       - name: Retain real renderer output and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -60,6 +68,8 @@ jobs:
           name: sitka-real-native-land-stereo-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/sitka-genuine-stereo.png
+            ${{ runner.temp }}/sitka-crescent-dock.png
+            ${{ runner.temp }}/sitka-crescent-cast.png
             ${{ runner.temp }}/sitka-genuine-stereo.ppm
             ${{ runner.temp }}/sitka-geographic-render.log
           if-no-files-found: warn

@@ -83,6 +83,8 @@ struct Journal {
     uint32_t starter_tokens=0,submitted_starter_tokens=0;
     uint32_t submitted_discoveries=0;
     uint32_t practice_finds=0,practice_submitted=0,practice_checkpoints=0;
+    uint32_t crescent_job=0,crescent_cm=0;
+    bool at_crescent=false;
     uint32_t chart_stations=0; // successive filed survey stations
 };
 inline uint32_t BeachSiteCount(uint64_t bits){
@@ -343,10 +345,10 @@ struct Fishing {
     }
     bool UpgradeTackle(){return Purchase(Equipment::Rod);}
 };
-// V6 appends the chart log to the shipped V5 journal in the same slot.
+// V7 adds the Crescent Harbor job and last position in the same host slot.
 inline std::string SaveJournal(const Journal& j){
-    std::string out="SITKA-FISH-6\n";
-    const std::array<uint64_t,36> fields={{
+    std::string out="SITKA-FISH-7\n";
+    const std::array<uint64_t,39> fields={{
         j.seed,j.credits,j.gear,j.total,j.caught[0],j.caught[1],
         j.caught[2],j.caught[3],j.helm_upgrades,j.hull_tier,
         j.reel_level,j.line_level,j.lure_level,j.shore_kit_level,
@@ -356,19 +358,20 @@ inline std::string SaveJournal(const Journal& j){
         j.fish_inventory[0],j.fish_inventory[1],j.fish_inventory[2],
         j.fish_inventory[3],j.shellfish_inventory,j.submitted_beach_sites,
         j.starter_tokens,j.submitted_starter_tokens,j.submitted_discoveries,j.chart_stations,
-        j.practice_finds,j.practice_submitted,j.practice_checkpoints
+        j.practice_finds,j.practice_submitted,j.practice_checkpoints,
+        j.crescent_job,j.crescent_cm,j.at_crescent
     }};
     for(uint64_t n:fields)out+=std::to_string(n)+"\n";
     return out;
 }
 inline bool LoadJournal(std::string_view bytes,Journal& out){
-    constexpr std::string_view v5="SITKA-FISH-5\n",v6="SITKA-FISH-6\n";
+    constexpr std::string_view v5="SITKA-FISH-5\n",v6="SITKA-FISH-6\n",v7="SITKA-FISH-7\n";
     const auto version=bytes.substr(0,v6.size());
-    if(version!=v5&&version!=v6)return false;
+    if(version!=v5&&version!=v6&&version!=v7)return false;
     bytes.remove_prefix(version.size());
-    const unsigned fields=version==v6?36u:32u;
+    const unsigned fields=version==v7?39u:version==v6?36u:32u;
     if(bytes.size()>512u)return false;
-    std::array<uint64_t,36> n{};
+    std::array<uint64_t,39> n{};
     for(unsigned i=0;i<fields;++i){
         const auto end=bytes.find('\n');
         if(end==std::string_view::npos||end==0u||end>20u)return false;
@@ -377,7 +380,7 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
         if(parsed.ec!=std::errc{}||parsed.ptr!=begin+end)return false;
         bytes.remove_prefix(end+1u);
     }
-    if(!bytes.empty()||n[33]>=(1u<<kPracticeKinds.size())||(n[34]&~n[33])||
+    if(!bytes.empty()||n[36]>4u||n[37]>15000u||n[38]>1u||n[33]>=(1u<<kPracticeKinds.size())||(n[34]&~n[33])||
        n[35]>=(1u<<kPracticeCheckpoints)||n[32]>kChartStations||n[0]==0u||n[0]>UINT32_MAX||
        n[1]>1000000u||n[2]>kEquipmentMax[0]||n[3]>1000000u||
        n[8]>65535u||n[9]>3u||n[10]>kEquipmentMax[1]||
@@ -434,6 +437,7 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
     j.practice_finds=uint32_t(n[33]);j.practice_submitted=uint32_t(n[34]);
     j.practice_checkpoints=uint32_t(n[35]);
     j.chart_stations=static_cast<uint32_t>(n[32]);
+    j.crescent_job=uint32_t(n[36]);j.crescent_cm=uint32_t(n[37]);j.at_crescent=n[38]!=0;
     out=j;return true;
 }
 }} // namespace reverie::sitka

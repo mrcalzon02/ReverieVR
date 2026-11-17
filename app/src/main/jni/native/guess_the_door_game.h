@@ -63,7 +63,7 @@ inline DoorDesign MakeDoor(uint64_t seed,unsigned room,unsigned side) {
 enum class Phase: uint8_t { Ready, Pulling, Opening, Walking, Falling, Victory };
 enum Sound: unsigned {
     NoSound=0u, LeverSound=1u, DoorSound=2u, StepSound=4u,
-    PitSound=8u, VictorySound=16u
+    PitSound=8u, VictorySound=16u, LeverVoice=32u
 };
 struct Room {
     unsigned safeSide=0u;
@@ -114,7 +114,10 @@ struct Game {
         side=selected;timer=0.f;phase=Phase::Pulling;
         pendingSound|=LeverSound;
         easterActive=!easterSeen&&room==1u&&side==1;
-        if(easterActive)easterSeen=true;
+        if(easterActive){
+            easterSeen=true;
+            pendingSound|=LeverVoice;
+        }
         return true;
     }
     void Update(float delta) {

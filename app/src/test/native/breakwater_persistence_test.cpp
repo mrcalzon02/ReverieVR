@@ -265,16 +265,18 @@ int main() {
     assert(!preserved.DeserializeCheckpoint(damaged.data(),damaged.size()));
     assert(preserved.phase()==Phase::Victory);
     assert(!preserved.DeserializeCheckpoint(victory_bytes.data(),victory_bytes.size()-1u));
-    fail_write=true;Interact(state,At(menu::ShopCard(0)),true);
-    assert(state->reset_armed&&state->campaign.phase()==Phase::Victory);
     Interact(state,At(menu::ShopCard(0)),true);
+    assert(!state->reset_armed); // A miss cannot arm the destructive action.
+    fail_write=true;Interact(state,At(menu::DebriefAction(1)),true);
+    assert(state->reset_armed&&state->campaign.phase()==Phase::Victory);
+    Interact(state,At(menu::DebriefAction(1)),true);
     assert(state->campaign.phase()==Phase::Victory&&saved.at(CheckpointSlot(0))==victory_bytes);
     assert(state->reset_pending&&state->save_dirty);
     // Rename may be visible even though final directory fsync reports ERROR.
     apply_then_fail=true;
     assert(kApi.prepare_exit(state)==0&&saved.at(CheckpointSlot(0)).empty());
     assert(state->reset_pending&&state->campaign.phase()==Phase::Victory);
-    Interact(state,At(menu::ShopCard(0)),true);
+    Interact(state,At(menu::DebriefAction(1)),true);
     assert(saved.at(CheckpointSlot(0)).empty()&&state->reset_pending);
     auto reset_retry=At(menu::DifficultyCard(0));Update(state,&reset_retry);
     fail_write=false;state->save_retry=.01f;reset_retry.delta_seconds=.05f;

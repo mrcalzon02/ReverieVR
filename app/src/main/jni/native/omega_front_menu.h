@@ -9,8 +9,8 @@ namespace reverie { namespace omega {
 
 // Menus are deliberately not part of the campaign checkpoint: reopening the
 // module must reach a safe title screen, never fire an order on load.
-enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Gallery, Playing };
-enum class MenuCommand : uint8_t { None, Resume, RetryLoad, StartNew, SetFieldAction, SetCommandMode, CommitTurn, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon, WorldMap };
+enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Gallery, RegionalReport, Playing };
+enum class MenuCommand : uint8_t { None, Resume, RetryLoad, StartNew, SetFieldAction, SetCommandMode, CommitTurn, ClearOrders, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon, WorldMap };
 
 // A menu's release/idle ray must not overwrite the restored tactical cursor.
 // A fresh click, deliberate pointer movement, or pointer loss re-arms aiming.
@@ -37,6 +37,7 @@ public:
     int field_choice=0,mode_choice=0;
     MenuScreen return_to=MenuScreen::Title;
     bool world_available=false;
+    bool regional_complete=false;
 
     static float ButtonY(int index,bool compact=false) {
         return compact?.585f-.187f*index:.42f-.225f*index;
@@ -68,7 +69,8 @@ public:
         case MenuScreen::ConfirmNew: return 2;
         case MenuScreen::Pause: return world_available?6:5;
         case MenuScreen::FieldOrders: return 8;
-        case MenuScreen::TacticalOrders: return 5;
+        case MenuScreen::TacticalOrders: return 6;
+        case MenuScreen::RegionalReport: return 1;
         case MenuScreen::Gallery: return 5;
         case MenuScreen::Playing: return 0;
         }
@@ -87,12 +89,13 @@ public:
             return index>=0&&index<Count(has_campaign,load_failed)?
                 ((has_campaign||load_failed)?saved[index]:fresh[index]):"";
         }
+        case MenuScreen::RegionalReport: return index==0?"RETURN TO PLAY":"";
         case MenuScreen::Controls: return index==0?"BACK":"";
         case MenuScreen::ConfirmNew: {
             const char *v[]={"ERASE AND START NEW","CANCEL"};return index>=0&&index<2?v[index]:"";
         }
         case MenuScreen::Pause: {
-            const char *v[]={"RESUME","CAMPAIGN BRIEFING","FACTION GALLERY",
+            const char *v[]={"RESUME",regional_complete?"HEARTHFALL REPORT":"CAMPAIGN BRIEFING","FACTION GALLERY",
                 "CONTROLS","MAIN MENU","WORLD MAP"};
             return index>=0&&index<Count(has_campaign,load_failed)?v[index]:"";
         }
@@ -103,8 +106,8 @@ public:
         }
         case MenuScreen::TacticalOrders: {
             const char *v[]={"MOVE","ATTACK","REPAIR SELF","RESUPPLY SELF",
-                             "END TURN / RESOLVE"};
-            return index>=0&&index<5?v[index]:"";
+                             "END TURN / RESOLVE","CLEAR UNIT ORDERS"};
+            return index>=0&&index<6?v[index]:"";
         }
         case MenuScreen::Gallery: {
             const char *v[]={"PREVIOUS FACTION","NEXT FACTION",
@@ -114,6 +117,10 @@ public:
         case MenuScreen::Playing: return "";
         }
         return "";
+    }
+    void OpenRegionalReport(bool primary,bool secondary){
+        Enter(MenuScreen::RegionalReport);
+        SyncButtons(primary,secondary);
     }
     void OpenPause(bool primary,bool secondary,bool strategic=false) {
         if(screen!=MenuScreen::Playing)return;
@@ -182,6 +189,8 @@ public:
                 return_to=MenuScreen::Campaign;Enter(MenuScreen::Controls);
             }else Enter(MenuScreen::Title);
             break;
+        case MenuScreen::RegionalReport:
+            Enter(MenuScreen::Playing);return MenuCommand::Resume;
         case MenuScreen::Controls: Back();break;
         case MenuScreen::ConfirmNew:
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::StartNew;}
@@ -196,13 +205,17 @@ public:
                 Enter(MenuScreen::Playing);
                 return MenuCommand::CommitTurn;
             }
+            if(selected==5){
+                Enter(MenuScreen::Playing);
+                return MenuCommand::ClearOrders;
+            }
             mode_choice=selected;
             Enter(MenuScreen::Playing);
             return MenuCommand::SetCommandMode;
         case MenuScreen::Pause:
             if(selected==5){Enter(MenuScreen::Playing);return MenuCommand::WorldMap;}
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::Resume;}
-            if(selected==1)Enter(MenuScreen::Campaign);
+            if(selected==1)Enter(regional_complete?MenuScreen::RegionalReport:MenuScreen::Campaign);
             else if(selected==2){return_to=MenuScreen::Pause;Enter(MenuScreen::Gallery);}
             else if(selected==3){return_to=MenuScreen::Pause;Enter(MenuScreen::Controls);}
             else Enter(MenuScreen::Title);
@@ -229,7 +242,8 @@ private:
         case MenuScreen::ConfirmNew:Enter(MenuScreen::Campaign);break;
         case MenuScreen::Pause:Enter(MenuScreen::Playing);break;
         case MenuScreen::FieldOrders:Enter(MenuScreen::Playing);break;
-        case MenuScreen::TacticalOrders:Enter(MenuScreen::Playing);break;
+        case MenuScreen::TacticalOrders:
+        case MenuScreen::RegionalReport:Enter(MenuScreen::Playing);break;
         case MenuScreen::Gallery:Enter(return_to);break;
         case MenuScreen::Playing:break;
         }

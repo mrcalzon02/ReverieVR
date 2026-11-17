@@ -73,6 +73,8 @@ int main() {
     assert(a.room==1u);
     assert(a.Pull(1)); // The early-right-lever quote is seed-independent.
     assert(a.easterActive&&a.easterSeen);
+    assert((a.DrainSound()&LeverVoice)!=0u);
+    assert((a.DrainSound()&LeverVoice)==0u);
     assert(!a.Pull(0));
     for(unsigned i=0;i<100;i++)a.Update(.1f);
     assert(a.easterSeen);

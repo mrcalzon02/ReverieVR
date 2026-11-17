@@ -34,6 +34,8 @@ int main(){
         "native/omega-front/terrain/ash_waste.png")>0);
     assert(MaximumBytes("classic-chess",
         "native/breakwater/beckenburg/wooden_crate_1.bwm")==0);
+    assert(MaximumBytes("sitka","sitka/coast/crescent-deck.sitkam")==131072u);
+    assert(MaximumBytes("chess","sitka/coast/crescent-deck.sitkam")==0u);
     assert(MaximumBytes("sitka","sitka/boat/launch.txt")==4096u);
     assert(MaximumBytes("sitka","sitka/walk/paths.sitkaw")==262144u);
     assert(MaximumBytes("breakwater-battery","sitka/walk/paths.sitkaw")==0u);

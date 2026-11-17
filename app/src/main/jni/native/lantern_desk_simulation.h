@@ -32,6 +32,7 @@ public:
     bool SubmitReport(Assessment assessment, ReportResult *result);
     bool NextSortie();
     const Photograph *evidence_photo() const;
+    bool previous_exposure(Photograph *output) const;
     const ReportResult *last_report() const;
     Phase phase() const { return phase_; }
     int32_t credibility() const { return credibility_; }
@@ -42,6 +43,7 @@ private:
     Sector selected_ = Sector::RailApproach;
     // A filed sortie advances only its own sector when the next sortie opens.
     uint8_t follow_up_sectors_ = 0;
+    uint8_t filed_sectors_ = 0;
     Photograph photo_{};
     ReportResult last_report_{};
     int32_t credibility_ = 0;

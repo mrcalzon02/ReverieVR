@@ -2,6 +2,7 @@
 // test range is used only when approved geographic assets are absent.
 #include "sitka_terrain_gl.h"
 #include "sitka_chart_survey.h"
+#include "sitka_crescent_harbor.h"
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
@@ -50,6 +51,9 @@ struct State {
     reverie::sitka::TerrainGl geo_gl;
     reverie::nativetext::LatoLayer geo_text;
     reverie::sitka::TerrainGl chart_pin;
+    reverie::sitka::TerrainMesh crescent_deck;
+    reverie::sitka::TerrainGl crescent_gl,crescent_line;
+    bool crescent_chord_held=false;
     bool chart_route=false,chart_primary_held=false;
     std::string chart_caption;
     bool geo_view=false,geo_chord_held=false;
@@ -149,6 +153,49 @@ bool WriteFishingSave(void* user,const std::string& text) {
 reverie::sitka::FishingStore Store(State* state) {
     return {state,ReadFishingSave,WriteFishingSave};
 }
+bool OnCrescent(const State& state){
+    return state.geo_view&&!state.crescent_deck.indices.empty()&&state.fishing.fishing.journal.at_crescent;
+}
+void FocusCrescent(State& state){
+    const auto point=reverie::sitka::CrescentPosition(state.fishing.fishing.journal.crescent_cm*.01f);
+    state.geo_east=state.crescent_deck.origin_east+point.east;
+    state.geo_north=state.crescent_deck.origin_north+point.north;
+    state.geo_tiles->SetFocus(state.geo_east,state.geo_north);
+}
+void UpdateCrescent(State& state,const ReverieNativeInputV1& input,bool pressed,double dt){
+    using namespace reverie::sitka;
+    auto& session=state.fishing;
+    auto& j=session.fishing.journal;
+    const bool active=session.fishing.phase!=FishingPhase::Ready;
+    if(active||(pressed&&CrescentCanCast(j.crescent_cm*.01f)&&!input.secondary_down)){
+        // Edge qualification is shared with the dock controls. Synchronize the
+        // fishing session before its first cast if the previous click was ashore.
+        if(!active)session.Update(0.f,false,false,false,0.f);
+        const auto result=session.Update(float(dt),input.primary_down,input.secondary_down,
+                                   true,kCrescentSoundingDepth);
+        if(result.journal_changed&&!session.Flush(Store(&state)))
+            Log(state.host,"Sitka Crescent catch save deferred");
+        if(result.event==FishingEvent::Cast||result.event==FishingEvent::Landed)
+            ReverieNativeRequestFeedbackV1(state.host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        if(result.event==FishingEvent::Bite)
+            ReverieNativeRequestFeedbackV1(state.host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+        return;
+    }
+    const float end=CrescentDistances().back();
+    const float metres=std::clamp(j.crescent_cm*.01f-
+        (std::isfinite(input.move_y)?std::clamp(input.move_y,-1.f,1.f):0.f)*4.f*float(dt),0.f,end);
+    const auto cm=uint32_t(std::lround(metres*100.f));
+    if(j.crescent_cm!=cm){j.crescent_cm=cm;session.dirty=true;}
+    FocusCrescent(state);
+    if(!pressed||j.crescent_job>=kCrescentStops.size()||input.secondary_down)return;
+    const float goal=CrescentDistances()[kCrescentStops[j.crescent_job].node];
+    if(std::abs(metres-goal)>2.f)return;
+    ++j.crescent_job;
+    if(j.crescent_job==kCrescentStops.size())j.credits=std::min(1000000u,j.credits+60u);
+    session.dirty=true;
+    if(!session.Flush(Store(&state)))Log(state.host,"Sitka Crescent delivery save deferred");
+    ReverieNativeRequestFeedbackV1(state.host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+}
 // Updated once per input frame; head-locked text stays stable between eyes.
 void UpdateChartCaption(State& state){
     using namespace reverie::sitka;
@@ -156,7 +203,38 @@ void UpdateChartCaption(State& state){
     std::string title="SITKA / NOAA ENC + USGS 3DEP";
     std::string target="ELEVATION: LOW GREEN TO HIGH TAN";
     std::string cue="TOUCH PAD TO MOVE";
-    if(state.chart_route){
+    std::string record;
+    std::string controls="VOL UP + RIGHT: EXIT / + UP OR DOWN: ALT";
+    if(OnCrescent(state)){
+        const auto& j=state.fishing.fishing.journal;
+        title="CRESCENT HARBOR / FLOAT 2";
+        const bool fishing=state.fishing.fishing.phase!=FishingPhase::Ready;
+        const bool at_mark=CrescentCanCast(j.crescent_cm*.01f);
+        if(fishing||at_mark){
+            const auto panel=ShoreGameplayPanel(state.fishing,false);
+            target="NOAA SOUNDING / 3.9 M MLLW";
+            cue=fishing?panel[3]:"SELECT: CAST TO THE SOUNDING";
+            if(fishing&&state.fishing.fishing.phase==FishingPhase::Reeling)controls=panel[4];
+            else if(fishing&&state.fishing.fishing.phase==FishingPhase::Landed)controls="SELECT: STOW  /  SELL AT THE PRACTICE OFFICE";
+            else if(fishing)controls="VOL UP: CANCEL CAST";
+            else controls="PAD UP / DOWN: CONTINUE ALONG FLOAT";
+        }else if(j.crescent_job<kCrescentStops.size()){
+            const auto& stop=kCrescentStops[j.crescent_job];
+            const float delta=CrescentDistances()[stop.node]-j.crescent_cm*.01f;
+            target=stop.name;
+            cue=std::abs(delta)<=2.f?stop.action:
+                std::string(delta>0.f?"PAD UP / OUTBOUND  ":"PAD DOWN / RETURN  ")+
+                    std::to_string(int(std::ceil(std::abs(delta))))+" M";
+        }else{
+            target="RECEIPT FILED / SHORE ANGLING";
+            const float distance=CrescentCastMark()-j.crescent_cm*.01f;
+            cue=std::string(distance>0.f?"PAD UP":"PAD DOWN")+"  "+
+                std::to_string(int(std::ceil(std::abs(distance))))+" M TO CAST MARK";
+        }
+        record=state.fishing.write_failed?"SAVE PENDING / RETRY ON EXIT":
+            "CITY OF SITKA DOCKS  /  "+std::to_string(j.credits)+" CR";
+        if(!fishing&&!at_mark)controls="PAD UP / DOWN: WALK    VOL UP + LEFT: LEAVE";
+    }else if(state.chart_route){
         title="CHART SURVEY   "+std::to_string(visited)+" / "+std::to_string(kChartStations);
         if(visited<kChartStations){
             const auto& site=kSurveyRoute[visited];
@@ -178,22 +256,22 @@ void UpdateChartCaption(State& state){
             cue="EXPLORE THE CHART OR RETURN TO THE HARBOR";
         }
     }
-    const std::string record=state.fishing.write_failed?"SAVE PENDING / RETRY ON EXIT":
+    if(record.empty())record=state.fishing.write_failed?"SAVE PENDING / RETRY ON EXIT":
         state.chart_route&&visited?
         std::string("FILED: ")+kSurveyRoute[visited-1u].name+" / "+
             std::to_string(int(kSurveyRoute[visited-1u].elevation))+"."+
             std::to_string(int(std::lround(kSurveyRoute[visited-1u].elevation*10))%10)+" M 3DEP":
         "NOAA ENC LAND / USGS 3DEP";
-    const std::string caption=title+"\n"+target+"\n"+cue+"\n"+record;
+    const std::string caption=title+"\n"+target+"\n"+cue+"\n"+record+"\n"+controls;
     if(caption==state.chart_caption)return;
     state.chart_caption=caption;
     auto& text=state.geo_text;text.Clear();
     text.Fit(title.c_str(),0.f,1.38f,2.90f,.055f,.98f,.94f,.68f);
     text.Fit(target.c_str(),0.f,1.14f,2.90f,.049f,.98f,.97f,.93f);
     text.Fit(cue.c_str(),0.f,.89f,2.90f,.041f,.99f,.82f,.47f);
-    text.Fit("+",0.f,0.f,.16f,.05f,.98f,.96f,.72f);
+    if(!OnCrescent(state))text.Fit("+",0.f,0.f,.16f,.05f,.98f,.96f,.72f);
     text.Fit(record.c_str(),0.f,-.92f,2.90f,.038f,.9f,.96f,.94f);
-    text.Fit("VOL UP + RIGHT: EXIT / + UP OR DOWN: ALT",0.f,-1.13f,3.15f,.037f,.9f,.96f,.94f);
+    text.Fit(controls.c_str(),0.f,-1.13f,3.15f,.037f,.9f,.96f,.94f);
     text.Fit("CHART LAND / NOT FOR NAVIGATION",0.f,-1.35f,2.90f,.037f,.96f,.78f,.58f);
 }
 #include "sitka_integration_range.h"
@@ -230,6 +308,20 @@ void* Create(const ReverieNativeHostV1* host) {
                 state->geo_north=state->geo_tiles->origin_north()-
                     512.*state->geo_tiles->rows()*.625;
                 state->geo_tiles->SetFocus(state->geo_east,state->geo_north);
+                if(state->chart_route){
+                    try{
+                        const auto deck=ReadText(host,"sitka/coast/crescent-deck.sitkam",131072u);
+                        if(reverie::sitka::LandTileCrc32(deck)!=0x7e346b73u)
+                            throw std::invalid_argument("Crescent municipal footprint mismatch");
+                        state->crescent_deck=reverie::sitka::ParseTerrainMesh(
+                            reinterpret_cast<const uint8_t*>(deck.data()),deck.size());
+                        reverie::sitka::DressCrescentDeck(state->crescent_deck);
+                        if(state->fishing.fishing.journal.at_crescent){
+                            state->geo_view=true;
+                            FocusCrescent(*state);
+                        }
+                    }catch(const std::exception& e){Log(host,e.what());}
+                }
                 ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_INFO,
                     "SitkaTerrain",
                     "NOAA chart land / USGS 3DEP geography available via VOL UP + PAD RIGHT. "
@@ -579,6 +671,12 @@ int32_t OnGlCreated(void* instance) {
             state->geo_tiles.reset();
             state->geo_view=false;
         }else{
+            if(!state->crescent_deck.indices.empty()&&
+               (!state->crescent_gl.Create(state->crescent_deck,state->lighting,&error)||
+                !state->crescent_line.Create(reverie::sitka::CrescentFishingLine(),state->lighting,&error))){
+                Log(state->host,error.c_str());state->crescent_deck={};
+                state->geo_view=false;
+            }
             state->geo_tiles->AfterGlContextLoss();
             state->chart_caption.clear();
             UpdateChartCaption(*state);
@@ -690,6 +788,8 @@ int32_t OnGlCreated(void* instance) {
 void ReleaseGl(void* instance) {
     if(instance){
         static_cast<State*>(instance)->horizon_gpu.Release();
+        static_cast<State*>(instance)->crescent_line.Release();
+        static_cast<State*>(instance)->crescent_gl.Release();
         static_cast<State*>(instance)->chart_pin.Release();
         static_cast<State*>(instance)->geo_text.Release();
         static_cast<State*>(instance)->geo_gl.Release();
@@ -732,6 +832,27 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
     // The default secondary action (Volume Up) plus rightward touch toggles
     // the land chart. A held chord can toggle only once.
+    const bool dock_chord=state->geo_tiles&&!state->crescent_deck.indices.empty()&&
+        input->secondary_down&&!input->primary_down&&input->move_x<-.80f&&
+        (OnCrescent(*state)||(state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready&&
+          !(state->skiff&&state->skiff->Active())));
+    if(!dock_chord)state->crescent_chord_held=false;
+    if(dock_chord){
+        if(!state->crescent_chord_held){
+            state->crescent_chord_held=true;
+            if(OnCrescent(*state)&&state->fishing.fishing.phase!=reverie::sitka::FishingPhase::Ready)
+                state->fishing.Update(.01f,false,true,false,0.f);
+            auto& session=state->fishing;
+            session.fishing.journal.at_crescent=!OnCrescent(*state);
+            state->geo_view=session.fishing.journal.at_crescent;
+            if(state->geo_view)FocusCrescent(*state);
+            session.dirty=true;
+            if(!session.Flush(Store(state)))Log(state->host,"Sitka harbor travel save deferred");
+            state->chart_primary_held=false;
+            ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+        return;
+    }
     const bool geo_chord=state->geo_tiles &&
         input->secondary_down!=0u && input->primary_down==0u &&
         input->move_x>.80f;
@@ -739,6 +860,13 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(geo_chord){
         if(!state->geo_chord_held){
             state->geo_chord_held=true;
+            if(OnCrescent(*state)){
+                if(state->fishing.fishing.phase!=reverie::sitka::FishingPhase::Ready)
+                    state->fishing.Update(.01f,false,true,false,0.f);
+                state->fishing.fishing.journal.at_crescent=false;
+                state->fishing.dirty=true;
+                if(!state->fishing.Flush(Store(state)))Log(state->host,"Sitka harbor exit save deferred");
+            }
             state->geo_view=!state->geo_view;
             state->chart_primary_held=false;
             ReverieNativeRequestFeedbackV1(
@@ -751,7 +879,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             std::clamp(double(input->delta_seconds),0.,.05):0.;
         const bool chart_press=input->primary_down&&!state->chart_primary_held;
         state->chart_primary_held=input->primary_down!=0u;
-        if(input->secondary_down!=0u || input->primary_down!=0u){
+        if(OnCrescent(*state)){
+            UpdateCrescent(*state,*input,chart_press,dt);
+        }else if(input->secondary_down!=0u || input->primary_down!=0u){
             // The secondary button leaves Daydream touch axes live. Gamepads
             // can also hold Select to adjust the geographic observation
             // altitude; the preview is aerial and not collision-grounded.
@@ -781,7 +911,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             Log(state->host,state->geo_tiles->last_error().c_str());
         }
         const auto station=state->fishing.fishing.journal.chart_stations;
-        if(state->chart_route&&chart_press&&!input->secondary_down&&
+        if(!OnCrescent(*state)&&state->chart_route&&chart_press&&!input->secondary_down&&
            std::abs(input->move_y)<.35f&&station<reverie::sitka::kChartStations){
             const auto& site=reverie::sitka::kSurveyRoute[station];
             const bool reached=std::hypot(state->geo_east-site.east,state->geo_north-site.north)
@@ -1121,7 +1251,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             lines[2]="SELECT + VOL UP: BOARD HERE / DOCK WHEN SLOW";
         const bool show_map_hint=state->integration_range && state->geo_tiles &&
             !state->harbor_shop.open();
-        const char* map_hint=state->chart_route?"VOL UP + PAD RIGHT: CHART SURVEY (+25 CR / SITE)":
+        const char* map_hint=!state->crescent_deck.indices.empty()?
+            "VOL UP + LEFT: CRESCENT DOCKS   /   + RIGHT: SURVEY":state->chart_route?"VOL UP + PAD RIGHT: CHART SURVEY (+25 CR / SITE)":
             "VOL UP + PAD RIGHT: NOAA/USGS LAND MAP";
         std::string signature;
         for(const auto& line:lines){signature+=line;signature+='\n';}
@@ -1303,22 +1434,61 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
         // No headset tracking is interpreted as a GPS / surveyed viewpoint.
         const float x=float(state->geo_east-state->geo_tiles->origin_east());
         const float z=float(state->geo_north-state->geo_tiles->origin_north());
-        const float pitch=.70f,c=std::cos(pitch),s=std::sin(pitch);
+        const bool dock=OnCrescent(*state);
+        const float heading=dock?-1.f:1.f;
+        const bool angling=dock&&state->fishing.fishing.phase!=reverie::sitka::FishingPhase::Ready;
+        const float sound_x=dock?float(state->crescent_deck.origin_east-state->geo_tiles->origin_east())+
+            reverie::sitka::kCrescentSounding.east:0.f;
+        const float sound_z=dock?float(state->crescent_deck.origin_north-state->geo_tiles->origin_north())+
+            reverie::sitka::kCrescentSounding.north:0.f;
+        const float follow_x=angling?(sound_x+x)*.5f:x,follow_z=angling?(sound_z+z)*.5f:z;
+        const float altitude=dock?(angling?19.f:15.f):state->geo_altitude;
+        const float pitch=dock?.88f:.70f,c=std::cos(pitch),s=std::sin(pitch);
         const float tilt[16]={
             1.f,0.f,0.f,0.f, 0.f,c,s,0.f,
             0.f,-s,c,0.f, 0.f,0.f,0.f,1.f
         };
         const float shift[16]={
-            1.f,0.f,0.f,0.f, 0.f,1.f,0.f,0.f,
-            0.f,0.f,-1.f,0.f,
-            -x,-state->geo_altitude,z-state->geo_altitude*c/s,1.f
+            heading,0.f,0.f,0.f, 0.f,1.f,0.f,0.f,
+            0.f,0.f,-heading,0.f,
+            -follow_x*heading,-altitude,follow_z*heading-altitude*c/s,1.f
         };
         float angled[16];
         ReverieNativeMat4Multiply(angled,tilt,shift);
         ReverieNativeMat4Multiply(camera.view,eye->view,angled);
         if(!state->geo_gl.RenderEye(&camera))return 0;
         const auto station=state->fishing.fishing.journal.chart_stations;
-        if(state->chart_route&&station<reverie::sitka::kChartStations){
+        if(dock){
+            const float placement[16]={1,0,0,0,0,1,0,0,0,0,1,0,
+                float(state->crescent_deck.origin_east-state->geo_tiles->origin_east()),0.f,
+                float(state->crescent_deck.origin_north-state->geo_tiles->origin_north()),1};
+            if(!state->crescent_gl.RenderEye(&camera,placement))return 0;
+            // The small gold pin is the walker; teal deck squares are stops.
+            const float person[16]={.075f,0,0,0,0,.09f,0,0,0,0,.075f,0,x,.92f,z,1};
+            if(!state->chart_pin.RenderEye(&camera,person))return 0;
+            if(angling){
+                const auto& fish=state->fishing.fishing;
+                const float reach=1.f-fish.reel;
+                const float bob_x=x+(sound_x-x)*reach,bob_z=z+(sound_z-z)*reach;
+                const float bob_y=fish.phase==reverie::sitka::FishingPhase::Bite?
+                    .15f+.13f*std::sin(fish.time*12.f):.21f;
+                const float line[16]={bob_x-x,bob_y-1.5f,bob_z-z,0,0,1,0,0,0,0,1,0,x,1.5f,z,1};
+                if(!state->crescent_line.RenderEye(&camera,line))return 0;
+                const float bobber[16]={.042f,0,0,0,0,.043f,0,0,0,0,.042f,0,bob_x,bob_y,bob_z,1};
+                if(!state->chart_pin.RenderEye(&camera,bobber))return 0;
+            }
+            if(state->harbor_panel_gl.ready()){
+                // The same head-relative projection as the Lato labels keeps
+                // instructions legible over both the water and the pale deck.
+                auto hud_eye=*eye;
+                std::fill_n(hud_eye.view,16,0.f);
+                for(unsigned i=0;i<4;++i)hud_eye.view[i*5]=1.f;
+                for(const float y:{1.15f,-1.14f}){
+                    const float panel[16]={1.97f,0,0,0,0,.67f,0,0,0,0,1,0,0,y,-2.87f,1};
+                    if(!state->harbor_panel_gl.RenderEye(&hud_eye,panel))return 0;
+                }
+            }
+        }else if(state->chart_route&&station<reverie::sitka::kChartStations){
             const auto& site=reverie::sitka::kSurveyRoute[station];
             if(state->geo_tiles->OnDisplayedTile(site.row,site.column)){
                 const float pin[16]={1,0,0,0, 0,1,0,0, 0,0,1,0,

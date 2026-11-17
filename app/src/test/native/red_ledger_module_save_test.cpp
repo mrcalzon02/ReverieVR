@@ -51,14 +51,136 @@ static void PlayOpeningShift(const ReverieNativeHostV1 &host){
                 "last closed accounts accessible after restart");
     audit::Capture(RenderEye,state,"red-ledger-closed-shift",1.2f,-.12f);
     Tap(state,WorkTarget::Ledger);audit::Check(state->ledger_page==LedgerPage::Factions,"read faction accounts");
+    Tap(state,WorkTarget::Ledger);audit::Check(state->ledger_page==LedgerPage::District,"read district record");
     Tap(state,WorkTarget::Ledger);audit::Check(state->ledger_page==LedgerPage::Renovations,"return to renovations");
     std::printf("PASS_RED_SHIFT open=%d supplies=%d sales=%d close=%d served=4\n",opening,cost,sales,closing);
     ReleaseGlContext(state);Destroy(state);audit::saves.clear();
 }
+static void GroceryPage(ModuleState *state) {
+    for (int i=0; i<4 && state->ledger_page!=LedgerPage::District; ++i)
+        Tap(state,WorkTarget::Ledger);
+    audit::Check(state->ledger_page==LedgerPage::District,"open district book");
+}
+static void Shift(ModuleState *state, bool pay) {
+    int day=state->simulation.day();
+    if (state->market.room()==trade::Room::Living) Tap(state,WorkTarget::ToBar,"TO BAR");
+    if (day<=7 && pay && state->simulation.current_event()==EventType::ProtectionDemand)
+        Tap(state,WorkTarget::ProtectionEnvelope);
+    if (state->simulation.current_event()!=EventType::SupplyInterruption &&
+        state->simulation.beer_units()<8) {
+        Tap(state,WorkTarget::DoorStock,"STOCK");
+        Tap(state,WorkTarget::BeerOrder);
+        Tap(state,WorkTarget::ToBar,"TO BAR");
+    }
+    for (int i=0;i<4;++i) {
+        if (!state->simulation.clean_cups()) Tap(state,WorkTarget::WashStation);
+        Service(state); Tap(state,WorkTarget::Payment);
+    }
+    Tap(state,WorkTarget::DoorLiving,"ROOM");
+    Tap(state,WorkTarget::Bed,"SLEEP");
+    audit::Check(state->simulation.day()==day+1,"close a full worked shift");
+}
+static void PlayDistrictAccount(const ReverieNativeHostV1 &host) {
+    auto *state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && OnGlContextCreated(state)==1,"fresh district campaign");
+    while (state->simulation.day()<=6) Shift(state,true);
+    const auto beforeSeventhDay=audit::saves;
+    Shift(state,true);
+    audit::Check(state->ledger_page==LedgerPage::District && state->grocery.envelopes_paid==3 &&
+                 state->grocery.first_fee()==0,"Grigory honors all three first-week envelopes");
+    audit::Capture(RenderEye,state,"red-ledger-grigory",1.2f,-.12f);
+    ReleaseGlContext(state); Destroy(state); audit::saves=beforeSeventhDay;
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && OnGlContextCreated(state)==1 && state->simulation.day()==7,"reopen earlier week");
+    Shift(state,false);
+    audit::Check(state->grocery.envelopes_paid==2 && state->grocery.first_fee()==100,
+                 "missed protection receipt changes first district settlement");
+    while (state->simulation.day()<GroceryAccount::kOpeningDay) Shift(state,false);
+    audit::Check(state->ledger_page==LedgerPage::District && state->clientele.services()==240,
+                 "sixty staffed shifts lead to Mininska");
+    const int faction=2;
+    Tap(state,WorkTarget::ToStock,"TO STOCK");
+    for (int i=0; i<trade::kOffers && state->market.offer()!=trade::kDrinks+faction; ++i)
+        Tap(state,WorkTarget::StockNext);
+    audit::Check(state->market.offer()==trade::kDrinks+faction,"selected Union snack crate");
+    Tap(state,WorkTarget::StockBuy); Tap(state,WorkTarget::ToBar,"TO BAR");
+    Tap(state,WorkTarget::DoorLiving,"ROOM"); GroceryPage(state);
+    for (int i=0;i<faction;++i) Tap(state,WorkTarget::UpgradeNext);
+    const int before=state->simulation.cash_cents();
+    const int stock=state->market.stock_snack(faction);
+    Tap(state,WorkTarget::UpgradeBuy);
+    audit::Check(!state->grocery.deliveries && state->simulation.cash_cents()==before &&
+                 state->market.stock_snack(faction)==stock,"unimproved bar cannot dispatch a grocery invoice");
+    Tap(state,WorkTarget::Ledger); Tap(state,WorkTarget::UpgradeBuy);
+    audit::Check(state->renovations.tier(property::Walls)==1,"purchase real interior improvement");
+    GroceryPage(state);
+    int cash=state->simulation.cash_cents(),favor=state->market.favor(faction);
+    int cents=state->grocery.proceeds(faction,true);
+    const auto beforeDispatch=audit::saves;
+    audit::reject_writes=true;
+    Tap(state,WorkTarget::UpgradeBuy);
+    audit::Check(state->grocery.deliveries==1 && state->simulation.cash_cents()==cash+cents &&
+                 state->market.stock_snack(faction)==stock-3 && state->market.favor(faction)==favor+1 &&
+                 !IsTargetAvailable(state,WorkTarget::UpgradeBuy),"invoice pays once from physical stock");
+    audit::Check(PrepareExit(state)==0 && audit::saves==beforeDispatch,"failed dispatch write retains last good books");
+    audit::reject_writes=false; Pause(state); audit::Check(PrepareExit(state)==1,"retry saves invoice");
+    ReleaseGlContext(state); Destroy(state);
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && OnGlContextCreated(state)==1 && state->ledger_page==LedgerPage::District &&
+                 state->grocery.last_dispatch==61 && state->grocery.last_supplier==faction &&
+                 state->market.stock_snack(faction)==stock-3 && state->simulation.cash_cents()==cash+cents &&
+                 !IsTargetAvailable(state,WorkTarget::UpgradeBuy),"reopen with one receipt and next order dated");
+    audit::Capture(RenderEye,state,"red-ledger-mininska-grocery",1.2f,-.12f);
+    Shift(state,false);
+    const auto &book=state->simulation.last_ledger();
+    audit::Check(book.closing_cash_cents==book.opening_cash_cents+book.sales_cents-book.supply_spend_cents-
+                book.protection_spend_cents-book.inspection_fines_cents-book.debt_service_cents,
+                "wholesale and grocery proceeds reconcile in shift accounts");
+    while (state->simulation.day()<68) Shift(state,false);
+    GroceryPage(state);
+    int day68Cash=state->simulation.cash_cents();
+    Tap(state,WorkTarget::UpgradeBuy);
+    int nextPayment=state->simulation.cash_cents()-day68Cash;
+    audit::Check(state->grocery.deliveries==2 && nextPayment==cents+100 && state->grocery.next_day()==75,
+                 "week two order restores full price; first deduction never recurs");
+    std::printf("PASS_RED_DISTRICT day=68 full_shifts=67 services=%d week_one_paid=2/3 supplier=%d orders=2 first=%d next=%d remaining_stock=%d next_day=75\n",
+                state->clientele.services(),faction,cents,nextPayment,state->market.stock_snack(faction));
+    ReleaseGlContext(state); Destroy(state); audit::saves.clear();
+}
+static void ReadPreviousBooks(const ReverieNativeHostV1 &host) {
+    // Written by Phone Test #2028's native module after 60 staffed shifts and a wall purchase.
+    std::ifstream file("app/src/test/native/fixtures/red_ledger_v5_day61.bin",std::ios::binary);
+    std::vector<uint8_t> old{std::istreambuf_iterator<char>(file),std::istreambuf_iterator<char>()};
+    audit::Check(old.size()==396,"original checked v5 day 61 checkpoint");
+    audit::saves[kSaveSlot]=old;
+    audit::saves[kSaveSlot].back()^=1;
+    auto *state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && state->load_blocked && PrepareExit(state)==0,
+                 "damaged prior envelope never imports");
+    Destroy(state);
+    audit::saves[kSaveSlot]=old;
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && !state->load_blocked && state->save_dirty &&
+                 state->simulation.day()==61 && state->simulation.cash_cents()==23800 &&
+                 state->clientele.services()==240 && state->renovations.tier(property::Walls)==1 &&
+                 state->market.room()==trade::Room::Living && state->grocery.incomplete_books &&
+                 state->grocery.first_fee()==0 && state->ledger_page==LedgerPage::District,
+                 "old checked dates, cash, service count, building and room survive import");
+    audit::reject_writes=true; Pause(state);
+    audit::Check(audit::saves[kSaveSlot]==old && PrepareExit(state)==0,
+                 "failed upgrade keeps the old file byte for byte");
+    audit::reject_writes=false; Pause(state); Destroy(state);
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && !state->save_dirty && state->grocery.incomplete_books &&
+                 state->simulation.cash_cents()==23800,"new checked books remember historical uncertainty");
+    Destroy(state); audit::saves.clear();
+}
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     audit::Check(argc==2,"capture directory argument");audit::output=argv[1];audit::GL context;auto host=audit::Host();
+    ReadPreviousBooks(host);
     PlayOpeningShift(host);
+    PlayDistrictAccount(host);
     auto* state=static_cast<ModuleState*>(Create(&host));audit::Check(state&&!state->load_blocked,"fresh game");
     audit::Check(OnGlContextCreated(state)==1,"Red Ledger real GL");
     audit::Capture(RenderEye,state,"red-ledger-after-bar",1.2f,-.12f);
@@ -113,7 +235,7 @@ int main(int argc,char** argv){
     audit::Check(!state->load_blocked&&state->simulation.cash_cents()==latestCash,"Resume retries failed read without default overwrite");Destroy(state);
     const auto& checked=valid.at(kSaveSlot);
     audit::saves[kSaveSlot]=std::vector<uint8_t>(checked.begin()+Checkpoint::kHeaderSize,
-        checked.begin()+Checkpoint::kHeaderSize+Checkpoint::kPayloadSize);
+        checked.begin()+Checkpoint::kHeaderSize+Checkpoint::kPreviousPayloadSize);
     state=static_cast<ModuleState*>(Create(&host));
     audit::Check(!state->load_blocked&&state->save_dirty&&state->simulation.cash_cents()==latestCash,"supported old composite imported");
     Pause(state);audit::Check(audit::saves[kSaveSlot].size()==Checkpoint::kBytes&&!state->save_dirty,"legacy upgrade committed only after validation");

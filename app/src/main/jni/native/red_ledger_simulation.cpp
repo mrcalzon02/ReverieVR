@@ -804,6 +804,15 @@ bool Simulation::FillSpecialDrink() {
     return true;
 }
 
+bool Simulation::RecordGrocerySale(int32_t cents) {
+    if (!day_open_ || pending_payment_cents_ || work_drink_state_ != DrinkState::None ||
+        cents <= 0 || cents > 1000 || cash_cents_ > 1000000000-cents ||
+        sales_cents_ > 1000000000-cents) return false;
+    cash_cents_ += cents;
+    sales_cents_ += cents;
+    return true;
+}
+
 bool Simulation::SpendSpecialStock(int32_t cents) {
     if (!day_open_ || event_ == EventType::SupplyInterruption
         || cents <= 0 || cents > 100000

@@ -118,6 +118,7 @@ struct State {
     bool armory_page=false, sam_armed=false, ghost_on=false;
     bool slot_picker=true, reset_armed=false;
     bool round_summary=false, summary_requires_release=false;
+    uint8_t wave_location=0;
     int32_t wave_credits_before=0,wave_hull_before=100;
     int32_t wave_credits_gained=0,wave_hull_lost=0;
     uint8_t save_slot=0u;
@@ -398,7 +399,8 @@ bool FlushState(State *s) {
         s->save_dirty=s->save_failed=false;
         s->slot_exists[s->save_slot]=true;
         s->slot_read[s->save_slot]=SlotRead::Valid;
-        s->save_notice="CHECKPOINT SAVED - COMBAT RESTARTS AT WAVE START";
+        s->save_notice=s->campaign.phase()==Phase::Victory?"VICTORY SAVED":
+            "CHECKPOINT SAVED - COMBAT RESTARTS AT WAVE START";
     } else {
         if(!s->save_failed)
             ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_ERROR,"BreakwaterSave",
@@ -437,7 +439,8 @@ void AdoptCheckpoint(State *s,uint8_t slot,const Campaign& campaign) {
         s->checkpoint.data(),s->checkpoint.size());
     s->save_dirty=s->save_failed=s->read_blocked=s->reset_pending=false;
     s->slot_exists[slot]=true;s->slot_read[slot]=SlotRead::Valid;
-    s->save_notice="CHECKPOINT LOADED - COMBAT RESTARTS AT WAVE START";
+    s->save_notice=campaign.phase()==Phase::Victory?"SAVED VICTORY":
+        "CHECKPOINT LOADED - COMBAT RESTARTS AT WAVE START";
 }
 void LoadState(State *s) {
     Campaign snapshot;
@@ -448,6 +451,7 @@ bool BeginActiveWave(State *s,bool captureSelect) {
     // A new combat wave may only consume the durable shop checkpoint.
     if(!s || !SaveState(s) || !s->campaign.BeginWave())return false;
     s->round_summary=false;s->summary_requires_release=false;
+    s->wave_location=s->campaign.location();
     s->wave_credits_before=s->campaign.credits();
     s->wave_hull_before=s->campaign.integrity();
     s->wave_credits_gained=0;s->wave_hull_lost=0;
@@ -849,6 +853,34 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             ControlSound(s,rejection,REVERIE_NATIVE_FEEDBACK_FAILURE);
         }
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
+        float x=0.f,y=0.f;
+        const int action=AimAtPlane(input,kShopZ,&x,&y)>0.f?menu::HitDebrief(x,y):-1;
+        if(action!=1)s->reset_armed=false;
+        if(action<0)return;
+        if(action==0) {
+            if(game.phase()==Phase::Defeat) {
+                // BeginActiveWave retained the last confirmed shop checkpoint.
+                Campaign shop;
+                if(!s->checkpoint_valid ||
+                   !shop.DeserializeCheckpoint(s->checkpoint.data(),s->checkpoint.size()) ||
+                   shop.phase()!=Phase::Shop) {
+                    s->save_notice="WAVE CHECKPOINT UNAVAILABLE";
+                    s->scene_dirty=true;
+                    Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+                    return;
+                }
+                AdoptCheckpoint(s,s->save_slot,shop);
+                s->save_notice="WAVE RESTORED - ADJUST LOADOUT OR START";
+                s->armory_page=false;
+            } else {
+                s->slot_picker=true;
+                s->save_notice="VICTORY KEPT - CHOOSE A SLOT";
+            }
+            s->menu_focus=-1;s->scene_dirty=true;
+            ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_MENU_BACK,
+                         REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            return;
+        }
         if(!s->reset_armed) {
             s->reset_armed=true;s->scene_dirty=true;
             ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN,
@@ -1359,7 +1391,8 @@ void BuildScene(State *s) {
         const menu::Rect frame=menu::kPanel;
         Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
               .065f,.10f,.13f);
-        Text(s,"WAVE COMPLETE",0,1.31f,-2.97f,.068f,
+        Text(s,s->wave_location!=game.location()?"THEATER SECURED":"WAVE COMPLETE",
+             0,1.31f,-2.97f,.068f,
              .96f,.86f,.54f);
         char line[92];
         const Status score=game.wave_status();
@@ -1382,6 +1415,11 @@ void BuildScene(State *s) {
             game.integrity(),game.credits());
         Text(s,line,0,.17f,-2.97f,
              font::FittedScale(line,5.7f,.040f),.83f,.92f,.82f);
+        std::snprintf(line,sizeof(line),"NEXT  %s  %s %u  WAVE %u/%u",
+            Campaign::Locations()[game.location()].name,
+            game.period()==Period::Night?"NIGHT":"DAY",unsigned(game.day()),
+            unsigned(game.wave_index()),unsigned(game.waves_this_period()));
+        Text(s,line,0,-.07f,-2.97f,font::FittedScale(line,5.70f,.037f),.85f,.91f,.83f);
         for(int action=0;action<2;++action) {
             const menu::Rect tile=menu::DebriefAction(action);
             const bool focus=s->menu_focus==action;
@@ -1723,11 +1761,31 @@ void BuildScene(State *s) {
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
         s->console=false;s->player_local=false;
     } else {
-        Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
-        Text(s,game.phase()==Phase::Victory?"VICTORY":"BATTERY LOST",
-             0,.3f,-2.95f,.09f,.9f,.81f,.50f);
-        Text(s,s->reset_armed?"SELECT AGAIN TO RESTART":
-             "SELECT TO RESTART CAMPAIGN",0,-.35f,-2.95f,.045f,.87f,.82f,.69f);
+        const bool won=game.phase()==Phase::Victory;
+        Panel(s,0,.15f,-3.06f,5.3f,2.15f,.07f,.10f,.14f);
+        Text(s,won?"CAMPAIGN VICTORY":"BATTERY LOST",
+             0,.70f,-2.95f,.065f,.9f,.81f,.50f);
+        char status[80];
+        if(won)std::snprintf(status,sizeof(status),"%u THEATERS SECURED  /  HULL %d",
+                             unsigned(Campaign::kLocations),game.integrity());
+        else std::snprintf(status,sizeof(status),"%s  %s %u  WAVE %u/%u",
+            Campaign::Locations()[game.location()].name,game.period()==Period::Night?"NIGHT":"DAY",
+            unsigned(game.day()),unsigned(game.wave_index()),unsigned(game.waves_this_period()));
+        Text(s,status,0,.33f,-2.95f,font::FittedScale(status,4.95f,.043f),.84f,.91f,.82f);
+        Text(s,s->reset_armed?"NEW RUN WILL ERASE THIS SLOT":
+             won?(s->save_dirty?"SELECT TO RETRY SAVING VICTORY":"VICTORY RECORDED IN THIS SLOT"):
+             "RETRY FROM THE START OF THIS WAVE",
+             0,-.02f,-2.95f,.034f,.88f,.87f,.74f);
+        for(int action=0;action<2;++action) {
+            const menu::Rect tile=menu::DebriefAction(action);
+            const bool focus=s->menu_focus==action;
+            Panel(s,tile.x,tile.y,-3.f,tile.width,tile.height,
+                  focus?.30f:.16f,focus?.42f:.25f,focus?.36f:.26f);
+            const char* label=action==0?(won?"SAVE SLOTS":"RETRY WAVE"):
+                s->reset_armed?"CONFIRM NEW RUN":"NEW RUN";
+            Text(s,label,tile.x,tile.y,-2.97f,font::FittedScale(label,tile.width,.04f),
+                 .95f,.94f,.78f);
+        }
         if(game.phase()==Phase::Defeat && s->battery_damage.active()) {
             char damage[28];
             std::snprintf(damage,sizeof(damage),"LAST HIT -%d",
@@ -2108,6 +2166,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             next_focus=AimAtPlane(copy,kShopZ,&x,&y)>0.0f?
                 menu::HitDebrief(x,y):-1;
         } else next_focus=ShopTarget(copy,s->armory_page);
+    } else if(s->campaign.phase()==Phase::Victory || s->campaign.phase()==Phase::Defeat) {
+        float x=0.f,y=0.f;
+        next_focus=AimAtPlane(copy,kShopZ,&x,&y)>0.f?menu::HitDebrief(x,y):-1;
     }
     if(next_focus!=s->menu_focus) {
         s->menu_focus=next_focus;
@@ -2115,7 +2176,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     }
     int focus=-1;
     if(next_focus>=0) {
-        const int page=s->slot_picker?10:s->round_summary?80:
+        const int page=s->slot_picker?10:
+            (s->campaign.phase()==Phase::Defeat || s->campaign.phase()==Phase::Victory)?160:
+            s->round_summary?80:
             s->campaign.phase()==Phase::Briefing?20:s->armory_page?60:40;
         focus=page+next_focus;
     } else if(s->campaign.phase()==Phase::Combat) {
@@ -2123,8 +2186,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         else if(hud_focus!=CombatHudTarget::None)
             focus=120+static_cast<int>(hud_focus);
         else if(s->defense_points.hover>=0)focus=140+s->defense_points.hover;
-    } else if(s->campaign.phase()==Phase::Victory ||
-              s->campaign.phase()==Phase::Defeat)focus=160;
+    }
     if(s->audio_focus.Update(focus,copy.delta_seconds,down || secondary))
         Feedback(s,REVERIE_NATIVE_FEEDBACK_FOCUS);
     // All mounted guns, including the missile pod, follow permitted

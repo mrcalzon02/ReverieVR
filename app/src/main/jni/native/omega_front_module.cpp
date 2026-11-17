@@ -110,7 +110,45 @@ void DrawGallery(State *s){
          -1.06f,.010f,.69f,.80f,.84f);
     s->upload=true;
 }
+void DrawRegionalReport(State *s) {
+    const auto &front=s->session.frontier;
+    s->mesh.clear();s->font.Clear();s->sprites.Clear();
+    s->base_vertices=s->unit_vertices=0;
+    Rect(s,0,0,2.15f,2.30f,kBoardZ-.09f,.017f,.032f,.047f);
+    Rect(s,0,.91f,2.04f,.35f,kBoardZ-.07f,.065f,.125f,.176f);
+    Text(s,"HEARTHFALL  /  REGIONAL REPORT",.97f,.019f,.96f,.93f,.77f);
+    Text(s,"SIX OPERATIONS RESOLVED",.81f,.012f,.69f,.86f,.78f);
+    const float resume_y=game::Menu::ButtonY(0);
+    Rect(s,0,resume_y,1.55f,.19f,kBoardZ-.04f,.20f,.31f,.38f);
+    Text(s,"RETURN TO PLAY",resume_y,.013f,1.f,.92f,.73f);
+    constexpr const char *sites[]={"Ashrail Yard","Charter Gate","Caravan Ford"};
+    constexpr const char *settled[]={"Engine stock recovered","Checkpoint taken","Crossing secured"};
+    char line[96];
+    for(int op=3;op<=5;++op){
+        const auto status=front.obligation_status(op);
+        const char *outcome=settled[op-3];
+        switch(status){
+        case game::Obligations::Due:outcome="Accord signed";break;
+        case game::Obligations::Honored:outcome="Accord honored";break;
+        case game::Obligations::Broken:outcome="Accord defaulted";break;
+        case game::Obligations::Legacy:outcome="Accord on record";break;
+        case game::Obligations::None:break;
+        }
+        if(status==game::Obligations::Due)
+            std::snprintf(line,sizeof(line),"%s  /  %s  /  due day %d",sites[op-3],outcome,front.obligation_due_day(op));
+        else std::snprintf(line,sizeof(line),"%s  /  %s",sites[op-3],outcome);
+        Text(s,line,.10f-(op-3)*.19f,.013f,.90f,.89f,.75f);
+    }
+    std::snprintf(line,sizeof(line),"Day %d   /   Guards %d   /   Public trust %d",front.day(),front.guards(),front.trust());
+    Text(s,line,-.57f,.012f,.72f,.85f,.90f);
+    std::snprintf(line,sizeof(line),"Lantern Pump %d/18   /   Field rations %d",front.pump_health(),front.rations());
+    Text(s,line,-.75f,.012f,.72f,.85f,.90f);
+    Text(s,s->save_failed?"SAVE FAILED  /  RETRY BEFORE EXIT":"Field command and outpost operations continue.",
+         -.98f,.011f,s->save_failed?1.f:.68f,s->save_failed?.43f:.81f,.72f);
+    s->upload=true;
+}
 void DrawMenu(State *s) {
+    if(s->menu.screen==game::MenuScreen::RegionalReport){DrawRegionalReport(s);return;}
     if(s->menu.screen==game::MenuScreen::Gallery){DrawGallery(s);return;}
     const auto screen=s->menu.screen;
     const game::Frontier &f=s->session.frontier;
@@ -995,8 +1033,13 @@ void Draw(State *s){
         "HOLD ACTIVE  MINUS WITH NO SELECTION TO RESUME");
     else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),
         "SELECT UNIT  /  ORDERS RESOLVE ON END TURN");
-    else std::snprintf(action,sizeof(action),"UNIT %d  %s  CLICK ORDER",s->session.tactical.selected,
-                       mode_names[static_cast<int>(s->session.tactical.mode)]);
+    else {
+        const int id=s->session.tactical.selected;
+        const auto *unit=battle.unit(id);
+        std::snprintf(action,sizeof(action),"UNIT %d  /  HP %d  /  AMMO %d  /  %s  /  QUEUED %d",
+                      id,unit?unit->hp:0,unit?unit->ammo:0,mode_names[static_cast<int>(s->session.tactical.mode)],
+                      battle.queued(id));
+    }
     Text(s,action,-1.061f,.012f,s->session.tactical.rejected?1.f:.91f,
          s->session.tactical.rejected?.37f:.86f,.55f);
     if(s->save_failed || s->load_failed)
@@ -1019,6 +1062,7 @@ bool SaveState(State *s){
     if(ok){
         s->has_campaign=true;
         s->load_failed=false;
+        if(s->session.view==game::FrontMode::Tactical)s->continent_view=false;
         s->saved_tick=s->session.tactical.battle.ticks();
         s->saved_orders=s->session.orders+s->session.tactical.issued;
         s->saved_view=s->session.view;
@@ -1042,6 +1086,7 @@ void LoadState(State *s){
     }else{
         s->has_campaign=true;
         s->load_failed=false;
+        if(s->session.view==game::FrontMode::Tactical)s->continent_view=false;
         s->saved_tick=s->session.tactical.battle.ticks();
         s->saved_orders=s->session.orders+s->session.tactical.issued;
         s->saved_view=s->session.view;
@@ -1150,6 +1195,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             }
         }
     }
+    s->menu.regional_complete=s->session.frontier.operation()==game::kHearthfallOperations;
     const bool click=action.primary&&!s->pointer_primary_down;
     s->pointer_primary_down=action.primary;
     if(s->menu.screen!=game::MenuScreen::Playing){
@@ -1173,6 +1219,10 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         }
         if(command==game::MenuCommand::SetFieldAction)
             s->session.action=static_cast<game::FieldAction>(s->menu.field_choice);
+        if(command==game::MenuCommand::ClearOrders){
+            if(s->session.ClearSelectedOrders())SaveState(s);
+            else ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        }
         if(command==game::MenuCommand::SetCommandMode)
             s->session.tactical.mode=static_cast<game::CommandMode>(s->menu.mode_choice);
         // Preview browsing does not issue orders, spend supplies or save.
@@ -1373,6 +1423,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         }else if(before!=s->world_relief)Draw(s);
         return;
     }
+    const int old_operation=s->session.frontier.operation();
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
     const uint32_t old_tick=s->session.tactical.battle.ticks();
     const auto old_view=s->session.view;
@@ -1403,6 +1454,9 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             s->session.tactical.paused!=s->saved_pause ||
             s->session.tactical.battle.result()!=s->saved_result ||
             (s->session.view==game::FrontMode::Tactical && tick!=s->saved_tick))) SaveState(s);
+        if(old_operation<game::kHearthfallOperations &&
+           s->session.frontier.operation()==game::kHearthfallOperations)
+            s->menu.OpenRegionalReport(action.primary,action.secondary);
         Draw(s);
         if(new_orders!=old_orders || old_view!=s->session.view)
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);

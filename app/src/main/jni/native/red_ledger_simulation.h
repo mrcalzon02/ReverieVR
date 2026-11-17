@@ -114,6 +114,7 @@ public:
     bool FillSpecialDrink();
     bool ServeHeldCup();
     bool ApplyServicePremium(int32_t cents, int32_t reputation_points);
+    bool RecordGrocerySale(int32_t cents);
     bool SpendSpecialStock(int32_t cents);
     bool CollectPayment();
     bool TurnAwayCurrentPatron();

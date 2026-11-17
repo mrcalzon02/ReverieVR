@@ -35,9 +35,9 @@ struct State {
     const ReverieNativeHostV1 *host=nullptr;
     sim::Simulation simulation;
 #if RECON_PROJECT_KIND == 0
-    sim::Photograph photo{};
+    sim::Photograph photo{},prior{};
     sim::ReportResult result{};
-    bool hasPhoto=false,panChord=false;
+    bool hasPhoto=false,hasPrior=false,panChord=false;
     int cropX=4,cropY=4,lastAimX=-1,lastAimY=-1;
 #else
     sim::ContactEvidence evidence{};
@@ -45,6 +45,7 @@ struct State {
 #endif
     int choice=0;
     bool saveDirty=false,saveFailed=false,loadBlocked=false,inputReady=false;
+    bool viewDirty=false; // Inspection moves can wait until the next checkpoint or exit.
     float retrySeconds=1.f;
 #if RECON_PROJECT_KIND == 1
     bool confirmRefit=false;
@@ -65,17 +66,21 @@ void Text(State *s,const char *str,float y,float size,
 #if RECON_PROJECT_KIND == 0
 constexpr float kPhotoPixel=.083f,kPhotoY=.16f,kPhotoZ=-2.92f,kLoupeX=1.59f;
 constexpr int kFilmSize=16,kWindowSize=8;
-void DrawFilm(State *s,float cx,int startX,int startY,int size){
+void DrawFilm(State *s,const sim::Photograph &film,float cx,int startX,int startY,int size){
     const float step=kPhotoPixel*kFilmSize/size;
     Rect(s,cx,kPhotoY,1.46f,1.46f,-2.96f,.14f,.17f,.14f);
     for(int y=0;y<size;++y)for(int x=0;x<size;++x){
-        if(s->photo.pixels[startY+y] & (1u<<(startX+x)))
+        if(film.pixels[startY+y] & (1u<<(startX+x)))
             Rect(s,cx+(x-(size-1)*.5f)*step,kPhotoY+((size-1)*.5f-y)*step,
                  step*.96f,step*.96f,kPhotoZ,.84f,.85f,.63f);
     }
 }
 void DrawLoupe(State *s){
-    DrawFilm(s,kLoupeX,s->cropX,s->cropY,kWindowSize);
+    DrawFilm(s,s->photo,kLoupeX,s->cropX,s->cropY,kWindowSize);
+    if(s->hasPrior){
+        DrawFilm(s,s->prior,-kLoupeX,s->cropX,s->cropY,kWindowSize);
+        s->font.Fit("2X PREVIOUS",-kLoupeX,-.64f,1.42f,.025f,.76f,.89f,.98f,-2.87f);
+    }
     const float width=kWindowSize*kPhotoPixel;
     const float x=(s->cropX-4)*kPhotoPixel,y=kPhotoY-(s->cropY-4)*kPhotoPixel;
     for(int side:{-1,1}){
@@ -83,7 +88,7 @@ void DrawLoupe(State *s){
         Rect(s,x,y+side*width*.5f,width,.014f,-2.90f,.96f,.70f,.27f);
     }
     s->font.Fit("SOURCE FRAME",0.f,-.64f,1.42f,.025f,.77f,.89f,.84f,-2.87f);
-    s->font.Fit("2X LOUPE",kLoupeX,-.64f,1.42f,.025f,.96f,.82f,.45f,-2.87f);
+    s->font.Fit(s->hasPrior?"2X CURRENT":"2X LOUPE",kLoupeX,-.64f,1.42f,.025f,.96f,.82f,.45f,-2.87f);
 }
 // Aim updates only when its source pixel changes. A stationary head ray
 // cannot return the loupe to center immediately after a pad pan.
@@ -245,22 +250,24 @@ void DrawBoard(State *s){
             std::snprintf(text,sizeof(text),"%s / PHOTO CLARITY %u%%",
                 sectors[static_cast<unsigned>(s->photo.sector)],static_cast<unsigned>(s->photo.clarity));
             Text(s,text,.99f,.029f,.79f,.91f,.96f);
-            // The field reference is identical on all assignments. It describes
-            // image features without identifying the current photograph.
-            s->font.Fit("FIELD GUIDE",-1.57f,.65f,1.28f,.030f,.79f,.91f,.96f,-2.87f);
-            s->font.Fit("COLUMN",-1.57f,.36f,1.28f,.028f,.92f,.82f,.59f,-2.87f);
-            s->font.Fit("PAIRED PROFILES",-1.57f,.16f,1.35f,.025f,.83f,.90f,.87f,-2.87f);
-            s->font.Fit("BRIDGE DAMAGE",-1.57f,-.12f,1.35f,.028f,.92f,.82f,.59f,-2.87f);
-            s->font.Fit("GAP IN DECK",-1.57f,-.32f,1.28f,.025f,.83f,.90f,.87f,-2.87f);
+            if(!s->hasPrior){
+                // The field reference is identical on all assignments. It describes
+                // image features without identifying the current photograph.
+                s->font.Fit("FIELD GUIDE",-1.57f,.65f,1.28f,.030f,.79f,.91f,.96f,-2.87f);
+                s->font.Fit("COLUMN",-1.57f,.36f,1.28f,.028f,.92f,.82f,.59f,-2.87f);
+                s->font.Fit("PAIRED PROFILES",-1.57f,.16f,1.35f,.025f,.83f,.90f,.87f,-2.87f);
+                s->font.Fit("BRIDGE DAMAGE",-1.57f,-.12f,1.35f,.028f,.92f,.82f,.59f,-2.87f);
+                s->font.Fit("GAP IN DECK",-1.57f,-.32f,1.28f,.025f,.83f,.90f,.87f,-2.87f);
+            }
         }
         if(s->hasPhoto){
-            DrawFilm(s,0.f,0,0,kFilmSize);
+            DrawFilm(s,s->photo,0.f,0,0,kFilmSize);
             if(s->simulation.phase()==sim::Phase::PhotoReady)DrawLoupe(s);
         }
         if(s->simulation.phase()==sim::Phase::PhotoReady){
             const char *labels[]={"NO CONTACT","POSSIBLE CONTACT",
                                   "VEHICLE COLUMN","BRIDGE DAMAGE"};
-            Text(s,"AIM AT PHOTO OR HOLD MINUS + PAD TO PAN",-.90f,.027f,.83f,.91f,.90f);
+            Text(s,s->hasPrior?"COMPARE SAME AREA / AIM OR HOLD MINUS + PAD":"AIM AT PHOTO OR HOLD MINUS + PAD TO PAN",-.90f,.027f,.83f,.91f,.90f);
 
             std::snprintf(text,sizeof(text),"FILE: %s",labels[s->choice%4]);
             Text(s,text,-1.19f,.040f,1.f,.81f,.36f);
@@ -359,6 +366,7 @@ void RefreshEvidence(State* s){
 #if RECON_PROJECT_KIND == 0
     const auto* photo=s->simulation.evidence_photo();
     s->hasPhoto=photo!=nullptr;s->photo=photo?*photo:sim::Photograph{};
+    s->hasPrior=s->simulation.phase()==sim::Phase::PhotoReady && s->simulation.previous_exposure(&s->prior);
     const auto* report=s->simulation.last_report();s->result=report?*report:sim::ReportResult{};
 #else
     s->evidence=sim::ContactEvidence{};s->debrief=sim::Debrief{};
@@ -369,6 +377,8 @@ SavedSession Snapshot(const State* s){
     SavedSession saved;saved.simulation=s->simulation;saved.choice=static_cast<uint8_t>(s->choice);
 #if RECON_PROJECT_KIND == 1
     saved.confirm_refit=s->confirmRefit;
+#else
+    if(s->hasPrior){saved.crop_x=static_cast<uint8_t>(s->cropX);saved.crop_y=static_cast<uint8_t>(s->cropY);}
 #endif
     return saved;
 }
@@ -381,7 +391,7 @@ bool Save(State* s){
         &&s->host->write_save(kSaveSlot,bytes.data(),static_cast<uint32_t>(bytes.size()))==REVERIE_NATIVE_SAVE_OK;
     if(!ok&&!s->saveFailed)ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
         "Checkpoint failed; latest progress retained for retry");
-    s->saveFailed=!ok;if(ok)s->saveDirty=false;
+    s->saveFailed=!ok;if(ok){s->saveDirty=false;s->viewDirty=false;}
     return ok;
 }
 bool Load(State* s){
@@ -399,8 +409,10 @@ bool Load(State* s){
     s->simulation=next.simulation;s->choice=next.choice;
 #if RECON_PROJECT_KIND == 1
     s->confirmRefit=next.confirm_refit;
+#else
+    s->cropX=next.crop_x;s->cropY=next.crop_y;s->lastAimX=s->lastAimY=-1;
 #endif
-    s->loadBlocked=false;s->saveDirty=false;s->saveFailed=false;
+    s->loadBlocked=false;s->saveDirty=false;s->saveFailed=false;s->viewDirty=false;
     RefreshEvidence(s);return true;
 }
 bool Act(State *s){
@@ -463,7 +475,7 @@ void *Create(const ReverieNativeHostV1 *host){
 }
 void Destroy(void *p){
     auto* s=static_cast<State*>(p);if(!s)return;
-    if(s->saveDirty&&!s->loadBlocked)Save(s);
+    if((s->saveDirty || s->viewDirty)&&!s->loadBlocked)Save(s);
     delete s;
 }
 int32_t GlStart(void *p){
@@ -507,13 +519,13 @@ void Resume(void *p){
 }
 void Pause(void *p){
     auto* s=static_cast<State*>(p);if(!s)return;
-    if(s->saveDirty&&!s->loadBlocked)Save(s);
+    if((s->saveDirty || s->viewDirty)&&!s->loadBlocked)Save(s);
     s->inputReady=false;s->primary=s->secondary=s->axis=false;DrawBoard(s);
 }
 int32_t PrepareExit(void *p){
     auto* s=static_cast<State*>(p);if(!s)return 1;
     if(s->loadBlocked)return 0;
-    return !s->saveDirty||Save(s)?1:0;
+    return (!s->saveDirty && !s->viewDirty)||Save(s)?1:0;
 }
 void Update(void *p,const ReverieNativeInputV1 *in){
     State *s=static_cast<State *>(p);
@@ -562,7 +574,10 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         stepAxis=stepAxis && !second && !s->panChord;
         activate=activate && !second && !s->panChord;
         if(!second)s->panChord=false;
-        if(redraw)DrawBoard(s);
+        if(redraw){
+            if(s->hasPrior)s->viewDirty=true;
+            DrawBoard(s);
+        }
     }
 #endif
 #if RECON_PROJECT_KIND == 1

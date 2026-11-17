@@ -115,6 +115,7 @@ bool Simulation::SubmitReport(Assessment assessment, ReportResult *result) {
 }
 bool Simulation::NextSortie() {
     if(phase_!=Phase::Filed)return false;
+    filed_sectors_ |= SectorBit(selected_);
     follow_up_sectors_ ^= SectorBit(selected_);
     phase_=Phase::Briefing;selected_=Sector::RailApproach;
     photo_=Photograph{};last_report_=ReportResult{};
@@ -122,6 +123,13 @@ bool Simulation::NextSortie() {
 }
 const Photograph *Simulation::evidence_photo() const {
     return phase_==Phase::PhotoReady||phase_==Phase::Filed?&photo_:nullptr;
+}
+bool Simulation::previous_exposure(Photograph *output) const {
+    if (!output || !evidence_photo() || !(filed_sectors_ & SectorBit(selected_))) return false;
+    // The two authored negatives for each sector alternate only on closing a
+    // filed sortie. Their sector and exposure index reproduce the original pixels.
+    MakePhotograph(selected_, (follow_up_sectors_ & SectorBit(selected_)) == 0, output);
+    return true;
 }
 const ReportResult *Simulation::last_report() const {
     return phase_==Phase::Filed?&last_report_:nullptr;

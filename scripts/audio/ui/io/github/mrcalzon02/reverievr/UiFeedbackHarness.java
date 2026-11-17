@@ -9,7 +9,7 @@ public final class UiFeedbackHarness {
   UiFeedback ui=new UiFeedback(new android.content.Context()); start(ui);
   BreakwaterAudio bank=BreakwaterAudio.instance;
   check(bank.active&&bank.lifecycle&&!bank.suspended,"lazy bank begins active with fresh pointer");
-  ui.nativeSoundCue(22);drain();check(RedLedgerSound.played.isEmpty(),"Breakwater cannot leak another game bank");
+  ui.nativeSoundCue(22);drain();check(NativeGameSamples.played.isEmpty(),"Breakwater cannot leak another game bank");
   ui.nativeSoundCue(1); ui.setNativeAudioSuspended(true); drain();
   check(bank.cues.isEmpty()&&NativeCombatSound.played.isEmpty(),"Quick Menu invalidates already posted native shot");
   ui.nativeSoundCue(1);ui.nativeFeedback(8);drain();
@@ -35,9 +35,9 @@ public final class UiFeedbackHarness {
   check(ToneGenerator.tones.size()==before&&NativeCombatSound.played.isEmpty(),"unready Breakwater feedback stays quiet without legacy fallback");
   ui.activation();ui.focus();ui.failure();ui.springRecenter();drain();
   check(ToneGenerator.tones.size()==before&&android.media.AudioManager.plays==0,"unready Breakwater shell controls also never use legacy tones/effects");
-  ui.setNativeModuleSession("omega-front");ui.setNativeAudioSuspended(false);drain();ui.nativeSoundCue(21);ui.nativeSoundCue(22);ui.nativeSoundCue(48);drain();
+  ui.setNativeModuleSession("omega-front");ui.setNativeAudioSuspended(false);drain();ui.nativeSoundCue(21);ui.nativeSoundCue(22);ui.nativeSoundCue(49);drain();
   check(NativeCombatSound.played.size()==1&&NativeCombatSound.played.get(0)==21,"other modules retain their legacy cue bank");
-  check(RedLedgerSound.played.size()==1&&RedLedgerSound.played.get(0)==22,"Red Ledger retains its own cue namespace");
+  check(NativeGameSamples.played.size()==1&&NativeGameSamples.played.get(0)==22,"Red Ledger retains its own cue namespace");
   ui.nativeSoundCue(1);ui.close();drain();check(NativeCombatSound.played.size()==1&&bank.closed,"close cannot replay queued sounds");
   System.out.println("UiFeedback lifecycle/routing harness: "+checks+" checks passed");
  }
