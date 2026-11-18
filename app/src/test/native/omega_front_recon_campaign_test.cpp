@@ -11,7 +11,73 @@ static void Reseal(CampaignSave::Bytes &bytes){
     for(size_t i=0;i<bytes.size()-8;++i){h^=bytes[i];h*=UINT64_C(1099511628211);}
     for(size_t i=bytes.size()-8;i<bytes.size();++i){bytes[i]=static_cast<uint8_t>(h);h>>=8;}
 }
+// Rejection of a diplomatic action before surveying a visible neighbor must
+// never bill supplies, advance the day, or reveal hidden campaign knowledge.
+// Reload must preserve the pending action without replaying the rejected bill.
+static void RejectedBeforeSurveyParleyCheckpoint(){
+    Session blocked(414);
+    blocked.Input({0,0,0,false,false,3,1}); // visible, unsurveyed Charter Gate
+    assert(blocked.focused==7 && blocked.frontier.location()==6);
+    assert(blocked.frontier.intelligence(7)==Intelligence::Terrain);
+    for(int i=0;i<6;++i)Tap(blocked,false,true);
+    assert(blocked.action==FieldAction::Parley);
+    const uint64_t pristine=blocked.frontier.Checksum();
+    const uint32_t orders=blocked.orders;
+    const int rations=blocked.frontier.rations();
+    const int salvage=blocked.frontier.salvage();
+    const int day=blocked.frontier.day();
+    const int trust=blocked.frontier.trust();
+    const int relation=blocked.frontier.relation(2);
+    const int claims=blocked.frontier.sector(7)->claims;
+    const int wreck=blocked.frontier.sector(7)->wreck_mass;
+    Tap(blocked,true);
+    assert(blocked.rejected && blocked.orders==orders);
+    assert(blocked.frontier.Checksum()==pristine);
+    assert(blocked.frontier.rations()==rations && blocked.frontier.salvage()==salvage);
+    assert(blocked.frontier.day()==day && blocked.frontier.trust()==trust);
+    assert(blocked.frontier.relation(2)==relation);
+    assert(blocked.frontier.sector(7)->claims==claims);
+    assert(blocked.frontier.sector(7)->wreck_mass==wreck);
+    assert(!blocked.frontier.parleyed(7));
+    assert(blocked.frontier.intelligence(0)==Intelligence::Unknown);
+
+    CampaignSave::Bytes data{};
+    assert(CampaignSave::Encode(blocked,&data));
+    Session reload(999);
+    assert(CampaignSave::Decode(&reload,data.data(),data.size()));
+    assert(!reload.rejected); // rejected is transient UI feedback, not a bill
+    assert(reload.action==FieldAction::Parley && reload.focused==7);
+    assert(reload.Checksum()==blocked.Checksum());
+    Tap(reload,true); // retry is still rejected, including after restart
+    assert(reload.rejected && reload.orders==orders);
+    assert(reload.frontier.Checksum()==pristine);
+    for(int i=0;i<7;++i)Tap(reload,false,true); // Parley -> Scout
+    assert(reload.action==FieldAction::Scout);
+    Tap(reload,true);
+    assert(!reload.rejected && reload.orders==orders+1);
+    assert(reload.frontier.intelligence(7)==Intelligence::Surveyed);
+    assert(reload.frontier.rations()==rations-2);
+    assert(reload.frontier.day()==day+1);
+    Tap(reload,false,true); // Scout -> Parley
+    assert(reload.action==FieldAction::Parley);
+    Tap(reload,true);
+    assert(!reload.rejected && reload.orders==orders+2);
+    assert(reload.frontier.parleyed(7));
+    assert(reload.frontier.rations()==rations-3);
+    assert(reload.frontier.salvage()==salvage-4);
+    assert(reload.frontier.relation(2)==relation+8);
+    assert(reload.frontier.sector(7)->wreck_mass==wreck+4);
+    assert(reload.frontier.day()==day+2);
+    assert(reload.frontier.operation()==0);
+    assert(reload.frontier.intelligence(0)==Intelligence::Unknown);
+    assert(CampaignSave::Encode(reload,&data));
+    Session final(1);
+    assert(CampaignSave::Decode(&final,data.data(),data.size()));
+    assert(final.Checksum()==reload.Checksum());
+    std::cout << "Omega Front rejected pre-survey parley save/reload passed\\n";
+}
 int main(){
+    RejectedBeforeSurveyParleyCheckpoint();
     Session campaign(414);
     assert(campaign.frontier.intelligence(6)==Intelligence::Surveyed);
     assert(campaign.frontier.intelligence(7)==Intelligence::Terrain);
