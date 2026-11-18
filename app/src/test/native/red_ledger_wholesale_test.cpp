@@ -1,4 +1,5 @@
 #include "red_ledger_wholesale.h"
+#include "red_ledger_save.h"
 #include <cassert>
 #include <cstdint>
 #include <iostream>
@@ -23,6 +24,72 @@ int main() {
     assert(!trade::BuyWholesale(&sim,&market));
     assert(sim.cash_cents()==after_purchase);
     assert(market.stock_drink(3)==whiskey_before);
+
+    // The live checkout uses a two-party wallet/inventory transaction.
+    // A checked whole-game restart must preserve both halves, including an
+    // unaffordable offer (no charge), one purchased lot, and no free replay.
+    {
+        save::State original{};
+        assert(original.market.SelectOffer(1));
+        save::Checkpoint::Bytes opening{};
+        assert(save::Checkpoint::Encode(original,&opening));
+        save::State resumed{};
+        assert(save::Checkpoint::Decode(
+            &resumed,opening.data(),opening.size())==save::Checkpoint::Format::Checked);
+        const int32_t opening_cash=resumed.simulation.cash_cents();
+        const int opening_stock=resumed.market.stock_drink(1);
+        const int lot=trade::kDrinkCatalog[1].units;
+        assert(opening_cash>=resumed.market.offer_cost());
+
+        // An expensive offer must reject without debiting any of the checked
+        // gameplay state, not merely leave the selected SKU's stock unchanged.
+        assert(resumed.market.SelectOffer(3));
+        save::Checkpoint::Bytes expensive_before{},expensive_after{};
+        assert(save::Checkpoint::Encode(resumed,&expensive_before));
+        assert(!trade::BuyWholesale(&resumed.simulation,&resumed.market));
+        assert(save::Checkpoint::Encode(resumed,&expensive_after));
+        assert(expensive_after==expensive_before);
+        assert(resumed.market.SelectOffer(1));
+        const int price=resumed.market.offer_cost();
+        assert(trade::BuyWholesale(&resumed.simulation,&resumed.market));
+        assert(resumed.simulation.cash_cents()==opening_cash-price);
+        assert(resumed.market.stock_drink(1)==opening_stock+lot);
+
+        save::Checkpoint::Bytes purchased{},roundtrip{};
+        assert(save::Checkpoint::Encode(resumed,&purchased));
+        save::State reopened{};
+        assert(save::Checkpoint::Decode(
+            &reopened,purchased.data(),purchased.size())==save::Checkpoint::Format::Checked);
+        assert(save::Checkpoint::Encode(reopened,&roundtrip));
+        assert(roundtrip==purchased);
+        assert(reopened.simulation.cash_cents()==opening_cash-price);
+        assert(reopened.market.stock_drink(1)==opening_stock+lot);
+        assert(reopened.market.SelectOffer(3));
+        save::Checkpoint::Bytes failed_before{},failed_after{};
+        assert(save::Checkpoint::Encode(reopened,&failed_before));
+        assert(!trade::BuyWholesale(&reopened.simulation,&reopened.market));
+        assert(save::Checkpoint::Encode(reopened,&failed_after));
+        assert(failed_before==failed_after);
+        assert(reopened.simulation.cash_cents()==opening_cash-price);
+        assert(reopened.market.stock_drink(1)==opening_stock+lot);
+    }
+
+    // A full SKU restored from a checked checkpoint must not collect money,
+    // even when the buyer has enough cash for the displayed price.
+    {
+        save::State full{};
+        assert(full.market.SelectOffer(1));
+        while(full.market.CanAcceptStock())assert(full.market.AcceptStock());
+        assert(full.simulation.cash_cents()>=full.market.offer_cost());
+        save::Checkpoint::Bytes capped{},after{};
+        assert(save::Checkpoint::Encode(full,&capped));
+        save::State restored_full{};
+        assert(save::Checkpoint::Decode(
+            &restored_full,capped.data(),capped.size())==save::Checkpoint::Format::Checked);
+        assert(!trade::BuyWholesale(&restored_full.simulation,&restored_full.market));
+        assert(save::Checkpoint::Encode(restored_full,&after));
+        assert(capped==after);
+    }
 
     // Force each of 24 source products to its exact max capacity without
     // altering cash. No stock overflow or partial money debits are allowed.
