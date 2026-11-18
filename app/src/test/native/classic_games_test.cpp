@@ -192,6 +192,86 @@ static void TestChessCpuResetSaveReload() {
     assert(ScreenIndex(target.first,target.second,-1)==board.lastTo);
 }
 
+// A castle cannot move a king THROUGH check, even when its destination is
+// safe. The rejected input must be inert before and after a real save/load;
+// removing ONLY the hostile attack must then permit the original castle.
+static void TestChessCastleAttackedTransitCheckpoint() {
+    namespace save=reverie::classics::save;
+    using reverie::boardgames::Kind;
+    using reverie::boardgames::State;
+    struct Case {
+        int king,rook,enemyKing,enemyRook,transit,destination,rookTo,rights,side;
+    };
+    const Case cases[]={
+        {60,63, 0, 5,61,62,61,1, 1}, // White O-O; f8 rook attacks f1
+        {60,56, 7, 3,59,58,59,2, 1}, // White O-O-O; d8 rook attacks d1
+        { 4, 7,56,61, 5, 6, 5,4,-1}, // Black O-O; f1 rook attacks f8
+        { 4, 0,63,59, 3, 2, 3,8,-1}  // Black O-O-O; d1 rook attacks d8
+    };
+    for(const Case &c:cases) {
+        save::Snapshot snapshot;
+        State &board=snapshot.board;
+        board.Reset(Kind::Chess);
+        board.cells.fill(0);
+        board.cells[c.king]=static_cast<int8_t>(6*c.side);
+        board.cells[c.rook]=static_cast<int8_t>(4*c.side);
+        board.cells[c.enemyKing]=static_cast<int8_t>(-6*c.side);
+        board.cells[c.enemyRook]=static_cast<int8_t>(-4*c.side);
+        board.castles=c.rights;
+        board.side=c.side;
+        board.chessHistory.clear();
+        board.chessHistory.emplace(board.CurrentChessPosition(),1);
+
+        assert(!board.KingInCheck(board.cells,c.side));
+        assert(board.Attacked(board.cells,c.transit,-c.side));
+        assert(!board.Attacked(board.cells,c.destination,-c.side));
+        const State before=board;
+        assert(!board.ChessLegal(c.king,c.destination));
+        assert(!board.ChessMove(c.king,c.destination));
+        assert(board.cells==before.cells && board.side==before.side);
+        assert(board.castles==before.castles && board.ply==before.ply);
+        assert(board.chessHistory==before.chessHistory);
+        assert(board.chessSanHistory.empty() && board.lastFrom==-1);
+        std::vector<uint8_t> bytes;
+        assert(save::Encode(5,snapshot.game,snapshot.breakout,board,bytes));
+        save::Snapshot restored;
+        assert(save::Decode(5,bytes,restored));
+        State &loaded=restored.board;
+        assert(loaded.cells==before.cells && loaded.castles==before.castles);
+        assert(loaded.chessHistory==before.chessHistory);
+        assert(!loaded.ChessLegal(c.king,c.destination));
+        assert(!loaded.ChessMove(c.king,c.destination));
+        assert(loaded.ply==0 && loaded.chessSanHistory.empty());
+
+        // Remove the attacker from the synthetic starting position; this
+        // creates a separate legal fixture with the original castle rights.
+        loaded.cells[c.enemyRook]=0;
+        loaded.chessHistory.clear();
+        loaded.chessHistory.emplace(loaded.CurrentChessPosition(),1);
+        assert(!loaded.KingInCheck(loaded.cells,c.side));
+        assert(!loaded.Attacked(loaded.cells,c.transit,-c.side));
+        assert(loaded.ChessLegal(c.king,c.destination));
+        assert(loaded.ChessMove(c.king,c.destination));
+        assert(loaded.cells[c.king]==0 && loaded.cells[c.rook]==0);
+        assert(loaded.cells[c.destination]==6*c.side);
+        assert(loaded.cells[c.rookTo]==4*c.side);
+        assert((loaded.castles & c.rights)==0);
+        assert(loaded.ply==1 && loaded.side==-c.side);
+        assert(loaded.lastFrom==c.king && loaded.lastTo==c.destination);
+        assert(loaded.chessSanHistory.size()==1);
+        assert(loaded.chessSanHistory.back()==
+               (c.destination%8>c.king%8?"O-O":"O-O-O"));
+        bytes.clear();
+        assert(save::Encode(5,restored.game,restored.breakout,loaded,bytes));
+        save::Snapshot after;
+        assert(save::Decode(5,bytes,after));
+        assert(after.board.cells==loaded.cells);
+        assert(after.board.castles==loaded.castles);
+        assert(after.board.chessSanHistory==loaded.chessSanHistory);
+    }
+    std::cout<<"PASS: Classic Chess blocked attacked-transit castles and saved rights\\n";
+}
+
 static void TestChessStudyLibrary() {
     using namespace reverie::chessstudy;
     assert(kCount==34);
@@ -1607,6 +1687,7 @@ int main() {
     assert(!ladder.finished&&ladder.position==0&&ladder.rival==0);
     TestChessChooseSideOverlaysAndCaptures();
     TestChessCpuResetSaveReload();
+    TestChessCastleAttackedTransitCheckpoint();
     TestChessStudyLibrary();
     TestBoardGames();
     TestReversi();
