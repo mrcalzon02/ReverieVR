@@ -20,6 +20,73 @@ static void PassDoor(Game& game) {
     for(int i=0;i<30&&game.phase==Phase::Walking;i++)game.Update(.1f);
     if(old+1u<kRooms)assert(game.room==old+1u&&game.phase==Phase::Ready);
 }
+// Restart is an authoritative game boundary: old animation and queued audio
+// must not become actions or sounds in the next seed's room.
+static void TestRestartClearsInFlightActions() {
+    const uint64_t priorSeed=0xfee1dead12345ULL;
+    const uint64_t nextSeed=0x1122334455667788ULL;
+    const Room oldRoom=Generate(priorSeed,0u),freshRoom=Generate(nextSeed,0u);
+    assert(oldRoom.clueFeature!=freshRoom.clueFeature); // Distinct new puzzle.
+    const Phase interruptions[]={Phase::Pulling,Phase::Opening,Phase::Walking,Phase::Falling};
+    for(const Phase interrupted:interruptions) {
+        Game game;game.Reset(priorSeed);
+        const int chosen=interrupted==Phase::Falling
+            ?1-int(game.current.safeSide):int(game.current.safeSide);
+        assert(game.Pull(chosen));
+        if(interrupted!=Phase::Pulling)Until(game,Phase::Opening);
+        if(interrupted==Phase::Walking||interrupted==Phase::Falling)
+            Until(game,interrupted);
+        assert(game.phase==interrupted&&game.side==chosen);
+        assert(game.pendingSound!=NoSound); // Deliberately leave old audio queued.
+
+        game.Reset(nextSeed);
+        assert(game.seed==nextSeed&&game.room==0u&&game.falls==0u&&game.clearCount==0u);
+        assert(game.phase==Phase::Ready&&game.timer==0.f&&game.side==-1);
+        assert(!game.easterSeen&&!game.easterActive&&!game.secondStep);
+        assert(game.current.clueFeature==freshRoom.clueFeature);
+        assert(game.current.clueValue==freshRoom.clueValue);
+        assert(game.current.safeSide==freshRoom.safeSide);
+        assert(std::strcmp(game.current.Clue(),freshRoom.Clue())==0);
+        assert(game.current.Matches(game.current.safeSide));
+        assert(!game.current.Matches(1u-game.current.safeSide));
+        assert(game.ClueVisible()&&game.DrainSound()==NoSound);
+        for(int tick=0;tick<50;++tick)game.Update(.1f);
+        assert(game.phase==Phase::Ready&&game.room==0u&&game.falls==0u);
+        assert(game.timer==0.f&&game.side==-1&&game.DrainSound()==NoSound);
+
+        assert(game.Pull(int(game.current.safeSide)));
+        assert(game.DrainSound()==LeverSound); // No sound from abandoned action.
+        assert(!game.Pull(1-int(game.current.safeSide))); // No second action.
+        assert(game.DrainSound()==NoSound);
+        Until(game,Phase::Opening);
+        assert(game.DrainSound()==DoorSound);
+        Until(game,Phase::Walking);
+        assert(game.DrainSound()==StepSound);
+        Until(game,Phase::Ready);
+        assert(game.room==1u&&game.clearCount==1u&&game.falls==0u);
+        assert(game.DrainSound()==StepSound&&game.DrainSound()==NoSound);
+    }
+
+    // A queued one-time voice cannot leak through Reset, and the new
+    // game's voice can still play once when its own right lever is pulled.
+    Game voice;voice.Reset(priorSeed);
+    PassDoor(voice);
+    assert(voice.room==1u);
+    voice.DrainSound();
+    assert(voice.Pull(1));
+    assert(voice.easterSeen&&voice.easterActive);
+    assert((voice.pendingSound&LeverVoice)!=0u);
+    voice.Reset(nextSeed);
+    assert(!voice.easterSeen&&!voice.easterActive);
+    assert(voice.DrainSound()==NoSound);
+    PassDoor(voice);
+    voice.DrainSound();
+    assert(voice.Pull(1));
+    assert(voice.DrainSound()==(LeverSound|LeverVoice));
+    assert(!voice.Pull(0));
+    assert(voice.DrainSound()==NoSound);
+    std::puts("PASS: Guess the Door mid-action restart clears old transitions/audio and re-arms new seed");
+}
 int main() {
     const uint64_t seed=0xfee1dead12345ULL;
     bool observed[kFeatures][2]={{false}};
@@ -78,5 +145,6 @@ int main() {
     assert(!a.Pull(0));
     for(unsigned i=0;i<100;i++)a.Update(.1f);
     assert(a.easterSeen);
+    TestRestartClearsInFlightActions();
     std::puts("guess_the_door_game_test: feature-derived visual clues, deterministic doors, pitfalls, victory and quote PASS");
 }
