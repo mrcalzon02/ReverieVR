@@ -87,6 +87,30 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Rasterize paid Breakwater rack selection in real Mesa GLES2 stereo
+        shell: bash
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends libegl1-mesa-dev libgl1-mesa-dri
+          mkdir -p validation/breakwater/raster
+          BREAKWATER_CAPTURE_DIR=validation/breakwater/raster \
+            bash scripts/verify-breakwater-world-gl.sh | tee validation/breakwater/raster.log
+          grep -F 'PASS: Breakwater paid rack GLES2 selected-mount stereo raster and fire' validation/breakwater/raster.log
+      - name: Preserve Breakwater stereo framebuffer proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakwater-mounted-rack-${{ github.run_id }}
+          path: |
+            validation/breakwater/raster.log
+            validation/breakwater/raster/breakwater-paid-*.ppm
+          if-no-files-found: warn
+          retention-days: 7
+
   red-ledger:
     name: Red Ledger patron, faction, economy and trade simulation
     runs-on: ubuntu-latest
