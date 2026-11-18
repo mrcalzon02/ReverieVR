@@ -1465,6 +1465,107 @@ static void TestBreakout() {
     std::cout<<"Classic Breakout physics, scoring and lives passed\\n";
 }
 
+// Score a REAL simulated Pong point, persist the waiting serve, then resume
+// with the normal Press/Step inputs. Existing checks cover terminal score
+// persistence and paddle physics separately, not this post-point lifecycle.
+static void TestPongScoredServeCheckpoint() {
+    namespace save = reverie::classics::save;
+    struct Scenario {int player, opponent; bool playerScores;};
+    const Scenario cases[] = {
+        {0,0,true}, {0,0,false},       // first point by either side
+        {9,0,true}, {0,9,false},      // tenth point, not match over
+        {10,0,true}, {0,10,false}     // eleventh point, match over
+    };
+    for(const auto &scenario:cases) {
+        save::Snapshot snapshot;
+        State &game=snapshot.game;
+        game.Reset(Game::Pong);
+        game.score=scenario.player;
+        game.opponent=scenario.opponent;
+        game.Press();
+        // Start beyond the respective paddle plane, as a missed return.
+        // Step must award the actual point, not a hand-edited score.
+        game.ball_x=scenario.playerScores?1.045f:-1.045f;
+        game.ball_y=.60f;
+        game.velocity_x=scenario.playerScores?.9f:-.9f;
+        game.velocity_y=0.f;
+        const int before=game.score+game.opponent;
+        game.Step(.02f,0.f);
+        const int player=scenario.player+(scenario.playerScores?1:0);
+        const int opponent=scenario.opponent+(scenario.playerScores?0:1);
+        const bool terminal=player==11||opponent==11;
+        assert(game.score==player && game.opponent==opponent);
+        assert(game.score+game.opponent==before+1);
+        assert(game.finished==terminal && !game.moving);
+        assert(game.ball_x==0.f && game.ball_y==0.f);
+        const float serveX=(before+1)%2?-pong::kServeHorizontalSpeed:
+                                            pong::kServeHorizontalSpeed;
+        const float serveY=(before+1)%2?-pong::kServeVerticalSpeed:
+                                            pong::kServeVerticalSpeed;
+        assert(game.velocity_x==serveX && game.velocity_y==serveY);
+
+        std::vector<uint8_t> saved;
+        assert(save::Encode(0,snapshot.game,snapshot.breakout,
+                            snapshot.board,saved));
+        save::Snapshot recovered;
+        assert(save::Decode(0,saved,recovered));
+        State &restored=recovered.game;
+        assert(restored.score==player && restored.opponent==opponent);
+        assert(restored.finished==terminal && !restored.moving);
+        assert(restored.ball_x==0.f && restored.ball_y==0.f);
+        assert(restored.velocity_x==serveX && restored.velocity_y==serveY);
+        std::vector<uint8_t> replay;
+        assert(save::Encode(0,recovered.game,recovered.breakout,
+                            recovered.board,replay) && replay==saved);
+
+        // An unserved checkpoint cannot score another point merely through
+        // time or paddle movement, even after repeated saved-game recovery.
+        for(int n=0;n<3;++n)restored.Step(.1f,n%2?-.35f:.35f);
+        assert(!restored.moving && restored.ball_x==0.f);
+        assert(restored.score==player && restored.opponent==opponent);
+
+        if(terminal) {
+            // First post-match Press resets the board but DOES NOT serve.
+            restored.Press();
+            assert(!restored.finished && !restored.moving);
+            assert(restored.score==0 && restored.opponent==0);
+            assert(restored.velocity_x==pong::kServeHorizontalSpeed);
+            std::vector<uint8_t> newMatch;
+            assert(save::Encode(0,recovered.game,recovered.breakout,
+                                recovered.board,newMatch));
+            save::Snapshot fresh;
+            assert(save::Decode(0,newMatch,fresh));
+            assert(!fresh.game.moving && !fresh.game.finished);
+            assert(fresh.game.score==0 && fresh.game.opponent==0);
+        }
+        const int replayPlayer=restored.score,replayOpponent=restored.opponent;
+        restored.Press();
+        assert(restored.moving && !restored.finished);
+        std::vector<uint8_t> launched;
+        assert(save::Encode(0,recovered.game,recovered.breakout,
+                            recovered.board,launched));
+        // Repeated input during the same serve is idempotent.
+        restored.Press();
+        std::vector<uint8_t> repeated;
+        assert(save::Encode(0,recovered.game,recovered.breakout,
+                            recovered.board,repeated) && repeated==launched);
+        save::Snapshot midRally;
+        assert(save::Decode(0,repeated,midRally));
+        const float startX=restored.ball_x;
+        restored.Step(.05f,0.f);
+        midRally.game.Step(.05f,0.f);
+        assert(restored.ball_x!=startX);
+        assert(restored.score==replayPlayer && restored.opponent==replayOpponent);
+        std::vector<uint8_t> advanced,restoredAdvanced;
+        assert(save::Encode(0,recovered.game,recovered.breakout,
+                            recovered.board,advanced));
+        assert(save::Encode(0,midRally.game,midRally.breakout,
+                            midRally.board,restoredAdvanced));
+        assert(advanced==restoredAdvanced);
+    }
+    std::cout<<"PASS: Classic Pong post-point checkpoint, serve and replay conservation\n";
+}
+
 int main() {
     TestChessWoodAtlas();
     TestChessSpriteAtlas();
@@ -1474,6 +1575,7 @@ int main() {
     TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
     TestBreakout();
+    TestPongScoredServeCheckpoint();
     State a,b;
     a.Reset(Game::Pong);b.Reset(Game::Pong);
     assert(!a.moving && !a.finished);
