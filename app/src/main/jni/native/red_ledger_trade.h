@@ -250,6 +250,9 @@ public:
     }
     void RecordService(PatronKind patron) {
         const int faction=FactionFor(patron);
+        // A damaged/unknown identity must never index favor_ out of bounds or
+        // consume a pending bar selection. Reject the service atomically.
+        if(faction<0||faction>=kFactions)return;
         const ServiceBonus bonus=RateService(patron,chosen_drink_,chosen_snack_);
         const int64_t next=static_cast<int64_t>(favor_[faction])+bonus.favor;
         favor_[faction]=static_cast<int32_t>(

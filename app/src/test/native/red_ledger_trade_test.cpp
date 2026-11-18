@@ -86,6 +86,17 @@ int main() {
     assert(state.Enter(trade::Room::Stockroom));
     assert(!state.Enter(trade::Room::Stockroom));
 
+    // Invalid patron IDs can arrive from damaged/untrusted state. An unknown
+    // customer must not corrupt supplier favor or consume a prepared order.
+    trade::Trade unknown;
+    assert(unknown.SelectDrink(6) && unknown.drink()==1);
+    assert(unknown.SelectSnack() && unknown.snack()==0);
+    std::array<uint8_t,trade::Trade::kSerializedSize> before_unknown{},after_unknown{};
+    assert(unknown.Serialize(before_unknown.data(),before_unknown.size()));
+    unknown.RecordService(static_cast<PatronKind>(255));
+    assert(unknown.Serialize(after_unknown.data(),after_unknown.size()));
+    assert(before_unknown==after_unknown);
+
     std::vector<uint8_t> bytes(trade::Trade::kSerializedSize+2u,0xC5u);
     assert(!state.Serialize(nullptr,trade::Trade::kSerializedSize));
     assert(!state.Serialize(bytes.data(),trade::Trade::kSerializedSize-1u));
