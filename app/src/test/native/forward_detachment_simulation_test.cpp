@@ -4,6 +4,68 @@
 
 using namespace reverie::forward;
 
+// A hazardous patrol spends fuel and may damage the vehicle. None of that
+// expenditure is refundable mid-mission or by replaying a completed debrief.
+static void TestRiskyPatrolRefitAndDebriefGuards() {
+    for (int pass = 0; pass < 2; ++pass) {
+        const Route route = pass == 0 ? Route::MainRoad : Route::RidgeBypass;
+        const int expected_condition = pass == 0 ? 75 : 65;
+        const int expected_fuel = pass == 0 ? 10 : 4;
+        const int expected_intel = pass == 0 ? -3 : -5;
+        Simulation patrol;
+        Debrief report;
+        assert(patrol.BeginPatrol(route));
+        assert(patrol.phase() == Phase::Travelling);
+        assert(!patrol.RefitAtBase() && patrol.fuel_remaining() == 20);
+        assert(!patrol.FileDebrief(&report) && !patrol.NextPatrol());
+
+        if (route == Route::RidgeBypass) {
+            for (int step = 0; step < Simulation::kRidgeExit; ++step)
+                assert(patrol.WalkRidge(1));
+        }
+        assert(patrol.ReachContact());
+        assert(patrol.fuel_remaining() == (pass == 0 ? 15 : 12));
+        assert(!patrol.RefitAtBase());
+        assert(patrol.ResolveContact(Decision::Engage));
+        assert(patrol.vehicle_condition() == expected_condition);
+        assert(!patrol.ResolveContact(Decision::Engage));
+        assert(!patrol.RefitAtBase() && !patrol.FileDebrief(&report));
+        assert(patrol.ReturnToBase());
+        assert(patrol.fuel_remaining() == expected_fuel);
+        assert(!patrol.ReturnToBase() && !patrol.RefitAtBase());
+        assert(!patrol.NextPatrol());
+        assert(patrol.vehicle_condition() == expected_condition);
+
+        assert(patrol.FileDebrief(&report));
+        assert(report.information_value == expected_intel);
+        assert(report.vehicle_condition == expected_condition);
+        assert(report.fuel_remaining == expected_fuel && report.unnecessary_force);
+        assert(patrol.LastRouteIntel(route) == expected_intel);
+        assert(!patrol.RefitAtBase());
+        Debrief rejected{777, 777, 777, false};
+        assert(!patrol.FileDebrief(&rejected));
+        assert(rejected.information_value == 777 &&
+               rejected.vehicle_condition == 777 && rejected.fuel_remaining == 777);
+        assert(!patrol.ResolveContact(Decision::Engage) && !patrol.ReturnToBase());
+        assert(patrol.LastRouteIntel(route) == expected_intel);
+
+        assert(patrol.NextPatrol());
+        assert(patrol.phase() == Phase::Briefing);
+        assert(!patrol.NextPatrol() && !patrol.FileDebrief(&rejected));
+        assert(patrol.fuel_remaining() == expected_fuel);
+        assert(patrol.vehicle_condition() == expected_condition);
+        assert(patrol.LastRouteIntel(route) == expected_intel);
+        assert(!patrol.CanBeginPatrol(Route::RidgeBypass));
+        if (pass == 1) assert(!patrol.CanBeginPatrol(Route::MainRoad));
+        // Only an explicit refit at the next legitimate briefing restores resources.
+        assert(patrol.RefitAtBase());
+        assert(patrol.fuel_remaining() == 20 && patrol.vehicle_condition() == 100);
+        assert(patrol.LastRouteIntel(route) == expected_intel);
+        assert(patrol.CanBeginPatrol(route));
+    }
+    std::cout << "PASS: Iron Sight no in-patrol refit or duplicate debrief\\n";
+}
+
 int main() {
     Simulation main;
     ContactEvidence evidence;
@@ -47,5 +109,6 @@ int main() {
     assert(bad.ReturnToBase() && bad.FileDebrief(&report));
     assert(report.unnecessary_force && report.vehicle_condition == 65);
     assert(report.information_value < 0);
+    TestRiskyPatrolRefitAndDebriefGuards();
     std::cout << "Forward Detachment patrol-to-debrief cycle passed\n";
 }
