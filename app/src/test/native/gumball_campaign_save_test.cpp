@@ -137,7 +137,64 @@ static void ShipyardSortieTransaction(){
     std::cout<<"PASS Gumball paid Blaster and stocked armor survive sortie, return, reload and relaunch without duplicate debit\n";
 }
 
+
+static void FatalHostileHitCheckpoint(){
+    // The flight-to-loss transition must itself be a valid atomic checkpoint.
+    // Prior tests cover 3D hostile contact and ordinary sortie saves separately;
+    // this crosses those two boundaries without a synthetic damage snapshot.
+    ShipAssembly ship;
+    Simulation game(81);
+    assert(game.configure_ship_profile(ship.profile(),ship.ready()));
+    assert(game.launch(0)&&game.phase()==Phase::Flight);
+    const int startingHp=game.hp(),startingShield=game.shield();
+    const uint32_t startingCash=game.cash(),startingKills=game.kills();
+    const uint32_t startingVisited=game.visited();
+    const ShipVolumePoint center{game.player_x(),game.player_y(),-2.55f};
+    const ShipVolumePoint nearA{center.x,center.y-.30f,center.z};
+    const ShipVolumePoint nearB{center.x,center.y+.30f,center.z};
+    const ShipVolumePoint farA{center.x,center.y-.30f,center.z-.80f};
+    const ShipVolumePoint farB{center.x,center.y+.30f,center.z-.80f};
+    const auto pristineFlight=Bytes(game,ship);
+    assert(!game.receive_hostile_segment(ship,farA,farB,500));
+    assert(Bytes(game,ship)==pristineFlight);
+    assert(game.hp()==startingHp&&game.shield()==startingShield);
+    assert(game.receive_hostile_segment(ship,nearA,nearB,500));
+    assert(game.phase()==Phase::Lost&&game.failure()==FailureReason::HullDestroyed);
+    assert(game.hp()==0&&game.shield()==0);
+    const auto lostCheckpoint=Bytes(game,ship);
+    Simulation restored;ShipAssembly restoredShip;
+    assert(CampaignSave::Decode(&restored,&restoredShip,
+                                lostCheckpoint.data(),lostCheckpoint.size()));
+    assert(Bytes(restored,restoredShip)==lostCheckpoint);
+    assert(restored.phase()==Phase::Lost
+           &&restored.failure()==FailureReason::HullDestroyed);
+    assert(restored.hp()==0&&restored.shield()==0);
+    // No delayed secondary impact, award, flight tick or relaunch after reload.
+    assert(!restored.receive_hostile_segment(restoredShip,nearA,nearB,500));
+    assert(!restored.launch(0));
+    restored.update(.05f,0.f,0.f,true);
+    assert(Bytes(restored,restoredShip)==lostCheckpoint);
+    assert(restored.cash()==startingCash&&restored.kills()==startingKills);
+    assert(restored.visited()==startingVisited);
+    assert(restored.recover()&&restored.phase()==Phase::Chart);
+    assert(!restored.recover());
+    const auto recoveredCheckpoint=Bytes(restored,restoredShip);
+    Simulation returned;ShipAssembly returnedShip;
+    assert(CampaignSave::Decode(&returned,&returnedShip,
+                                recoveredCheckpoint.data(),recoveredCheckpoint.size()));
+    assert(Bytes(returned,returnedShip)==recoveredCheckpoint);
+    assert(returned.phase()==Phase::Chart);
+    assert(returned.cash()==startingCash&&returned.kills()==startingKills);
+    assert(returned.visited()==startingVisited);
+    assert(!returned.recover());
+    assert(returned.launch(0)&&returned.phase()==Phase::Flight);
+    assert(returned.hp()==startingHp&&returned.shield()==startingShield);
+    assert(returned.failure()==FailureReason::None);
+    std::cout<<"PASS Gumball lethal real 3D hostile hit saves in Lost, rejects postmortem effects and recovers exactly once after reload\\n";
+}
+
 int main(){
+    FatalHostileHitCheckpoint();
     ShipyardSortieTransaction();
     CampaignFromNewGame();
     ShipAssembly ship;
