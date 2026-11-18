@@ -74,7 +74,7 @@ static void RejectedBeforeSurveyParleyCheckpoint(){
     Session final(1);
     assert(CampaignSave::Decode(&final,data.data(),data.size()));
     assert(final.Checksum()==reload.Checksum());
-    std::cout << "Omega Front rejected pre-survey parley save/reload passed\\n";
+    std::cout << "Omega Front rejected pre-survey parley save/reload passed\n";
 }
 int main(){
     RejectedBeforeSurveyParleyCheckpoint();
