@@ -1,3 +1,5 @@
+#include "gumball_shipyard_readiness.h"
+#include <cstring>
 #include "gumball_campaign_save.h"
 #include <cassert>
 #include <cstdio>
@@ -138,6 +140,89 @@ static void ShipyardSortieTransaction(){
 }
 
 
+
+// Test real editable 3D hulls against the campaign launch and save boundary.
+// A readiness-only UI test cannot cover a restored unready fitted ship.
+static void UnreadyShipyardCannotLaunchAfterReload(){
+    for(int mode=0;mode<2;++mode){
+        const bool powerDeficit=mode==0;
+        ShipAssembly hull;
+        Simulation game(powerDeficit?0xA101u:0xA102u);
+        assert(hull.ready());
+        assert(game.configure_ship_profile(hull.profile(),hull.ready()));
+        const auto initialCash=game.cash();
+        const auto initialNode=game.node();
+        const auto initialVisits=game.visited();
+        if(powerDeficit){
+            // Second thruster keeps mass legal while demand exceeds supply.
+            assert(hull.edit(4,2,2,Part::Thruster)==ShipEdit::Placed);
+            assert(hull.edit(2,2,2,Part::Mount)==ShipEdit::Placed);
+            assert(hull.edit(4,4,2,Part::Cargo)==ShipEdit::Placed);
+            assert(hull.edit(2,4,2,Part::Cargo)==ShipEdit::Placed);
+            assert(hull.profile().power<hull.profile().demand);
+            assert(hull.profile().mass<=18*hull.count(Part::Thruster));
+            assert(std::strcmp(FlightReadiness(hull),
+                "POWER DEFICIT / ADD BATTERY OR REACTOR")==0);
+        }else{
+            // The original reactor is sufficient; one thruster is not.
+            assert(hull.edit(4,2,2,Part::Armor)==ShipEdit::Placed);
+            assert(hull.edit(4,4,2,Part::Armor)==ShipEdit::Placed);
+            assert(hull.edit(2,2,2,Part::Armor)==ShipEdit::Placed);
+            assert(hull.profile().power>=hull.profile().demand);
+            assert(hull.profile().mass>18*hull.count(Part::Thruster));
+            assert(std::strcmp(FlightReadiness(hull),
+                "OVERWEIGHT / ADD THRUSTER OR REMOVE PARTS")==0);
+        }
+        assert(hull.connected()&&!hull.ready());
+        const Ship3DSave edited=hull.snapshot();
+        assert(!game.configure_ship_profile(hull.profile(),hull.ready()));
+        assert(!game.ship_ready());
+        const auto blocked=Bytes(game,hull);
+        for(unsigned choice=0;choice<3;++choice)
+            assert(!game.launch(choice));
+        assert(game.phase()==Phase::Chart&&game.cash()==initialCash
+               &&game.node()==initialNode&&game.visited()==initialVisits);
+        assert(Bytes(game,hull)==blocked);
+        const auto stillEdited=hull.snapshot();
+        assert(std::memcmp(&edited,&stillEdited,sizeof(edited))==0);
+
+        Simulation loaded;ShipAssembly restored;
+        assert(CampaignSave::Decode(&loaded,&restored,blocked.data(),blocked.size()));
+        assert(Bytes(loaded,restored)==blocked);
+        assert(!loaded.ship_ready()&&!restored.ready());
+        const auto restoredSnapshot=restored.snapshot();
+        assert(std::memcmp(&edited,&restoredSnapshot,sizeof(edited))==0);
+        for(unsigned choice=0;choice<3;++choice)
+            assert(!loaded.launch(choice));
+        assert(Bytes(loaded,restored)==blocked);
+        assert(loaded.cash()==initialCash&&loaded.node()==initialNode
+               &&loaded.visited()==initialVisits&&loaded.phase()==Phase::Chart);
+
+        // Editor repairs refund their own stock; rejected launches spent none.
+        if(powerDeficit){
+            assert(restored.edit(2,2,2,Part::Mount)==ShipEdit::Removed);
+            assert(restored.edit(2,4,2,Part::Cargo)==ShipEdit::Removed);
+        }else{
+            assert(restored.edit(2,2,2,Part::Armor)==ShipEdit::Removed);
+            assert(restored.edit(4,4,2,Part::Armor)==ShipEdit::Removed);
+        }
+        assert(restored.ready());
+        assert(loaded.configure_ship_profile(restored.profile(),restored.ready()));
+        const auto repaired=Bytes(loaded,restored);
+        assert(repaired!=blocked);
+        assert(loaded.launch(0)&&loaded.phase()==Phase::Flight);
+        assert(!loaded.launch(0)&&!loaded.launch(1));
+        assert(loaded.cash()==initialCash&&loaded.node()==initialNode
+               &&loaded.visited()==initialVisits);
+        const auto flying=Bytes(loaded,restored);
+        Simulation inFlight;ShipAssembly flownHull;
+        assert(CampaignSave::Decode(&inFlight,&flownHull,flying.data(),flying.size()));
+        assert(Bytes(inFlight,flownHull)==flying);
+        assert(inFlight.phase()==Phase::Flight&&!inFlight.launch(0));
+    }
+    std::cout<<"PASS Gumball unpowered/overweight 3D hulls cannot launch before or after reload; editor repair launches once\n";
+}
+
 static void FatalHostileHitCheckpoint(){
     // The flight-to-loss transition must itself be a valid atomic checkpoint.
     // Prior tests cover 3D hostile contact and ordinary sortie saves separately;
@@ -194,6 +279,7 @@ static void FatalHostileHitCheckpoint(){
 }
 
 int main(){
+    UnreadyShipyardCannotLaunchAfterReload();
     FatalHostileHitCheckpoint();
     ShipyardSortieTransaction();
     CampaignFromNewGame();
