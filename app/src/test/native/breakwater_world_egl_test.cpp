@@ -139,6 +139,110 @@ int main(int argc,char **argv) {
     eye.eye_index=0;Check(Draw(state,&eye)==1,"repeat render");
     for(size_t i=0;i<remaining.size();++i)
         Check(remaining[i].z==state->campaign.enemies()[i].z,"render advanced simulation");
+    // Renderer acceptance beyond CPU mesh/labels: use paid campaign ownership
+    // and actual tracked-controller rack presses to exchange the *mounted* gun.
+    // Keep world time, camera and gaze-guide identical for before/after eyes.
+    state->campaign=Campaign{};
+    Check(state->campaign.Start(),"paid-rack shop start");
+    const int32_t credits_before=state->campaign.credits();
+    Check(state->campaign.PurchaseWeapon(WeaponKind::HeavyGun),"paid-rack purchase");
+    Check(state->campaign.owns_weapon(WeaponKind::HeavyGun) &&
+          state->campaign.credits()==credits_before-
+              WeaponFor(WeaponKind::HeavyGun).purchase_cost,
+          "heavy gun actually paid for");
+    Check(state->campaign.BeginWave(),"paid-rack combat wave");
+    state->slot_picker=false;state->flash=0.f;
+    state->combat_input.Release();
+    const auto rackRay=[](uint8_t id) {
+        ReverieNativeInputV1 sample{};
+        sample.struct_size=sizeof(sample);
+        sample.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+        const auto slot=gunmesh::RackLocation(id);
+        const float length=std::sqrt(slot.x*slot.x+slot.y*slot.y+slot.z*slot.z);
+        sample.pointer_direction[0]=slot.x/length;
+        sample.pointer_direction[1]=slot.y/length;
+        sample.pointer_direction[2]=slot.z/length;
+        return sample;
+    };
+    const auto rackPress=[&](uint8_t id) {
+        auto sample=rackRay(id);
+        Check(gunmesh::HitRack(sample.pointer_origin,sample.pointer_direction)==id,
+              "physical rack ray hit");
+        Update(state,&sample); // release any preceding press
+        sample.primary_down=1u;
+        Update(state,&sample); // REAL module controller edge, not SelectWeapon()
+    };
+    const auto selected=state->campaign.selected_weapon();
+    rackPress(2); // unowned Flak is not a free swap
+    Check(state->campaign.selected_weapon()==selected &&
+          !state->campaign.owns_weapon(WeaponKind::Flak),
+          "locked rack must not equip");
+    auto forward=live;forward.delta_seconds=0.f;
+    forward.primary_down=0u;forward.secondary_down=0u;
+    forward.pointer_direction[0]=0.f;forward.pointer_direction[1]=0.f;
+    forward.pointer_direction[2]=-1.f;
+    const auto stereoMount=[&](const char *label) {
+        Update(state,&forward); // clear rack hover and release trigger
+        Check(state->rack_focus==-1,"mounted-gun snapshot has no rack hover");
+        state->aim_ray_valid=false; // omit weapon-dependent trajectory overlay
+        state->ghost_on=false;
+        state->scene_dirty=true;
+        Check(PrepareFrame(state)==1,"mounted-gun production PrepareFrame");
+        std::array<std::vector<unsigned char>,2> frames;
+        for(int side=0;side<2;++side) {
+            // The seated forward/downward view includes the near-field breech.
+            const float pitch=-.23f,cp=std::cos(pitch),sp=std::sin(pitch);
+            Identity(eye.view);
+            eye.view[5]=cp;eye.view[9]=sp;
+            eye.view[6]=-sp;eye.view[10]=cp;
+            eye.eye_index=side;eye.view[12]=side==0?.032f:-.032f;
+            glClearColor(.2f,.4f,.5f,1.f);
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+            Check(Draw(state,&eye)==1,"paid-rack real stereo draw");
+            Check(glGetError()==GL_NO_ERROR,"paid-rack GLES draw error");
+            auto &pixels=frames[static_cast<size_t>(side)];
+            pixels.resize(static_cast<size_t>(width*height*4));
+            glPixelStorei(GL_PACK_ALIGNMENT,1);
+            glReadPixels(0,0,width,height,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+            Check(glGetError()==GL_NO_ERROR,"paid-rack framebuffer readback");
+            Save(directory+"/breakwater-paid-"+label+
+                 (side==0?"-left.ppm":"-right.ppm"),width,height);
+        }
+        return frames;
+    };
+    rackPress(0);
+    Check(state->campaign.selected_weapon()==WeaponKind::MachineGun,
+          "real rack press must select original machine gun");
+    const auto machinePixels=stereoMount("machine");
+    rackPress(1);
+    Check(state->campaign.selected_weapon()==WeaponKind::HeavyGun &&
+          state->campaign.credits()==credits_before-
+              WeaponFor(WeaponKind::HeavyGun).purchase_cost,
+          "real rack press must equip paid heavy gun without rebilling");
+    const auto heavyPixels=stereoMount("heavy");
+    for(int side=0;side<2;++side) {
+        size_t changed=0;
+        // Center-lower framebuffer: physical gun muzzle and breech in front
+        // of the player, not the right-side weapon-name HUD or left rack.
+        for(int y=0;y<height/2;++y)for(int x=width*3/10;x<width*7/10;++x) {
+            const size_t p=static_cast<size_t>((y*width+x)*4);
+            const auto &a=machinePixels[static_cast<size_t>(side)];
+            const auto &b=heavyPixels[static_cast<size_t>(side)];
+            if(std::abs(int(a[p])-int(b[p]))>24 ||
+               std::abs(int(a[p+1])-int(b[p+1]))>24 ||
+               std::abs(int(a[p+2])-int(b[p+2]))>24)++changed;
+        }
+        Check(changed>100,"paid selected gun must change mounted GLES pixels in both eyes");
+        std::cout<<"PAID_RACK_MOUNT_PIXELS eye="<<side<<" changed="<<changed<<"\n";
+    }
+    // An unheld forward trigger really fires the selected paid gun.
+    const auto ammo=state->campaign.magazine_left();
+    forward.primary_down=1u;Update(state,&forward);
+    Check(state->campaign.selected_weapon()==WeaponKind::HeavyGun &&
+          state->campaign.magazine_left()+1u==ammo && state->flash>0.f,
+          "selected heavy mount fires with actual controller input");
+    Check(PrepareFrame(state)==1,"firing frame prepared");
+    std::cout<<"PASS: Breakwater paid rack GLES2 selected-mount stereo raster and fire\n";
     GlRelease(state);
     Check(eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT),"unbind old context");
     Check(eglDestroyContext(display,context),"destroy old context");
