@@ -156,6 +156,105 @@ static void RuleHistoryCases(){
     Check(RoundTrip(3,draw).board.CheckerDrawClaimable(),"checkers occurrence count retained");
     std::cout<<"rule history and pending phases PASS\n";
 }
+// Real king moves must cross the WCDF 40-moves-each quiet threshold
+// without granting an early claim. The 79-ply fixture has a single
+// recorded position, isolating the quiet-clock rule from repetition;
+// all subsequent moves, claims and checkpoint bytes use production code.
+static void CheckerQuietFortyTurnSaveBoundary(){
+    auto at79=Initial(3);
+    auto &board=at79.board;
+    board.cells.fill(0);
+    board.cells[41]=2;board.cells[14]=-2; // White and Black kings
+    board.side=-1;board.ply=79;board.checkerQuietPlies=79;
+    board.checkerHistory.clear();
+    board.checkerHistory.emplace(board.CurrentCheckerPosition(),1);
+    Check(board.forced==-1&&!board.finished&&board.CheckerRepetitions()==1,
+          "79-ply king fixture has no forced capture or repetition");
+    Check(!board.CheckerDrawAvailable(-1)&&!board.CheckerDrawClaimable(),
+          "39+40 quiet turns cannot claim before the 80th ply");
+    auto resumed=RoundTrip(3,at79);
+    Check(resumed.board.ply==79&&resumed.board.side==-1&&
+          resumed.board.checkerQuietPlies==79&&
+          !resumed.board.CheckerDrawAvailable(-1),
+          "checkpoint at ply 79 keeps draw unavailable");
+    const auto before=Encode(3,at79);
+    Check(board.CheckerMove(14,21)&&resumed.board.CheckerMove(14,21),
+          "both histories execute the actual 80th legal quiet king move");
+    Check(board.ply==80&&board.side==1&&board.forced==-1&&
+          board.checkerQuietPlies==80&&!board.finished,
+          "40 quiet moves by each side opens a claim on White's turn");
+    Check(board.CheckerDrawClaimable()&&resumed.board.CheckerDrawClaimable(),
+          "original and resumed boards both enable the quiet claim");
+    Check(Encode(3,at79)!=before&&Encode(3,at79)==Encode(3,resumed),
+          "same 80th move produces identical changed checkpoint bytes");
+    auto at80=RoundTrip(3,at79);
+    Check(at80.board.ply==80&&at80.board.side==1&&
+          at80.board.checkerQuietPlies==80&&at80.board.CheckerDrawClaimable(),
+          "reloading at the exact threshold preserves the claim");
+    Check(board.ClaimCheckerDraw()&&resumed.board.ClaimCheckerDraw()&&
+          at80.board.ClaimCheckerDraw(),
+          "all three states accept the same single legal draw claim");
+    Check(at80.board.finished&&at80.board.winner==0&&
+          !at80.board.ClaimCheckerDraw()&&!at80.board.CheckerMove(41,32),
+          "draw is terminal, neither duplicate claims nor further moves count");
+    Check(Encode(3,at79)==Encode(3,resumed)&&
+          Encode(3,at79)==Encode(3,at80),
+          "claimed terminal state is byte-identical after reload");
+
+    // A genuine man advancement resets an otherwise claimable clock.
+    auto man=RoundTrip(3,at79); // overwritten below by pre-claim fixture
+    man.board=Initial(3).board;
+    man.board.cells.fill(0);
+    man.board.cells[41]=2;man.board.cells[14]=-2;man.board.cells[1]=-1;
+    man.board.side=-1;man.board.ply=79;man.board.checkerQuietPlies=79;
+    man.board.checkerHistory.clear();
+    man.board.checkerHistory.emplace(man.board.CurrentCheckerPosition(),1);
+    auto manLoaded=RoundTrip(3,man);
+    Check(man.board.CheckerMove(1,8)&&manLoaded.board.CheckerMove(1,8),
+          "legal uncrowned Black man advancement resets quiet clock");
+    Check(man.board.checkerQuietPlies==0&&man.board.side==1&&
+          !man.board.CheckerDrawClaimable()&&
+          manLoaded.board.checkerQuietPlies==0,
+          "man move precludes a false 40-turn claim after reload");
+    Check(Encode(3,man)==Encode(3,manLoaded),
+          "man-reset save and restored state agree");
+    auto manAfter=RoundTrip(3,man);
+    Check(man.board.CheckerMove(41,32)&&manAfter.board.CheckerMove(41,32),
+          "next ordinary king turn remains playable following the reset");
+    Check(man.board.checkerQuietPlies==1&&
+          Encode(3,man)==Encode(3,manAfter),
+          "quiet clock restarts at one, never retains 79 after man move");
+
+    // A mandatory real capture also resets the clock and round-trips.
+    auto captured=Initial(3);
+    captured.board.cells.fill(0);
+    captured.board.cells[41]=2;captured.board.cells[14]=-2;
+    captured.board.cells[21]=1; // Black king 14 -> 28 jumps White man
+    captured.board.side=-1;captured.board.ply=79;
+    captured.board.checkerQuietPlies=79;
+    captured.board.checkerHistory.clear();
+    captured.board.checkerHistory.emplace(
+        captured.board.CurrentCheckerPosition(),1);
+    Check(captured.board.CheckersCapture(14,28),
+          "real king jump is mandatory in the 79-ply capture fixture");
+    auto captureLoaded=RoundTrip(3,captured);
+    Check(captured.board.CheckerMove(14,28)&&
+          captureLoaded.board.CheckerMove(14,28),
+          "original and loaded king both make the actual capture");
+    Check(captured.board.checkerQuietPlies==0&&
+          captured.board.cells[21]==0&&captured.board.cells[28]==-2&&
+          captured.board.side==1&&captured.board.forced==-1&&
+          !captured.board.CheckerDrawClaimable(),
+          "capture removes victim, resets clock and bars quiet claim");
+    Check(Encode(3,captured)==Encode(3,captureLoaded),
+          "captured position and reset clock survive save and reload");
+    auto captureAfter=RoundTrip(3,captured);
+    Check(captureAfter.board.checkerQuietPlies==0&&
+          !captureAfter.board.CheckerDrawClaimable(),
+          "reloaded capture does not resurrect a forty-turn claim");
+    std::cout<<"Checkers 79-to-80 quiet draw, claim and man/capture save resets PASS\\n";
+}
+
 static void FinishedCases(){
     auto pong=Initial(0);
     // Explicit near-score fixture, resolved by the production simulation.
@@ -304,4 +403,4 @@ static void BreakoutFirstWallSaveBoundary(){
           "restored and uninterrupted second-wall ball/brick states stay identical");
     std::cout<<"Breakout wall-one boundary, write interruption, wall-two continuation PASS\n";
 }
-int main(){BreakoutFirstWallSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
+int main(){BreakoutFirstWallSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();CheckerQuietFortyTurnSaveBoundary();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
