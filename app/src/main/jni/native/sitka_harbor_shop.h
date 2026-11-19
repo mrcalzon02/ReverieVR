@@ -302,17 +302,26 @@ public:
     bool open()const{return open_;}
     unsigned selected()const{return selected_;}
     int active_site()const{return site_;}
-    bool consumes_primary()const{return open_||consumed_primary_;}
+    bool consumes_primary()const{return open_||consumed_primary_||capture_until_release_;}
     ShopEvent Update(bool primary,bool secondary,float navigation,
         int aimed_site,FishingSession& fishing,bool underway){
-        consumed_primary_=false;
+        // The shop owns both controls until BOTH buttons have been released
+        // after closing. Otherwise an old Select or Select+Back chord can
+        // leak into fishing or skiff launch/dock on the very next frame.
+        if(!primary&&!secondary)capture_until_release_=false;
+        consumed_primary_=capture_until_release_;
         const bool press=primary&&!primary_held_;
         const bool back=secondary&&!secondary_held_;
         primary_held_=primary;secondary_held_=secondary;
         if(!std::isfinite(navigation))navigation=0.f;
         if(std::abs(navigation)<.35f)navigation_held_=false;
         if(underway){
-            if(open_){open_=false;site_=-1;return ShopEvent::Close;}
+            if(open_){
+                open_=false;site_=-1;navigation_held_=false;
+                capture_until_release_=primary||secondary;
+                consumed_primary_=true;
+                return ShopEvent::Close;
+            }
             return ShopEvent::None;
         }
         if(!open_){
@@ -324,8 +333,12 @@ public:
             return ShopEvent::None;
         }
         consumed_primary_=primary;
-        if(back){open_=false;site_=-1;consumed_primary_=true;
-                 return ShopEvent::Close;}
+        if(back){
+            open_=false;site_=-1;navigation_held_=false;
+            capture_until_release_=primary||secondary;
+            consumed_primary_=true;
+            return ShopEvent::Close;
+        }
         if(!navigation_held_&&std::abs(navigation)>.65f){
             navigation_held_=true;
             if(navigation<0.f){
@@ -362,6 +375,7 @@ public:
 private:
     bool open_=false,primary_held_=false,secondary_held_=false;
     bool navigation_held_=false,consumed_primary_=false;
+    bool capture_until_release_=false; // covers both modal buttons across Close
     int site_=-1;unsigned selected_=0u;
 };
 inline std::array<std::string,6> HarborShopPanel(

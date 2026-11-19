@@ -121,5 +121,55 @@ int main(){
     assert(HarborOffer(j,17u).unlocked);
     assert(NextEquipment(j,Equipment::Rod).unlocked);
     assert(HarborShopPanelMesh().indices.size()==6u);
+
+    // The modal consumes the whole press, even after closing. Without this
+    // gate a held Select would become a new fishing cast on the next frame,
+    // or a held Select+Back chord would board/dock the skiff.
+    FishingSession modalFishing;
+    HarborShopSession manual;
+    assert(manual.Update(true,false,0.f,0,modalFishing,false)==ShopEvent::Open);
+    assert(manual.consumes_primary());
+    assert(manual.Update(false,false,0.f,-1,modalFishing,false)==ShopEvent::None);
+    assert(manual.Update(true,true,0.f,-1,modalFishing,false)==ShopEvent::Close);
+    assert(!manual.open()&&manual.consumes_primary());
+    for(int tick=0;tick<4;++tick){
+        assert(manual.Update(true,true,0.f,-1,modalFishing,false)==ShopEvent::None);
+        assert(manual.consumes_primary());
+        assert(modalFishing.Update(.016f,!manual.consumes_primary(),false,true,2.f)
+            .event==FishingEvent::None);
+    }
+    // Releasing only one of the buttons cannot rearm an old chord.
+    assert(manual.Update(true,false,0.f,-1,modalFishing,false)==ShopEvent::None);
+    assert(manual.consumes_primary());
+    assert(manual.Update(false,true,0.f,-1,modalFishing,false)==ShopEvent::None);
+    assert(manual.consumes_primary());
+    assert(manual.Update(false,false,0.f,-1,modalFishing,false)==ShopEvent::None);
+    assert(!manual.consumes_primary());
+    assert(modalFishing.Update(.016f,false,false,true,2.f).event==FishingEvent::None);
+    assert(manual.Update(true,false,0.f,-1,modalFishing,false)==ShopEvent::None);
+    assert(!manual.consumes_primary());
+    assert(modalFishing.Update(.016f,true,false,true,2.f).event==FishingEvent::Cast);
+
+    // Forced close when a boat becomes active has the same release gate.
+    FishingSession voyageFishing;
+    HarborShopSession forced;
+    assert(forced.Update(true,false,0.f,0,voyageFishing,false)==ShopEvent::Open);
+    assert(forced.Update(false,false,0.f,-1,voyageFishing,false)==ShopEvent::None);
+    assert(forced.Update(true,true,0.f,-1,voyageFishing,true)==ShopEvent::Close);
+    assert(!forced.open()&&forced.consumes_primary());
+    // Mirrors the actual Sitka module's launch/dock chord routing.
+    const auto canChord=[&](bool primary,bool secondary){
+        return !forced.open()&&!forced.consumes_primary()&&primary&&secondary;
+    };
+    for(int tick=0;tick<4;++tick){
+        assert(!canChord(true,true));
+        assert(forced.Update(true,true,0.f,-1,voyageFishing,true)==ShopEvent::None);
+        assert(forced.consumes_primary());
+    }
+    assert(forced.Update(false,false,0.f,-1,voyageFishing,true)==ShopEvent::None);
+    assert(!forced.consumes_primary());
+    assert(forced.Update(true,true,0.f,-1,voyageFishing,true)==ShopEvent::None);
+    assert(canChord(true,true)); // Only a genuinely new chord can reach the skiff.
+    assert(voyageFishing.fishing.phase==FishingPhase::Ready);
     return 0;
 }

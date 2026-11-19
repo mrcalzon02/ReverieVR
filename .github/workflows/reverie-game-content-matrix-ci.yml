@@ -85,6 +85,8 @@ on:
       - 'app/src/test/native/sitka_lighting_test.cpp'
       - 'app/src/main/jni/native/sitka_fishing_*.h'
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
+      - 'app/src/main/jni/native/sitka_harbor_shop.h'
+      - 'app/src/test/native/sitka_harbor_shop_test.cpp'
       - 'app/src/main/jni/native/reverie_vr_workshop.h'
       - 'app/src/test/native/reverie_vr_workshop_test.cpp'
       - 'app/src/main/jni/native/reverie_vr_project_motion.h'
