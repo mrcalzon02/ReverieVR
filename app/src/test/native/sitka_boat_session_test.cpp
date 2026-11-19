@@ -177,17 +177,17 @@ int main(){
         cache,generated,waters,ox,oz)==SkiffSessionEvent::Launched);
     assert(overspeed.Active());
     assert(overspeed.Update(.1,0.,0.,false,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     for(int i=0;i<12;++i){
         assert(overspeed.Update(.1,1.,0.,false,500190.,6200400.,
-            cache,generated,waters,ox)==SkiffSessionEvent::Advanced);
+            cache,generated,waters,ox,oz)==SkiffSessionEvent::Advanced);
     }
     assert(overspeed.AtBerth(overspeed.Pose().east,overspeed.Pose().north));
     assert(overspeed.Pose().speed_mps>.4);
     const double refused_east=overspeed.Pose().east;
     const double refused_speed=overspeed.Pose().speed_mps;
     assert(overspeed.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::Rejected);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::Rejected);
     assert(overspeed.Active());
     assert(overspeed.Pose().east==refused_east);
     assert(overspeed.Pose().speed_mps==refused_speed);
@@ -195,7 +195,7 @@ int main(){
     // never auto-dock when the boat eventually slows beneath 0.4 m/s.
     for(int i=0;i<20;++i){
         const auto event=overspeed.Update(.1,0.,0.,true,500190.,6200400.,
-            cache,generated,waters,ox);
+            cache,generated,waters,ox,oz);
         assert(event!=SkiffSessionEvent::InvalidInput);
         assert(event!=SkiffSessionEvent::Docked);
         assert(overspeed.Active());
@@ -203,14 +203,14 @@ int main(){
     assert(overspeed.Pose().speed_mps<=.4);
     assert(overspeed.AtBerth(overspeed.Pose().east,overspeed.Pose().north));
     assert(overspeed.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(overspeed.Active());
     assert(overspeed.Update(.1,0.,0.,false,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(overspeed.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::Docked);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::Docked);
     assert(!overspeed.Active());
     assert(overspeed.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     std::cout<<"PASS Sitka projected-origin water mask, author-approved skiff launch, held button gating, sourced/procedural sounder, boat-authority prefetch, grounding, docking and overspeed docking chord recovery\n";
 }
