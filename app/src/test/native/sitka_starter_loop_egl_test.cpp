@@ -37,6 +37,8 @@ static void TestMovingHelm(ReverieNativeHostV1& host,const char* capture){
     ReverieNativeInputV1 in{};
     in.struct_size=sizeof(in);in.delta_seconds=.05f;
     in.listener_valid=1u;in.listener_right[0]=1.f;in.move_x=1.f;
+    in.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    in.pointer_direction[2]=-1.f; // controller present, gameplay owns input
     for(int i=0;i<35;++i)Update(range,&in);
     in.move_x=0.f;in.primary_down=in.secondary_down=1u;Update(range,&in);
     assert(range->skiff->Active()&&PrepareFrame(range));
@@ -74,6 +76,8 @@ static void TestPracticeShore(ReverieNativeHostV1& host,const char* capture){
     ReverieNativeInputV1 input{};
     input.struct_size=sizeof(input);input.delta_seconds=.05f;
     input.listener_valid=1u;input.listener_right[0]=1.f;
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[2]=-1.f;
     input.move_x=1.f;
     for(unsigned i=0;i<50;++i)Update(game,&input);
     input.move_x=0;input.move_y=1;

@@ -59,6 +59,21 @@ int main(){
     in.move_x=1.f;Update(&world,&in);in.move_x=0.f;
     assert(world.walk_session->pose().x==pose.x&&j.fish_inventory[1]==1u);
     assert(world.fishing.fishing.phase==FishingPhase::Ready);
+    // Exercise the ACTUAL Sitka module, not just the pure focus helper:
+    // Quick Menu must withdraw the full pointer without paying or walking.
+    const std::string shopBeforeLoss=SaveJournal(j);
+    auto withdrawn=in;withdrawn.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    withdrawn.primary_down=withdrawn.secondary_down=1u;
+    withdrawn.move_y=-1.f;
+    for(int frame=0;frame<35;++frame)Update(&world,&withdrawn);
+    assert(world.harbor_shop.open()&&SaveJournal(j)==shopBeforeLoss);
+    assert(world.walk_session->pose().x==pose.x);
+    in.primary_down=in.secondary_down=1u;in.move_y=-1.f;
+    Update(&world,&in); // pointer returned; old held controls still blocked
+    assert(SaveJournal(j)==shopBeforeLoss);
+    in.primary_down=in.secondary_down=0u;in.move_y=0.f;
+    Update(&world,&in); // only an all-neutral frame re-arms gameplay
+    assert(SaveJournal(j)==shopBeforeLoss);
     auto release=[&]{in.primary_down=0u;in.move_y=0.f;Update(&world,&in);};
     auto select=[&]{release();in.primary_down=1u;Update(&world,&in);};
     auto next=[&]{release();in.move_y=-1.f;Update(&world,&in);in.move_y=0.f;};
@@ -194,13 +209,27 @@ int main(){
         boat.skiff.reset(new SitkaSkiffSession(berth));
         ReverieNativeInputV1 touch{};
         touch.struct_size=sizeof(touch);touch.delta_seconds=.05f;
+        touch.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+        touch.pointer_direction[2]=-1.f;
         touch.listener_valid=1u;
         touch.listener_position[0]=190.f;
         touch.listener_position[2]=400.f;
         touch.primary_down=1u;touch.secondary_down=1u;
         Update(&boat,&touch);
         assert(boat.skiff->Active());
+        // Actual module focus-loss regression while a vessel is launched.
+        // A held throttle + dock chord cannot advance the boat during menu.
+        const auto beforeMenu=boat.skiff->Pose();
+        auto missingBoat=touch;
+        missingBoat.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+        missingBoat.move_y=-1.f;
+        for(int i=0;i<35;++i)Update(&boat,&missingBoat);
+        assert(boat.skiff->Pose().east==beforeMenu.east);
+        assert(boat.skiff->Pose().speed_mps==beforeMenu.speed_mps);
+        touch.move_y=-1.f;Update(&boat,&touch); // held chord still blocked
+        assert(boat.skiff->Active()&&boat.skiff->Pose().east==beforeMenu.east);
         touch.primary_down=touch.secondary_down=0u;
+        touch.move_y=0.f;Update(&boat,&touch); // neutral rearm
         // Touchpad up sends NEGATIVE Y, exactly as walking already uses.
         touch.move_y=-1.f;
         for(int n=0;n<80;++n)Update(&boat,&touch);
@@ -244,6 +273,7 @@ int main(){
     scout.listener_valid=1u;scout.listener_right[0]=1.f;
     scout.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
     scout.pointer_origin[1]=-.34f;
+    scout.pointer_direction[2]=-1.f; // live ray even during walking
     auto walk=[&](float x,float z){
         for(int tick=0;tick<200;++tick){
             const auto pose=range->walk_session->pose();
