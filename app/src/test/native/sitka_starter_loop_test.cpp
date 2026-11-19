@@ -399,6 +399,62 @@ int main(){
     fail_write=false;
     assert(PrepareExit(reopened_range)==1);
     Destroy(reopened_range);
+    // The practice basin is too narrow for an east-facing 14.4 m trawler.
+    // Validate that an actual earned hull upgrade reorients ONLY this
+    // synthetic mooring; it remains boardable after checked save/reopen.
+    Journal vesselProgress=StarterJournal();
+    vesselProgress.credits=6000u;
+    vesselProgress.hull_tier=2u;
+    vesselProgress.practice_finds=4095u;
+    vesselProgress.practice_submitted=4095u;
+    vesselProgress.practice_checkpoints=63u;
+    saved=SaveJournal(vesselProgress);
+    auto* commercial=static_cast<State*>(Create(&host));
+    assert(commercial&&commercial->integration_range);
+    assert(commercial->skiff&&commercial->skiff->HullTier()==2u);
+    assert(commercial->skiff->LaunchPoint().heading==PracticeBerthHeading(2u));
+    ReverieNativeInputV1 purchase{};
+    purchase.struct_size=sizeof(purchase);purchase.delta_seconds=.05f;
+    purchase.listener_valid=1u;purchase.listener_right[0]=1.f;
+    purchase.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    purchase.pointer_origin[1]=-.34f;
+    purchase.pointer_direction[0]=1.f;
+    purchase.primary_down=1u;Update(commercial,&purchase);
+    assert(commercial->harbor_shop.open());
+    purchase.primary_down=0u;Update(commercial,&purchase);
+    for(int i=0;i<3;++i){
+        purchase.move_y=-1.f;Update(commercial,&purchase);
+        purchase.move_y=0.f;Update(commercial,&purchase);
+    }
+    assert(commercial->harbor_shop.selected()==0u);
+    purchase.primary_down=1u;Update(commercial,&purchase);
+    assert(commercial->helm.hull==3u&&commercial->skiff->HullTier()==3u);
+    assert(commercial->fishing.fishing.journal.credits==1800u);
+    assert(commercial->skiff->LaunchPoint().heading==PracticeBerthHeading(3u));
+    // The same 5-point launch test must accept the full commercial hull at
+    // the reoriented berth, without weakening any real-water clearance.
+    const auto& practiceBerth=commercial->skiff->LaunchPoint();
+    assert(commercial->skiff->Update(.05,0.,0.,true,
+        practiceBerth.east,practiceBerth.north,
+        *commercial->stream,*commercial->generated,commercial->waters,
+        commercial->terrain.origin_east,commercial->terrain.origin_north)
+        ==SkiffSessionEvent::Launched);
+    assert(commercial->skiff->Active());
+    assert(!commercial->skiff->SetDockedHeading(1.5707963267948966));
+    assert(PrepareExit(commercial)==1);
+    Destroy(commercial);
+    auto* commercialReopened=static_cast<State*>(Create(&host));
+    assert(commercialReopened&&commercialReopened->helm.hull==3u);
+    assert(commercialReopened->skiff->HullTier()==3u);
+    assert(commercialReopened->skiff->LaunchPoint().heading==0.);
+    assert(commercialReopened->skiff->Update(.05,0.,0.,true,
+        commercialReopened->skiff->LaunchPoint().east,
+        commercialReopened->skiff->LaunchPoint().north,
+        *commercialReopened->stream,*commercialReopened->generated,
+        commercialReopened->waters,
+        commercialReopened->terrain.origin_east,
+        commercialReopened->terrain.origin_north)==SkiffSessionEvent::Launched);
+    Destroy(commercialReopened);
     host.read_asset=+[](const char*,void*,uint32_t,uint32_t* out)->int32_t {
         if(out)*out=48u;
         return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;

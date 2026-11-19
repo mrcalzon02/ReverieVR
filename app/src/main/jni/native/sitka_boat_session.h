@@ -121,6 +121,13 @@ public:
     bool Active()const{return navigation_.boat.launched;}
     bool SetHullTier(unsigned tier){return navigation_.SetHullTier(tier);}
     unsigned HullTier()const{return navigation_.HullTier();}
+    // Game-private safe re-berthing; never rotate a launched vessel or
+    // silently change a saved/sourced location while it is underway.
+    bool SetDockedHeading(double heading){
+        if(Active()||!std::isfinite(heading)||
+           std::abs(heading)>6.283185307179586)return false;
+        launch_.heading=heading;return true;
+    }
     const VesselDynamics& Dynamics()const{return navigation_.Dynamics();}
     const BoatPose& Pose()const{return navigation_.boat;}
     const BoatDepthFinder& Sounder()const{return navigation_.sounder;}

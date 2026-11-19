@@ -184,6 +184,18 @@ int main(){
     assert(std::abs(hull[0][0]-berth.east)<1.e-9);
     assert(std::abs(hull[1][0]-(berth.east+3.05))<1.e-8);
     assert(std::abs(hull[3][1]-(berth.north-1.15))<1.e-8);
+    // A temporary practice-dock rotation is legal ONLY before launch;
+    // invalid, out-of-bounds and underway heading changes are refused.
+    SitkaSkiffSession dockHeading(berth);
+    assert(!dockHeading.SetDockedHeading(
+        std::numeric_limits<double>::quiet_NaN()));
+    assert(!dockHeading.SetDockedHeading(7.));
+    assert(dockHeading.SetDockedHeading(0.));
+    assert(dockHeading.LaunchPoint().heading==0.);
+    assert(dockHeading.Update(.1,0.,0.,true,berth.east,berth.north,
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::Launched);
+    assert(!dockHeading.SetDockedHeading(1.5707963267948966));
+    assert(dockHeading.LaunchPoint().heading==0.);
     SitkaSkiffSession session(berth);
     assert(!session.Active());
     assert(session.InstrumentLines()[0]=="DEPTH NO DATA");

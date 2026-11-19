@@ -1022,9 +1022,20 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         state->helm_layout=reverie::sitka::AssembleHelm(state->helm);
         if(old.hull!=state->helm.hull||old.owned!=state->helm.owned)
             state->boat_dirty=true;
-        if(state->skiff&&!state->skiff->Active() &&
-           !state->skiff->SetHullTier(state->helm.hull))
-            Log(state->host,"Sitka purchased vessel dynamics unavailable");
+        if(state->skiff&&!state->skiff->Active()){
+            const bool tierApplied=state->skiff->SetHullTier(state->helm.hull);
+            if(!tierApplied)
+                Log(state->host,"Sitka purchased vessel dynamics unavailable");
+#if defined(REVERIE_SITKA_INTEGRATION_RANGE)
+            // Only the synthetic practice bay has a tier-dependent mooring.
+            // An authentic source berth retains its exact authored heading.
+            if(tierApplied&&state->integration_range &&
+               old.hull!=state->helm.hull &&
+               !state->skiff->SetDockedHeading(
+                   PracticeBerthHeading(state->helm.hull)))
+                Log(state->host,"Sitka practice berth heading unavailable");
+#endif
+        }
         if(!state->fishing.Flush(Store(state)))
             Log(state->host,"Sitka harbor purchase save pending retry");
     }

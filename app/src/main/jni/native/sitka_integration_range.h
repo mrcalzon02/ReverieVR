@@ -3,6 +3,13 @@
 // Included inside sitka_terrain_module.cpp's anonymous namespace, after State,
 // Log and Store are defined. NOT a geographic Sitka map or real bathymetry.
 #if defined(REVERIE_SITKA_INTEGRATION_RANGE)
+// The tiny synthetic bay is 14 m east/west but 18 m north/south. A
+// commercial trawler is 14.4 m long: moor that tier north/south instead of
+// attempting to spawn its bow across the west practice shoreline. Never
+// apply this test-range adjustment to a real, source-authored launch.
+inline double PracticeBerthHeading(unsigned hullTier) {
+    return hullTier==3u?0.:1.5707963267948966;
+}
 // Visible gravel strip and trail stakes on the fictional field course. This
 // is a static display mesh; the authored ground, water and pickup hitboxes
 // continue to own collision and the five-foot specimen reveal.
@@ -136,7 +143,7 @@ void* CreateIntegrationRange(const ReverieNativeHostV1* host) {
         reverie::sitka::SkiffLaunch berth;
         berth.datum_id=seabed.datum_id;
         berth.water_id=bay.id;berth.east=6.;berth.north=0.;
-        berth.heading=1.5707963267948966;berth.radius_m=8.;
+        berth.heading=PracticeBerthHeading(state->helm.hull);berth.radius_m=8.;
         state->skiff.reset(new reverie::sitka::SitkaSkiffSession(berth));
         if(!state->skiff->SetHullTier(state->helm.hull))
             throw std::runtime_error("Sitka test range hull initialization failed");
