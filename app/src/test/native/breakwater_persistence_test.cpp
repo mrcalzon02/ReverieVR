@@ -395,7 +395,10 @@ int main() {
     assert(state->campaign.phase()==Phase::Combat);
     assert(Stored(0).wave_index()==final_day_wave);
     const auto durable_before=saved.at(CheckpointSlot(0));
-    assert(durable_before.size()==Campaign::kCheckpointSize);
+    // The host may still hold a valid legacy 80-byte shop until a real
+    // state change is committed; never confuse migration in memory with a write.
+    assert(durable_before.size()==Campaign::kSerializedSize ||
+           durable_before.size()==Campaign::kCheckpointSize);
     Destroy(state); // Interrupted before earning the wave clear.
 
     state=static_cast<State*>(Create(&host));assert(state);
