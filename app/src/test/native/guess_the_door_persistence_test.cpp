@@ -33,7 +33,11 @@ Game Stored() {
     assert(reverie::doors::DecodeMazeSave(bytes.data(),bytes.size(),game));return game;
 }
 void Click(State* s,float axis=0.f) {
-    ReverieNativeInputV1 input{};input.struct_size=sizeof(input);input.delta_seconds=.01f;
+    // Legacy base-input hosts have no pointer prefix; they still support
+    // rocker plus Select. An explicit full-prefix POINTER_NONE is different.
+    ReverieNativeInputV1 input{};
+    input.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    input.delta_seconds=.01f;
     Update(s,&input);input.primary_down=1u;input.move_x=axis;Update(s,&input);
 }
 State* New(const ReverieNativeHostV1& host) {
@@ -87,7 +91,8 @@ int main() {
     failWrite=applyThenFail=false;kApi.pause(s);
     assert(!s->save_dirty && Stored().seed==newSeed && Stored().room==0u);
     // A held button across pause/resume cannot pull a lever before release.
-    kApi.resume(s);ReverieNativeInputV1 input{};input.struct_size=sizeof(input);
+    kApi.resume(s);ReverieNativeInputV1 input{};
+    input.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
     input.primary_down=1u;Update(s,&input);Update(s,&input);assert(s->game.phase==Phase::Ready);
     input.primary_down=0u;Update(s,&input);input.primary_down=1u;Update(s,&input);
     assert(s->game.phase==Phase::Pulling);Destroy(s);
@@ -143,5 +148,53 @@ int main() {
     }
     s->save_read=MazeRead::Invalid;s->save_notice="INVALID SAVE RETAINED";
     InForwardView(s);s->save_read=MazeRead::Fresh;Destroy(s);
-    std::cout<<"Guess module: safe resume, New Seed, write/read faults, backup recovery, held input and rocker PASS\n";
+
+    // Full-prefix POINTER_NONE is shell/Quick Menu ownership, not a legacy
+    // base-input host. It cannot silently choose a lever or run puzzle time.
+    disk.erase(reverie::doors::kMazeSaveSlot);
+    s=New(host);
+    const unsigned savedWrites=writes;
+    ReverieNativeInputV1 withdrawn{};
+    withdrawn.struct_size=sizeof(withdrawn);
+    withdrawn.delta_seconds=.1f;
+    withdrawn.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    withdrawn.primary_down=1u;
+    withdrawn.move_x=1.f;
+    for(int frame=0;frame<35;++frame)Update(s,&withdrawn);
+    assert(s->game.phase==Phase::Ready&&s->game.room==0u);
+    assert(s->game.timer==0.f&&s->game.side==-1);
+    assert(s->choice==0&&!s->rockerSelection);
+    assert(writes==savedWrites&&!s->save_dirty);
+
+    // Recover a real tracked ray with Select still held: require a release
+    // before any fresh lever press may enter the game's simulation.
+    ReverieNativeInputV1 lever=withdrawn;
+    lever.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    lever.pointer_direction[0]=-2.f;
+    lever.pointer_direction[1]=-.1f;
+    lever.pointer_direction[2]=-3.43f;
+    lever.move_x=0.f;
+    Update(s,&lever);
+    assert(s->game.phase==Phase::Ready&&s->game.side==-1);
+    lever.primary_down=0u;Update(s,&lever);
+    assert(!s->require_release);
+    lever.primary_down=1u;Update(s,&lever);
+    assert(s->game.phase==Phase::Pulling&&s->game.side==0);
+    const float animationTime=s->game.timer;
+    const unsigned committedRoom=Stored().room;
+    withdrawn.primary_down=0u;withdrawn.move_x=0.f;
+    for(int frame=0;frame<35;++frame)Update(s,&withdrawn);
+    assert(s->game.phase==Phase::Pulling&&s->game.timer==animationTime);
+    assert(Stored().room==committedRoom);
+    // Invalid tracked rays also fail closed; only valid rays can resume.
+    ReverieNativeInputV1 invalid=lever;
+    invalid.pointer_direction[0]=invalid.pointer_direction[1]=
+        invalid.pointer_direction[2]=0.f;
+    Update(s,&invalid);
+    assert(s->game.phase==Phase::Pulling&&s->game.timer==animationTime);
+    lever.primary_down=0u;Update(s,&lever);
+    for(int frame=0;frame<8;++frame)Update(s,&lever);
+    assert(s->game.phase==Phase::Opening);
+    Destroy(s);
+    std::cout<<"Guess module: safe resume, New Seed, save/read faults, backup recovery, lost-pointer freeze and rocker PASS\n";
 }

@@ -469,6 +469,7 @@ void Update(void* v,const ReverieNativeInputV1* in){
     ReverieNativeInputV1 input{};
     std::memcpy(&input,in,std::min(size_t(in->struct_size),sizeof(input)));
     ReverieNativeSanitizeBaseInputV1(&input);
+    const bool pointerPrefix=ReverieNativeInputHasPointerV1(&input)!=0;
     const bool hasPointer=ReverieNativeSanitizePointerV1(&input)!=0;
     const float dt=input.delta_seconds;
     bool primary=input.primary_down!=0u;
@@ -480,6 +481,20 @@ void Update(void* v,const ReverieNativeInputV1* in){
     if(s->save_dirty && !Recovering(s)) {
         s->save_retry-=dt;
         if(s->save_retry<=0.f)FlushMaze(s);
+    }
+    // A full pointer prefix with POINTER_NONE means the shell owns input
+    // (Quick Menu or controller loss), not a legacy button-only game host.
+    // Freeze animations, clue timing and lever/recovery actions until a
+    // usable ray returns and Select is actually released. Base-only hosts
+    // still retain their documented rocker/Select fallback.
+    if(pointerPrefix && !hasPointer) {
+        const bool redraw=s->reset_confirm || s->doorGaze!=-1 ||
+            s->leverGaze!=-1 || s->gazeSeconds>0.f || s->rockerSelection;
+        s->require_release=true;s->held=false;s->axisHeld=axis;
+        s->reset_confirm=false;s->rockerSelection=false;
+        s->doorGaze=s->leverGaze=-1;s->gazeSeconds=0.f;
+        if(redraw)Scene(s); // Rebuild once, never repeatedly per lost-ray frame.
+        return;
     }
     if(Recovering(s)) {
         if(axis&&!s->axisHeld) {
