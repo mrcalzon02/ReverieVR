@@ -91,6 +91,65 @@ static void CampaignFromNewGame(){
                 attempts,game.visited(),game.kills(),game.generals_defeated());
 }
 
+// A rejected Chart-phase purchase is not a deferred debit or ship edit.
+// The committed balance comes from an actual affordable purchase.
+static void RejectUnaffordableShipyardUpgradeAtomically(){
+    ShipAssembly ship;
+    const auto original=ship.snapshot();
+    assert(ship.edit(4,2,2,Part::Armor)==ShipEdit::Placed);
+    assert(ship.ready());
+    const auto fitted=ship.snapshot();
+    assert(ship.stock(Part::Armor)+1u==
+           original.stock[static_cast<unsigned>(Part::Armor)]);
+    Simulation game(0xBAD5EEDu);
+    assert(game.configure_ship_profile(ship.profile(),ship.ready()));
+    assert(game.phase()==Phase::Chart);
+    const uint32_t startingCash=game.cash();
+    const unsigned startingNode=game.node(),startingVisits=game.visited();
+    const uint32_t firstPrice=static_cast<uint32_t>(game.price(Upgrade::Hull));
+    assert(firstPrice>0u&&firstPrice<=startingCash);
+    assert(game.buy(Upgrade::Hull));
+    const uint32_t paidCash=startingCash-firstPrice;
+    assert(game.cash()==paidCash&&game.level(Upgrade::Hull)==1);
+    assert(game.price(Upgrade::Hull)>static_cast<int>(paidCash));
+    assert(game.price(Upgrade::Shield)>static_cast<int>(paidCash));
+    const auto beforeRejected=Bytes(game,ship);
+    const auto beforeCampaign=game.snapshot();
+    const auto beforeShip=ship.snapshot();
+    const auto beforeProfile=game.ship_profile();
+    // Neither the higher level nor a different new upgrade is affordable.
+    assert(!game.buy(Upgrade::Hull));
+    assert(!game.buy(Upgrade::Shield));
+    assert(game.cash()==paidCash&&game.level(Upgrade::Hull)==1
+           &&game.level(Upgrade::Shield)==0);
+    assert(game.node()==startingNode&&game.visited()==startingVisits
+           &&game.phase()==Phase::Chart);
+    assert(game.snapshot().checksum==beforeCampaign.checksum);
+    const auto afterRejectedShip=ship.snapshot();
+    assert(std::memcmp(&beforeShip,&fitted,sizeof(fitted))==0);
+    assert(std::memcmp(&beforeShip,&afterRejectedShip,sizeof(beforeShip))==0);
+    assert(game.ship_profile().hull==beforeProfile.hull
+           &&game.ship_profile().mass==beforeProfile.mass
+           &&game.ship_profile().power==beforeProfile.power
+           &&game.ship_profile().demand==beforeProfile.demand);
+    assert(Bytes(game,ship)==beforeRejected);
+    Simulation loaded;ShipAssembly loadedShip;
+    assert(CampaignSave::Decode(&loaded,&loadedShip,
+                                beforeRejected.data(),beforeRejected.size()));
+    assert(Bytes(loaded,loadedShip)==beforeRejected);
+    const auto loadedFitted=loadedShip.snapshot();
+    assert(std::memcmp(&beforeShip,&loadedFitted,sizeof(beforeShip))==0);
+    assert(loaded.ship_ready()&&loaded.cash()==paidCash
+           &&loaded.level(Upgrade::Hull)==1
+           &&loaded.level(Upgrade::Shield)==0);
+    assert(loaded.node()==startingNode&&loaded.visited()==startingVisits
+           &&loaded.phase()==Phase::Chart);
+    assert(!loaded.buy(Upgrade::Hull)&&!loaded.buy(Upgrade::Shield));
+    assert(Bytes(loaded,loadedShip)==beforeRejected);
+    assert(loadedShip.stock(Part::Armor)==ship.stock(Part::Armor));
+    std::cout<<"PASS Gumball unaffordable upgrades preserve cash, stock, fitted hull, chart and reload; one valid debit only\\n";
+}
+
 static void ShipyardSortieTransaction(){
     // Shipyard armor spends finite parts stock; the Blaster is a paid upgrade.
     // Their identities must stay atomic across flight, return and reload.
@@ -279,6 +338,7 @@ static void FatalHostileHitCheckpoint(){
 }
 
 int main(){
+    RejectUnaffordableShipyardUpgradeAtomically();
     UnreadyShipyardCannotLaunchAfterReload();
     FatalHostileHitCheckpoint();
     ShipyardSortieTransaction();
