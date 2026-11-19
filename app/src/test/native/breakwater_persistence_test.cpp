@@ -161,6 +161,30 @@ int main() {
     assert(saved.at(CheckpointSlot(0)).size()==Campaign::kCheckpointSize);
     assert(Stored(0).phase()==Phase::Shop);
 
+    // NEW RUN is a two-press destructive action. Interrupting the pointer
+    // or pausing must cancel its pending arm and preserve this save slot.
+    const auto protected_slot=saved.at(CheckpointSlot(0));
+    auto reset_input=At(menu::kResetCard);
+    reset_input.delta_seconds=.016f;
+    Update(state,&reset_input);  // release the post-pause input gate
+    reset_input.primary_down=1u;
+    Update(state,&reset_input);
+    assert(state->reset_armed && saved.at(CheckpointSlot(0))==protected_slot);
+    reset_input.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    Update(state,&reset_input);
+    assert(!state->reset_armed && saved.at(CheckpointSlot(0))==protected_slot);
+    reset_input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    Update(state,&reset_input);  // still holding Select must not re-arm
+    assert(!state->reset_armed && saved.at(CheckpointSlot(0))==protected_slot);
+    reset_input.primary_down=0u;
+    Update(state,&reset_input);
+    reset_input.primary_down=1u;
+    Update(state,&reset_input);
+    assert(state->reset_armed && saved.at(CheckpointSlot(0))==protected_slot);
+    kApi.pause(state);
+    assert(!state->reset_armed && saved.at(CheckpointSlot(0))==protected_slot);
+    assert(state->campaign.phase()==Phase::Shop);
+
     // A failed purchase is retained, and the retry click cannot buy twice.
     const auto credits=state->campaign.credits();
     fail_write=true;Interact(state,At(menu::ShopCard(0)),true);

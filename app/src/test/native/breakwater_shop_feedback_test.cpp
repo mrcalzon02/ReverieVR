@@ -29,6 +29,16 @@ int main() {
     assert(std::strcmp(msg,"SHOW UPGRADES")==0);
     Describe(msg,sizeof(msg),true,6,0,0,false,false);
     assert(std::strcmp(msg,"AIM AT A CARD TO INSPECT")==0);
+    // Destructive reset must report the selected save slot and confirmation.
+    Describe(msg,sizeof(msg),false,10,0,0,false,false,false,1u);
+    assert(std::strcmp(msg,"NEW RUN - SELECT TO ARM SLOT 2 RESET")==0);
+    Describe(msg,sizeof(msg),true,10,0,0,false,false,true,1u);
+    assert(std::strcmp(msg,"SLOT 2 RESET ARMED - SELECT NEW RUN TO ERASE")==0);
+    // Leaving the card hovered does not hide the still-armed warning.
+    Describe(msg,sizeof(msg),false,0,180,500,false,false,true,1u);
+    assert(std::strcmp(msg,"SLOT 2 RESET ARMED - SELECT NEW RUN TO ERASE")==0);
+    Describe(msg,sizeof(msg),false,0,180,500,false,false,false,1u);
+    assert(std::strcmp(msg,"FASTER FIRE - BUY 180 CR")==0);
     char guarded[9]={};
     guarded[8]='Z';
     Describe(guarded,8,false,0,450,10,false,false);

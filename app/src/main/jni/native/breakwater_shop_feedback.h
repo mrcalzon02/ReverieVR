@@ -19,9 +19,23 @@ inline const char* Item(bool armory,int index) {
     return index<6?weapons[index]:nullptr;
 }
 inline void Describe(char* output,size_t capacity,bool armory,int focus,
-                     int price,int credits,bool owned,bool active) {
+                     int price,int credits,bool owned,bool active,
+                     bool reset_armed=false,unsigned save_slot=0u) {
     if(!output||!capacity)return;
     output[0]='\0';
+    // A NEW RUN press can erase a real save. Show the actual slot and the
+    // second-press requirement instead of the generic empty-card tooltip.
+    // Keep the warning visible until the armed reset is cancelled or used.
+    if(reset_armed) {
+        std::snprintf(output,capacity,
+            "SLOT %u RESET ARMED - SELECT NEW RUN TO ERASE",save_slot+1u);
+        return;
+    }
+    if(focus==10) {
+        std::snprintf(output,capacity,
+            "NEW RUN - SELECT TO ARM SLOT %u RESET",save_slot+1u);
+        return;
+    }
     if(focus==8) {
         std::snprintf(output,capacity,"START THE NEXT WAVE");
         return;

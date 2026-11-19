@@ -1505,10 +1505,12 @@ void BuildScene(State *s) {
         char hint[80]={};
         shopfeedback::Describe(hint,sizeof(hint),s->armory_page,focused,
             ShopDisplayPrice(s,focused),game.credits(),
-            focus_owned,focus_active);
+            focus_owned,focus_active,s->reset_armed,s->save_slot);
         Text(s,hint,0,menu::kShopHintY,-2.972f,
              font::FittedScale(hint,5.65f,menu::kShopHintScale),
-             .87f,.96f,.85f);
+             s->reset_armed?1.f:.87f,
+             s->reset_armed?.73f:.96f,
+             s->reset_armed?.58f:.85f);
         // Everything interactive fits within the dark board and uses
         // exactly the same menu::Rect as the pointer hit-test.
         const char *labels[]={"FIRE","POWER","CLIP","ANTI","ARTY","AIR","TURRET","REPAIR"};
@@ -2063,6 +2065,8 @@ void Pause(void *instance) {
     s->pointer_visible=false;
     s->menu_focus=-1;
     s->rack_focus=-1;
+    // Leaving the game through the shell always cancels unconfirmed erase.
+    s->reset_armed=false;
     s->ghost_on=false;
     s->aim_ray_valid=false;
     s->held=false;
@@ -2115,6 +2119,12 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->rack_focus=-1;
         s->ghost_on=false;
         s->aim_ray_valid=false;
+        // Quick Menu or controller loss cannot leave an erase confirmation
+        // armed for a later, unrelated Select. Dirty the scene only once.
+        if(s->reset_armed) {
+            s->reset_armed=false;
+            s->scene_dirty=true;
+        }
         // Pointer-none frames are paused, not active combat frames.
         // Redraw once to clear targeting/hover; repeated menu-held frames
         // must not rebake the entire scene.
