@@ -103,27 +103,27 @@ int main(){
     assert(inputGate.Update(0.,0.,0.,true,500190.,6200400.,
         cache,generated,waters,ox,oz)==SkiffSessionEvent::InvalidInput);
     assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(!inputGate.Active());
     assert(inputGate.Update(.1,0.,0.,false,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::Launched);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::Launched);
     assert(inputGate.Active());
     // Refuse a held docking chord with an invalid throttle and require a
     // fresh release/press; the boat stays launched at the authored berth.
     assert(inputGate.Update(.1,0.,0.,false,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(inputGate.Update(.1,std::numeric_limits<double>::quiet_NaN(),
-        0.,true,500190.,6200400.,cache,generated,waters,ox)
+        0.,true,500190.,6200400.,cache,generated,waters,ox,oz)
         ==SkiffSessionEvent::InvalidInput);
     assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(inputGate.Active());
     assert(inputGate.Update(.1,0.,0.,false,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::None);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::None);
     assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
-        cache,generated,waters,ox)==SkiffSessionEvent::Docked);
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::Docked);
     assert(!inputGate.Active());
     SitkaSkiffSession session(berth);
     assert(!session.Active());
