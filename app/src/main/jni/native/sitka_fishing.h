@@ -87,6 +87,17 @@ struct Journal {
     bool at_crescent=false;
     uint32_t chart_stations=0; // successive filed survey stations
 };
+// Prefer an affordable stocked fish, but retain one blocked choice to explain
+// a full wallet. Share this rule between the shop preview and the sale.
+inline int NextFishSaleIndex(const Journal& j){
+    int first_stocked=-1;
+    for(unsigned id=0u;id<j.fish_inventory.size();++id){
+        if(!j.fish_inventory[id])continue;
+        if(first_stocked<0)first_stocked=int(id);
+        if(j.credits<=1000000u-kFishCreditAwards[id])return int(id);
+    }
+    return first_stocked;
+}
 inline uint32_t BeachSiteCount(uint64_t bits){
     uint32_t count=0;
     while(bits){bits&=(bits-1u);++count;}
@@ -272,13 +283,12 @@ struct Fishing {
     }
     bool SellFish(){
         if(phase!=FishingPhase::Ready)return false;
-        for(unsigned id=0;id<journal.fish_inventory.size();++id){
-            if(!journal.fish_inventory[id])continue;
-            if(journal.credits>1000000u-kFishCreditAwards[id])return false;
-            --journal.fish_inventory[id];journal.credits+=kFishCreditAwards[id];
-            return true;
-        }
-        return false;
+        const int chosen=NextFishSaleIndex(journal);
+        if(chosen<0)return false;
+        const unsigned id=unsigned(chosen);
+        if(journal.credits>1000000u-kFishCreditAwards[id])return false;
+        --journal.fish_inventory[id];journal.credits+=kFishCreditAwards[id];
+        return true;
     }
     bool SellShellfish(){
         constexpr uint32_t value=25u;

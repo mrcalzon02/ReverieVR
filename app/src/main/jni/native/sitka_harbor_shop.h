@@ -269,13 +269,15 @@ inline ShopOffer HarborOffer(const Journal& journal,unsigned index){
         o.owned=!o.available;
         o.unlocked=offer.unlocked;
     }else if(index==kPurchaseItems){
-        for(unsigned id=0u;id<journal.fish_inventory.size();++id){
-            if(!journal.fish_inventory[id])continue;
+        const int chosen=NextFishSaleIndex(journal);
+        if(chosen>=0){
+            const unsigned id=unsigned(chosen);
             o.title=std::string("Sell ")+kFishNames[id]+" ("+
                 std::to_string(journal.fish_inventory[id])+") +"+
                 std::to_string(kFishCreditAwards[id])+" CR";
             o.available=true;o.unlocked=true;
-            o.affordable=journal.credits<=1000000u-kFishCreditAwards[id];return o;
+            o.affordable=journal.credits<=1000000u-kFishCreditAwards[id];
+            return o;
         }
         o.title="Sell fish: inventory empty";return o;
     }else if(index==kPurchaseItems+1u){
@@ -303,6 +305,9 @@ public:
     unsigned selected()const{return selected_;}
     int active_site()const{return site_;}
     bool consumes_primary()const{return open_||consumed_primary_||capture_until_release_;}
+    // Shop browsing and walking share the analog stick; stay still while
+    // the shop or its post-close input handoff retains the gesture.
+    bool allows_walking()const{return !consumes_primary();}
     ShopEvent Update(bool primary,bool secondary,float navigation,
         int aimed_site,FishingSession& fishing,bool underway){
         // The shop owns both controls until BOTH buttons have been released

@@ -934,10 +934,11 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     // Home-style analog strength over actual terrain triangles. Footpath
     // lines are for navigation only, NEVER locomotion permissions. Water
     // and source building footprints still block unsafe movement.
-    // Suspend stepping while actively angling or controlling the boat.
+    // Suspend stepping while angling, steering or still releasing a shop
+    // control: a held shop browse should never move the avatar on close.
     if(state->walk_session && listener &&
        !(state->skiff&&state->skiff->Active()) &&
-       !state->harbor_shop.open() &&
+       state->harbor_shop.allows_walking() &&
        state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready)
         state->walk_session->Advance(
             input->move_x,-input->move_y,input->listener_right,

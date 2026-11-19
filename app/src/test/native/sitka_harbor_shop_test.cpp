@@ -171,5 +171,50 @@ int main(){
     assert(forced.Update(true,true,0.f,-1,voyageFishing,true)==ShopEvent::None);
     assert(canChord(true,true)); // Only a genuinely new chord can reach the skiff.
     assert(voyageFishing.fishing.phase==FishingPhase::Ready);
+
+    // Analog walking must remain suppressed for the duration of the
+    // just-closed harbor modal gesture, even if the stick is still held.
+    HarborShopSession walkGate;
+    FishingSession walkFishing;
+    assert(walkGate.allows_walking());
+    assert(walkGate.Update(true,false,0.f,0,walkFishing,false)==ShopEvent::Open);
+    assert(!walkGate.allows_walking());
+    walkGate.Update(false,false,0.f,-1,walkFishing,false);
+    assert(walkGate.Update(true,true,0.f,-1,walkFishing,false)==ShopEvent::Close);
+    for(int tick=0;tick<5;++tick){
+        assert(!walkGate.allows_walking());
+        assert(walkGate.Update(true,true,-1.f,-1,walkFishing,false)==ShopEvent::None);
+    }
+    assert(!walkGate.allows_walking());
+    walkGate.Update(false,false,0.f,-1,walkFishing,false);
+    assert(walkGate.allows_walking());
+
+    // A partially full wallet must not block sale of a cheaper stocked fish.
+    // Shop display and the real fish transaction use the same choice.
+    FishingSession ledger;
+    ledger.fishing.journal.credits=999940u;
+    ledger.fishing.journal.fish_inventory[unsigned(Fish::Coho)]=1u;
+    ledger.fishing.journal.fish_inventory[unsigned(Fish::Flounder)]=1u;
+    const auto sale=HarborOffer(ledger.fishing.journal,unsigned(kPurchaseItems));
+    assert(sale.available&&sale.affordable&&sale.unlocked);
+    assert(sale.title.find("Flounder")!=std::string::npos);
+    HarborShopSession fishCounter;
+    assert(fishCounter.Update(true,false,0.f,0,ledger,false)==ShopEvent::Open);
+    fishCounter.Update(false,false,0.f,-1,ledger,false);
+    assert(fishCounter.Update(true,false,0.f,-1,ledger,false)==ShopEvent::Sold);
+    assert(ledger.fishing.journal.credits==999975u&&ledger.dirty);
+    assert(ledger.fishing.journal.fish_inventory[unsigned(Fish::Coho)]==1u);
+    const auto blocked=HarborOffer(ledger.fishing.journal,unsigned(kPurchaseItems));
+    assert(blocked.available&&!blocked.affordable&&blocked.unlocked);
+    assert(blocked.title.find("Coho")!=std::string::npos);
+    fishCounter.Update(false,false,0.f,-1,ledger,false);
+    const std::string noSale=SaveJournal(ledger.fishing.journal);
+    assert(fishCounter.Update(true,false,0.f,-1,ledger,false)==ShopEvent::Denied);
+    assert(SaveJournal(ledger.fishing.journal)==noSale);
+    assert(HarborShopPanel(fishCounter,ledger)[4]=="WALLET FULL");
+    Journal reloadedCounter;
+    assert(LoadJournal(noSale,reloadedCounter));
+    assert(reloadedCounter.credits==999975u&&
+           reloadedCounter.fish_inventory[unsigned(Fish::Coho)]==1u);
     return 0;
 }

@@ -65,5 +65,28 @@ int main() {
     Journal imported;
     assert(LoadJournal(previous,imported)&&imported.chart_stations==3&&imported.practice_submitted==4095);
     assert(imported.credits==175&&!imported.at_crescent&&!imported.crescent_cm&&!imported.crescent_job);
+    // A 100-CR fish may not fit when a 35-CR fish still does.
+    Fishing nearCap;
+    nearCap.journal.credits=999940u;
+    nearCap.journal.fish_inventory[unsigned(Fish::Coho)]=1u;
+    nearCap.journal.fish_inventory[unsigned(Fish::Flounder)]=1u;
+    assert(NextFishSaleIndex(nearCap.journal)==int(Fish::Flounder));
+    assert(nearCap.SellFish());
+    assert(nearCap.journal.credits==999975u);
+    assert(nearCap.journal.fish_inventory[unsigned(Fish::Coho)]==1u);
+    assert(nearCap.journal.fish_inventory[unsigned(Fish::Flounder)]==0u);
+    const auto blockedSave=SaveJournal(nearCap.journal);
+    assert(NextFishSaleIndex(nearCap.journal)==int(Fish::Coho));
+    assert(!nearCap.SellFish()&&SaveJournal(nearCap.journal)==blockedSave);
+    Journal reloadedCap;
+    assert(LoadJournal(blockedSave,reloadedCap));
+    assert(reloadedCap.credits==999975u&&
+           reloadedCap.fish_inventory[unsigned(Fish::Coho)]==1u);
+    Fishing exactCap;
+    exactCap.journal.credits=999955u;
+    exactCap.journal.fish_inventory[unsigned(Fish::DollyVarden)]=1u;
+    assert(exactCap.SellFish()&&exactCap.journal.credits==1000000u);
+    assert(NextFishSaleIndex(exactCap.journal)==-1);
+    assert(!exactCap.SellFish());
     std::cout<<"Sitka fishing simulation, upgrades, save and rejection PASS\n";
 }
