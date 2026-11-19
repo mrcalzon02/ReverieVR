@@ -12,6 +12,6 @@
   ],
   "format": "reverievr-development-gallery-v1",
   "license": "USGS US Government public domain numeric terrain; NOAA chart source with attribution; licensed Lato SIL OFL",
-  "source_commit": "048f1dc6886bb99b69292e975d2cd358cca07d11",
+  "source_commit": "d6d8e50231e4c55dc51a451f4a19aefe60ecaa24",
   "source_kind": "ACTUAL C++ module+Mesa GLES2 two-eye render of verified NOAA ENC chart land and USGS 3DEP meshes, not Google imagery"
 }
