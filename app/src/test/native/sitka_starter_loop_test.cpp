@@ -337,7 +337,7 @@ int main(){
     player.listener_valid=1u;player.listener_right[0]=1.f;
     player.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
     player.pointer_origin[1]=-.34f;
-    player.pointer_direction[2]=-1.f; // usable ray before restored shore walking
+    player.pointer_direction[0]=1.f; // forward toward the berth; also used by cast test
     player.move_x=1.f;
     for(int n=0;n<35;++n)Update(range,&player);
     player.move_x=0.f;
