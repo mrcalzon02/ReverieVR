@@ -29,13 +29,14 @@ public:
     bool dirty = false;
     bool write_failed = false;
     FishingLoad Load(const FishingStore& store) {
+        // Preserve observed button holds across fresh/valid reloads. A held
+        // Select must be released before a new cast or catch acknowledgment.
         if (!store.read || !store.write) return FishingLoad::Unavailable;
         std::string contents;
         const int result = store.read(store.user, contents);
         if (result == 0) {
             fishing=Fishing{};fishing.journal=StarterJournal();
             dirty=true;write_failed=false;
-            primary_held_=secondary_held_=false;
             return FishingLoad::Fresh;
         }
         if (result != 1) return FishingLoad::IoError;
@@ -46,7 +47,6 @@ public:
         fishing = Fishing{};
         fishing.journal = parsed;
         dirty = write_failed = false;
-        primary_held_ = secondary_held_ = false;
         return FishingLoad::Restored;
     }
     FishingUpdate Update(float delta_seconds, bool primary, bool secondary,

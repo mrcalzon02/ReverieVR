@@ -97,6 +97,34 @@ int main(){
         else return false;
         return true;
     };
+    // An invalid frame consumes the launch/dock chord edge. Merely
+    // continuing to hold it cannot trigger a delayed action on recovery.
+    SitkaSkiffSession inputGate(berth);
+    assert(inputGate.Update(0.,0.,0.,true,500190.,6200400.,
+        cache,generated,waters,ox,oz)==SkiffSessionEvent::InvalidInput);
+    assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::None);
+    assert(!inputGate.Active());
+    assert(inputGate.Update(.1,0.,0.,false,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::None);
+    assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::Launched);
+    assert(inputGate.Active());
+    // Refuse a held docking chord with an invalid throttle and require a
+    // fresh release/press; the boat stays launched at the authored berth.
+    assert(inputGate.Update(.1,0.,0.,false,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::None);
+    assert(inputGate.Update(.1,std::numeric_limits<double>::quiet_NaN(),
+        0.,true,500190.,6200400.,cache,generated,waters,ox)
+        ==SkiffSessionEvent::InvalidInput);
+    assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::None);
+    assert(inputGate.Active());
+    assert(inputGate.Update(.1,0.,0.,false,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::None);
+    assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
+        cache,generated,waters,ox)==SkiffSessionEvent::Docked);
+    assert(!inputGate.Active());
     SitkaSkiffSession session(berth);
     assert(!session.Active());
     assert(session.InstrumentLines()[0]=="DEPTH NO DATA");

@@ -86,6 +86,19 @@ int main(){
     assert(reused.fishing.journal.total==checkpoint.total);
     assert(reused.fishing.journal.beach_sites==checkpoint.beach_sites);
     assert(!reused.dirty && !reused.write_failed);
+    // Reload while Select is still held must not turn it into a new cast.
+    assert(reused.Update(.016f,true,false,true,2.f).event==FishingEvent::None);
+    assert(reused.fishing.phase==FishingPhase::Ready);
+    reused.Update(.016f,false,false,false,2.f);
+    assert(reused.Update(.016f,true,false,true,2.f).event==FishingEvent::Cast);
+    // The same rule applies to a newly missing save on a reused host session.
+    Store empty;
+    assert(reused.Load(empty.Port())==FishingLoad::Fresh);
+    assert(reused.fishing.phase==FishingPhase::Ready);
+    assert(reused.dirty && reused.fishing.journal.starter_tokens==1u);
+    assert(reused.Update(.016f,true,false,true,2.f).event==FishingEvent::None);
+    assert(reused.fishing.phase==FishingPhase::Ready);
+    reused.Update(.016f,false,false,false,2.f);
     assert(reused.Update(.016f,true,false,true,2.f).event==FishingEvent::Cast);
 
     // A press while a landed catch is displayed only acknowledges it.

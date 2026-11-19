@@ -146,13 +146,15 @@ public:
         BathyStreamCache& sourced,const ProceduralSeabed& procedural,
         const std::vector<Water>& waters,double terrain_origin_east,
         double terrain_origin_north){
+        // Track the real chord on refused timing/controls too. Otherwise a
+        // held press from an invalid frame could launch/dock on the next tick.
+        const bool toggle=both_down&&!chord_held_;
+        chord_held_=both_down;
         if(!std::isfinite(dt)||dt<=0.||dt>.1||
            !BoatInputValid(throttle)||!BoatInputValid(rudder)||
            sourced.directory().datum_id!=launch_.datum_id||
            procedural.settings().datum_id!=launch_.datum_id)
             return SkiffSessionEvent::InvalidInput;
-        const bool toggle=both_down&&!chord_held_;
-        chord_held_=both_down;
         const auto water=[&](double east,double north){
             return SitkaWorldWater(waters,terrain_origin_east,
                 terrain_origin_north,east,north)!=nullptr;
