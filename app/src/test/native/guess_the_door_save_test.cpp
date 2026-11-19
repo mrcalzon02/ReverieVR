@@ -93,7 +93,10 @@ static void TestWrongChoiceThenNextRoom() {
     assert(animatedPass==committedPass);
     assert(again.Pull(static_cast<int>(generated.safeSide)));
     assert(!again.Pull(1-static_cast<int>(generated.safeSide)));
-    assert(again.DrainSound()==LeverSound);
+    // Room 1's genuine right-lever Easter voice may accompany the new lever;
+    // it is not queued audio leaking from the failed room 0 transition.
+    const unsigned expected=LeverSound | (generated.safeSide==1u?LeverVoice:NoSound);
+    assert(again.DrainSound()==expected);
     std::cout<<"Guess door wrong-path fall, next-room clue and save replay PASS\n";
 }
 
