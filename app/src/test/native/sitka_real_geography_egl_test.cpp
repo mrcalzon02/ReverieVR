@@ -129,8 +129,22 @@ int main(int argc,char** argv){
     ReverieNativeInputV1 input{};
     input.struct_size=sizeof(input);
     input.delta_seconds=.05f;
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[2]=-1.f; // intentional controller UI actions
     input.secondary_down=1u;
     input.move_x=1.f;
+    // POINTER_NONE is shell-owned input, not an offline map shortcut.
+    const auto beforeFocusLoss=SaveJournal(state->fishing.fishing.journal);
+    auto withdrawn=input;
+    withdrawn.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    for(int tick=0;tick<8;++tick)Update(state,&withdrawn);
+    assert(!state->geo_view);
+    assert(SaveJournal(state->fishing.fishing.journal)==beforeFocusLoss);
+    Update(state,&input); // held chord still blocked when ray returns
+    assert(!state->geo_view);
+    input.secondary_down=0u;input.move_x=0.f;
+    Update(state,&input); // neutral frame rearms the guest
+    input.secondary_down=1u;input.move_x=1.f;
     Update(state,&input);
     assert(state->geo_view);
     const float initial_altitude=state->geo_altitude;
@@ -256,6 +270,8 @@ int main(int argc,char** argv){
     assert(OnGlCreated(state));
     // Start through the advertised shore controls. A held click cannot deliver twice.
     input={};input.struct_size=sizeof(input);input.delta_seconds=.05f;
+    input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[2]=-1.f;
     input.secondary_down=1;input.move_x=-1;Update(state,&input);Update(state,&input);
     assert(OnCrescent(*state));
     input.secondary_down=0;input.move_x=0;
@@ -329,6 +345,7 @@ int main(int argc,char** argv){
     input.listener_valid=1;input.listener_right[0]=1.f;
     input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
     input.pointer_origin[1]=-.34f;
+    input.pointer_direction[2]=-1.f; // valid ray for shore walking
     for(unsigned i=0;i<200;++i){
         const auto pos=state->walk_session->pose();
         const float dx=-6.f-pos.x,dz=-pos.z,d=std::hypot(dx,dz);
