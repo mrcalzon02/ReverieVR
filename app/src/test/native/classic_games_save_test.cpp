@@ -250,4 +250,58 @@ static void StoreCases(){
     Check(huge.board.goHistory.size()==47000,"oversize source history remains complete");
     std::cout<<"bank interruption, read failures, corruption, retry and limits PASS\n";
 }
-int main(){CodecCases();ChutesRollHistory();RuleHistoryCases();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
+// Real first-wall -> second-wall rule transition, checked codec, and a
+// failed host checkpoint before manifest commit. Terminal wall-two fixtures
+// alone do not exercise this boundary.
+static void BreakoutFirstWallSaveBoundary(){
+    auto before=Initial(6);
+    auto &wall=before.breakout;
+    wall.bricks.fill(0);wall.bricks[111]=1;wall.remaining=1;wall.score=447;
+    wall.topRowBroken=wall.narrowPaddle=wall.moving=true;
+    wall.ballX=wall.BrickX(13);wall.ballY=wall.BrickY(7);
+    const auto oldBytes=Encode(6,before);
+    const auto old=RoundTrip(6,before);
+    Check(old.breakout.wall==1&&old.breakout.remaining==1,
+          "last wall-one brick preserved before actual hit");
+
+    wall.Tick(); // production collision scores the last brick and refills.
+    Check(wall.wall==2&&wall.remaining==112&&wall.score==448,
+          "wall-one final brick starts exactly 112 wall-two bricks");
+    Check(wall.lives==3&&wall.moving&&!wall.finished&&!wall.won,
+          "transition keeps ball in play without losing a life or winning");
+    for(uint8_t brick:wall.bricks)Check(brick==1,"all new wall-two bricks present");
+    const auto boundary=RoundTrip(6,before);
+    const auto boundaryBytes=Encode(6,boundary);
+    Check(boundaryBytes!=oldBytes,"transition changes the real checkpoint");
+
+    slots.clear();writes=failWrite=0;failReads=lateManifestError=false;
+    const auto host=Host();cs::Store store;store.Bind(&host,6);
+    store.dirty=true;
+    Check(store.Flush(old.game,old.breakout,old.board),
+          "pretransition state durably saved");
+    const auto lastCommit=slots;
+    store.dirty=true;failWrite=writes+1;
+    Check(!store.Flush(boundary.game,boundary.breakout,boundary.board)&&store.dirty,
+          "interrupted wall transition remains uncommitted and dirty");
+    Check(slots[cs::kManifest]==lastCommit.at(cs::kManifest),
+          "failed wall-two page never switches manifest");
+    cs::Snapshot recovered;cs::Store previous;previous.Bind(&host,6);
+    Check(previous.Load(recovered)==1&&Encode(6,recovered)==oldBytes,
+          "interrupted save restores wall-one checkpoint, not phantom wall two");
+
+    failWrite=0;
+    Check(store.Flush(boundary.game,boundary.breakout,boundary.board),
+          "wall-two transition is durably committed on retry");
+    cs::Store reloaded;reloaded.Bind(&host,6);
+    Check(reloaded.Load(recovered)==1&&Encode(6,recovered)==boundaryBytes,
+          "committed transition restores exact wall, score and moving ball");
+    auto uninterrupted=boundary;uninterrupted.breakout.Tick();
+    recovered.breakout.Tick(); // real next collision with a wall-two brick.
+    Check(recovered.breakout.wall==2&&recovered.breakout.remaining==111&&
+          recovered.breakout.score==449&&!recovered.breakout.finished,
+          "first wall-two hit earns only its own point, not another first-wall reward");
+    Check(Encode(6,uninterrupted)==Encode(6,recovered),
+          "restored and uninterrupted second-wall ball/brick states stay identical");
+    std::cout<<"Breakout wall-one boundary, write interruption, wall-two continuation PASS\n";
+}
+int main(){BreakoutFirstWallSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
