@@ -187,10 +187,10 @@ int main() {
     assert(s->game.phase==Phase::Pulling&&s->game.timer==animationTime);
     assert(Stored().room==committedRoom);
     // Invalid tracked rays also fail closed; only valid rays can resume.
-    ReverieNativeInputV1 invalid=lever;
-    invalid.pointer_direction[0]=invalid.pointer_direction[1]=
-        invalid.pointer_direction[2]=0.f;
-    Update(s,&invalid);
+    ReverieNativeInputV1 invalidRay=lever;
+    invalidRay.pointer_direction[0]=invalidRay.pointer_direction[1]=
+        invalidRay.pointer_direction[2]=0.f;
+    Update(s,&invalidRay);
     assert(s->game.phase==Phase::Pulling&&s->game.timer==animationTime);
     lever.primary_down=0u;Update(s,&lever);
     for(int frame=0;frame<8;++frame)Update(s,&lever);
