@@ -372,5 +372,120 @@ int main() {
     Update(state,&reset_retry); // Auto clear must consume edges, not start a new campaign.
     assert(state->campaign.phase()==Phase::Briefing&&saved.at(CheckpointSlot(0)).empty());
     kApi.pause(state);Destroy(state);assert(saved.at(CheckpointSlot(0)).empty());
+    // Real module Update transitions the last daylight wave to the night
+    // shop; an interrupted combat attempt must never earn a phantom payout.
+    saved.clear();unreadable.clear();fail_write=false;apply_then_fail=false;
+    fail_next_writes=0u;writes=0u;
+    Campaign boundary(Difficulty::Casual,0xBEEFu);
+    assert(boundary.Start());
+    std::vector<uint8_t> last_day(Campaign::kSerializedSize);
+    assert(boundary.SerializeShop(last_day.data(),last_day.size()));
+    const uint8_t final_day_wave=boundary.waves_this_period();
+    Word(last_day,7,final_day_wave);
+    const int32_t before_boundary_credits=boundary.credits();
+    saved[CheckpointSlot(0)]=last_day;
+    state=static_cast<State*>(Create(&host));assert(state);
+    SelectSlot(state,0);
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.location()==0u&&state->campaign.day()==1u);
+    assert(state->campaign.period()==Period::Day);
+    assert(state->campaign.wave_index()==final_day_wave);
+    assert(state->campaign.credits()==before_boundary_credits);
+    assert(BeginActiveWave(state,false));
+    assert(state->campaign.phase()==Phase::Combat);
+    assert(Stored(0).wave_index()==final_day_wave);
+    const auto durable_before=saved.at(CheckpointSlot(0));
+    assert(durable_before.size()==Campaign::kCheckpointSize);
+    Destroy(state); // Interrupted before earning the wave clear.
+
+    state=static_cast<State*>(Create(&host));assert(state);
+    SelectSlot(state,0);
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.period()==Period::Day);
+    assert(state->campaign.wave_index()==final_day_wave);
+    assert(state->campaign.credits()==before_boundary_credits);
+    assert(saved.at(CheckpointSlot(0))==durable_before);
+    assert(BeginActiveWave(state,false));
+    fail_write=true;
+    FinishWave(state); // Real Update and spawn progression, not direct completion.
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.location()==0u&&state->campaign.day()==1u);
+    assert(state->campaign.period()==Period::Night);
+    assert(state->campaign.wave_index()==1u);
+    assert(state->campaign.credits()==before_boundary_credits+220);
+    assert(state->round_summary&&state->wave_credits_gained==220);
+    assert(state->save_dirty&&state->save_failed);
+    assert(saved.at(CheckpointSlot(0))==durable_before);
+    assert(Stored(0).period()==Period::Day);
+    assert(Stored(0).wave_index()==final_day_wave);
+    assert(Stored(0).credits()==before_boundary_credits);
+    assert(kApi.prepare_exit(state)==0);
+    Destroy(state); // Failed write stays failed across forced shutdown.
+    assert(saved.at(CheckpointSlot(0))==durable_before);
+
+    fail_write=false;
+    state=static_cast<State*>(Create(&host));assert(state);
+    SelectSlot(state,0);
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.period()==Period::Day);
+    assert(state->campaign.wave_index()==final_day_wave);
+    assert(state->campaign.credits()==before_boundary_credits);
+    assert(BeginActiveWave(state,false));
+    FinishWave(state);
+    assert(!state->save_dirty&&!state->save_failed);
+    assert(state->round_summary&&state->wave_credits_gained==220);
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.period()==Period::Night);
+    assert(state->campaign.day()==1u&&state->campaign.location()==0u);
+    assert(state->campaign.wave_index()==1u);
+    assert(state->campaign.credits()==before_boundary_credits+220);
+    const auto durable_after=saved.at(CheckpointSlot(0));
+    assert(durable_after!=durable_before);
+    assert(Stored(0).phase()==Phase::Shop);
+    assert(Stored(0).period()==Period::Night);
+    assert(Stored(0).wave_index()==1u);
+    assert(Stored(0).credits()==before_boundary_credits+220);
+    auto idle=At(menu::Rect{0.f,0.f,1.f,1.f});
+    idle.delta_seconds=.1f;
+    for(int repeat=0;repeat<10;++repeat)Update(state,&idle);
+    assert(state->campaign.credits()==before_boundary_credits+220);
+    assert(state->campaign.wave_index()==1u);
+    assert(saved.at(CheckpointSlot(0))==durable_after);
+    assert(kApi.prepare_exit(state)==1);
+    Destroy(state);
+
+    state=static_cast<State*>(Create(&host));assert(state);
+    SelectSlot(state,0);
+    assert(!state->round_summary);
+    assert(state->campaign.phase()==Phase::Shop);
+    assert(state->campaign.period()==Period::Night);
+    assert(state->campaign.wave_index()==1u);
+    assert(state->campaign.credits()==before_boundary_credits+220);
+    assert(BeginActiveWave(state,false)); // Next night wave, no skip.
+    assert(state->campaign.phase()==Phase::Combat);
+    assert(Stored(0).credits()==before_boundary_credits+220);
+    Destroy(state);
+
+    // A corrupt envelope must block slot reuse, not overwrite prior progress.
+    auto corrupt=durable_after;
+    corrupt[32]^=1u;
+    saved[CheckpointSlot(0)]=corrupt;
+    const auto writes_before_corrupt=writes;
+    state=static_cast<State*>(Create(&host));assert(state);
+    assert(state->slot_read[0]==SlotRead::Invalid);
+    SelectSlot(state,0);
+    assert(state->slot_picker&&state->read_blocked);
+    assert(kApi.prepare_exit(state)==0);
+    assert(writes==writes_before_corrupt);
+    assert(saved.at(CheckpointSlot(0))==corrupt);
+    Destroy(state);
+    saved[CheckpointSlot(0)]=durable_after;
+    state=static_cast<State*>(Create(&host));assert(state);
+    SelectSlot(state,0);
+    assert(state->campaign.period()==Period::Night);
+    assert(state->campaign.wave_index()==1u);
+    assert(state->campaign.credits()==before_boundary_credits+220);
+    Destroy(state);
+    std::cout<<"PASS actual Breakwater wave boundary: interrupted combat, failed result, exact-once reward, corrupt-save refusal and night reload\n";
     std::cout<<"PASS actual Breakwater: read safety, dirty retry, earned wave/victory checkpoints, migration, corruption and guarded reset/exit\n";
 }
