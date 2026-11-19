@@ -167,13 +167,30 @@ jobs:
           grep -F 'PASS_RED_PREMIUM_PENDING' validation/red-ledger/module.log
 
   guess-the-door:
-    name: Guess the Door deterministic clues, levers and maze gameplay
+    name: Guess the Door clues, saves, module focus and lever gameplay
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Execute the actual procedural door-game regression
-        run: bash scripts/verify-guess-the-door.sh
+      - name: Install Khronos GLES2 for genuine guest module lifecycle tests
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgles2-mesa-dev
+      - name: Execute real door logic, save codec and native module input in both compilers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cc in g++ clang++; do
+            echo "Guess the Door simulation and save codec via $cc"
+            CXX="$cc" bash scripts/verify-guess-the-door.sh
+            echo "Guess the Door real module pause, focus and checkpoint via $cc"
+            "$cc" -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/guess_the_door_persistence_test.cpp \
+              -lGLESv2 -lz -o "${RUNNER_TEMP}/guess-module-${cc}"
+            "${RUNNER_TEMP}/guess-module-${cc}"
+          done
 
   classic-eight:
     name: Chess, Checkers, Go, Reversi, Pong, Snake, Breakout and Chutes
