@@ -181,10 +181,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Run actual classic rules, AI, game input and paddle-physics regressions
+      - name: Run actual classic rules, AI, game input, paddle physics and save lifecycle regressions
         shell: bash
         run: |
           set -euo pipefail
+          # The existing save verifier compiles the real native module for all
+          # eight games; that source includes Khronos GLES2 headers.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgles2-mesa-dev
           for cc in g++ clang++; do
             for game_test in classic_games classic_pong_dynamics; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
@@ -194,8 +198,10 @@ jobs:
                 -o "${RUNNER_TEMP}/${cc}-${game_test}"
               "${RUNNER_TEMP}/${cc}-${game_test}"
             done
+            echo "FUNCTIONAL TEST: classic save codec and eight real module lifecycles via $cc"
+            CXX="$cc" bash scripts/verify-classic-saves.sh
           done
-          echo 'PASS: all eight native classic game logic families'
+          echo 'PASS: all eight native classic game logic families, saves and module lifecycles'
 
   recon-missions:
     name: Lantern Desk reconnaissance and Iron Sight patrol-to-debrief
