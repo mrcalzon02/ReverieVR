@@ -41,6 +41,9 @@ public:
         if (result != 1) return FishingLoad::IoError;
         Journal parsed;
         if (!LoadJournal(contents, parsed)) return FishingLoad::Invalid;
+        // Only the journal is persisted. A live host can reload into the same
+        // session: discard its previous cast, bite, reel and landed display.
+        fishing = Fishing{};
         fishing.journal = parsed;
         dirty = write_failed = false;
         primary_held_ = secondary_held_ = false;

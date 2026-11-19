@@ -63,6 +63,31 @@ int main(){
     assert(replay.fishing.journal.beach_sites==(uint64_t(1)<<4u));
     assert(replay.fishing.journal.discoveries==FindMask(BeachFind::Rock));
     assert(!replay.Discover(4u,BeachFind::Rock));
+    // A valid load into an existing session must discard an unsaved cast,
+    // not carry its hooked fish, timer or reel into the restored journal.
+    FishingSession reused;
+    assert(reused.Load(s.Port())==FishingLoad::Restored);
+    const Journal checkpoint=reused.fishing.journal;
+    assert(reused.Update(.016f,true,false,true,2.f).event==FishingEvent::Cast);
+    assert(reused.fishing.phase==FishingPhase::Waiting);
+    assert(reused.fishing.journal.seed!=checkpoint.seed);
+    // Corrupt source must leave that live session untouched. A subsequent
+    // successful reload has to clear it and recover the exact saved journal.
+    const std::string valid_save=s.data;
+    s.data="corrupt";
+    assert(reused.Load(s.Port())==FishingLoad::Invalid);
+    assert(reused.fishing.phase==FishingPhase::Waiting);
+    s.data=valid_save;
+    assert(reused.Load(s.Port())==FishingLoad::Restored);
+    assert(reused.fishing.phase==FishingPhase::Ready);
+    assert(reused.fishing.time==0.f && reused.fishing.reel==0.f &&
+           reused.fishing.tension==0.f && reused.fishing.depth==0.f);
+    assert(reused.fishing.journal.seed==checkpoint.seed);
+    assert(reused.fishing.journal.total==checkpoint.total);
+    assert(reused.fishing.journal.beach_sites==checkpoint.beach_sites);
+    assert(!reused.dirty && !reused.write_failed);
+    assert(reused.Update(.016f,true,false,true,2.f).event==FishingEvent::Cast);
+
     // A press while a landed catch is displayed only acknowledges it.
     f.Update(.1f,false,false,false,0.f);
     assert(f.Update(.1f,true,false,false,0.f).event==FishingEvent::Acknowledged);
