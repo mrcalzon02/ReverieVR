@@ -172,7 +172,25 @@ public:
             const Water* berth=SitkaNamedWorldWater(waters,launch_.water_id,
                 terrain_origin_east,terrain_origin_north,
                 launch_.east,launch_.north);
-            if(!berth||!navigation_.Launch(launch_.east,launch_.north,
+            if(!berth)return SkiffSessionEvent::Rejected;
+            // Center-only depth checks can launch a purchased hull with its
+            // bow on shore or its beam over a source-verified shoal. Admission
+            // must clear all five movement points at the ACTUAL tier/draft.
+            const double draft=std::max(launch_.draft_m,
+                                       navigation_.Dynamics().min_draft_m);
+            for(const auto& point:BoatHullSamplePoints(
+                    launch_.east,launch_.north,launch_.heading,
+                    navigation_.Dynamics())){
+                const Water* body=SitkaNamedWorldWater(waters,launch_.water_id,
+                    terrain_origin_east,terrain_origin_north,
+                    point[0],point[1]);
+                if(!body)return SkiffSessionEvent::Rejected;
+                const DepthReading depth=FindBoatDepth(
+                    bottom,point[0],point[1],body->y,draft,true);
+                if(depth.status!=DepthStatus::Safe||depth.under_keel_m<.5)
+                    return SkiffSessionEvent::Rejected;
+            }
+            if(!navigation_.Launch(launch_.east,launch_.north,
                 launch_.heading,launch_.draft_m,bottom,berth->y,true))
                 return SkiffSessionEvent::Rejected;
             // Avoid reporting NO DATA for the first quarter second after

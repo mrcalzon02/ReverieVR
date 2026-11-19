@@ -62,6 +62,21 @@ inline constexpr std::array<VesselDynamics,4> kVesselDynamics={{
 inline bool BoatInputValid(double axis){
     return std::isfinite(axis)&&axis>=-1.&&axis<=1.;
 }
+// One hull geometry contract for launch admission and every movement tick.
+// World-space samples are center, bow, stern, starboard and port. Never let
+// a larger purchased hull start outside water that its center alone fits.
+inline std::array<std::array<double,2>,5> BoatHullSamplePoints(
+    double east,double north,double heading,const VesselDynamics& dynamics){
+    const double sine=std::sin(heading),cosine=std::cos(heading);
+    const double bow=dynamics.length_m*.5,beam=dynamics.beam_m*.5;
+    return {{
+        {{east,north}},
+        {{east+sine*bow,north+cosine*bow}},
+        {{east-sine*bow,north-cosine*bow}},
+        {{east+cosine*beam,north-sine*beam}},
+        {{east-cosine*beam,north+sine*beam}}
+    }};
+}
 class SkiffNavigation {
 public:
     BoatPose boat;
@@ -121,20 +136,13 @@ public:
             const double sine=std::sin(new_heading),cosine=std::cos(new_heading);
             const double east=boat.east+sine*speed*tick;
             const double north=boat.north+cosine*speed*tick;
-            // Hull footprint rather than center point: bow, stern and both
-            // beams all need approved water and under-keel depth. A large
-            // trawler must stop before its BOW crosses a sourced shoreline.
-            const std::array<std::array<double,2>,5> samples={{
-                {{0.,0.}},
-                {{0.,dynamics_.length_m*.5}},
-                {{0.,-dynamics_.length_m*.5}},
-                {{dynamics_.beam_m*.5,0.}},
-                {{-dynamics_.beam_m*.5,0.}}
-            }};
+            // Launch and motion use the SAME center/bow/stern/beam points:
+            // the boat can never pass a shoreline its launch ignored.
+            const auto samples=BoatHullSamplePoints(
+                east,north,new_heading,dynamics_);
             BoatEvent rejected=BoatEvent::None;
             for(const auto& point:samples){
-                const double se=east+cosine*point[0]+sine*point[1];
-                const double sn=north-sine*point[0]+cosine*point[1];
+                const double se=point[0],sn=point[1];
                 if(!check_water(se,sn)){
                     rejected=BoatEvent::StoppedLand;break;
                 }

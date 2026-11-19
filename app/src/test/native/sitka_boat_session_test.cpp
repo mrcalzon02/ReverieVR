@@ -125,6 +125,65 @@ int main(){
     assert(inputGate.Update(.1,0.,0.,true,500190.,6200400.,
         cache,generated,waters,ox,oz)==SkiffSessionEvent::Docked);
     assert(!inputGate.Active());
+    // A vessel with its center in water is not necessarily afloat. The
+    // real selected tier determines bow/stern and beam clearance on BOARD.
+    std::vector<Water> shortBerth=waters;
+    shortBerth[0].x=190.f;shortBerth[0].width=3.5f;
+    assert(SitkaNamedWorldWater(shortBerth,"test-harbor",ox,oz,
+                                 berth.east,berth.north)!=nullptr);
+    SitkaSkiffSession dinghyOnly(berth);
+    assert(dinghyOnly.SetHullTier(0u));
+    assert(dinghyOnly.Update(.1,0.,0.,true,berth.east,berth.north,
+        cache,generated,shortBerth,ox,oz)==SkiffSessionEvent::Launched);
+    SitkaSkiffSession skiffTooLong(berth);
+    assert(skiffTooLong.Update(.1,0.,0.,true,berth.east,berth.north,
+        cache,generated,shortBerth,ox,oz)==SkiffSessionEvent::Rejected);
+    assert(!skiffTooLong.Active());
+    std::vector<Water> narrowBeam=waters;
+    narrowBeam[0].x=190.f;narrowBeam[0].z=400.f;
+    narrowBeam[0].width=80.f;narrowBeam[0].depth=3.f;
+    SitkaSkiffSession beamSkiff(berth);
+    assert(beamSkiff.Update(.1,0.,0.,true,berth.east,berth.north,
+        cache,generated,narrowBeam,ox,oz)==SkiffSessionEvent::Launched);
+    SitkaSkiffSession beamTrawler(berth);
+    assert(beamTrawler.SetHullTier(3u));
+    assert(beamTrawler.Update(.1,0.,0.,true,berth.east,berth.north,
+        cache,generated,narrowBeam,ox,oz)==SkiffSessionEvent::Rejected);
+    assert(!beamTrawler.Active());
+
+    // Both surveyed tiles are resident: the center is safely deep in tile
+    // zero while the skiff's bow crosses a sourced shoal in tile one.
+    BathyStreamCache bowCache(dir);
+    auto shoalAhead=[&](const std::string& filename,std::string& bytes){
+        if(filename=="bathymetry-r00-c00.sitkab")bytes=Tile(0u,-10.f);
+        else if(filename=="bathymetry-r00-c01.sitkab")bytes=Tile(1u,-.4f);
+        else return false;
+        return true;
+    };
+    assert(bowCache.Pump(500199.,berth.north,4.,0.,shoalAhead));
+    assert(bowCache.Pump(500199.,berth.north,4.,0.,shoalAhead));
+    assert(bowCache.stats().loaded==2u);
+    MixedSeabed<BathyStreamCache> bowDepth(bowCache,generated);
+    const auto deepCenter=FindBoatDepth(bowDepth,500199.,berth.north,
+                                       waters[0].y,.35,true);
+    const auto shallowBow=FindBoatDepth(bowDepth,500203.,berth.north,
+                                       waters[0].y,.35,true);
+    assert(deepCenter.status==DepthStatus::Safe&&
+           deepCenter.under_keel_m>.5);
+    assert(shallowBow.under_keel_m<.5);
+    SkiffLaunch shallowBerth=berth;shallowBerth.east=500199.;
+    SitkaSkiffSession bowOverShoal(shallowBerth);
+    assert(bowOverShoal.Update(.1,0.,0.,true,shallowBerth.east,
+        shallowBerth.north,bowCache,generated,waters,ox,oz)
+        ==SkiffSessionEvent::Rejected);
+    assert(!bowOverShoal.Active());
+
+    // Transform identity is shared with moving-hull clearance.
+    const auto hull=BoatHullSamplePoints(
+        berth.east,berth.north,berth.heading,kVesselDynamics[1]);
+    assert(std::abs(hull[0][0]-berth.east)<1.e-9);
+    assert(std::abs(hull[1][0]-(berth.east+3.05))<1.e-8);
+    assert(std::abs(hull[3][1]-(berth.north-1.15))<1.e-8);
     SitkaSkiffSession session(berth);
     assert(!session.Active());
     assert(session.InstrumentLines()[0]=="DEPTH NO DATA");
