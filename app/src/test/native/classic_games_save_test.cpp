@@ -164,7 +164,7 @@ static void CheckerQuietFortyTurnSaveBoundary(){
     auto at79=Initial(3);
     auto &board=at79.board;
     board.cells.fill(0);
-    board.cells[41]=2;board.cells[14]=-2; // White and Black kings
+    board.cells[40]=2;board.cells[14]=-2; // White and Black kings
     board.side=-1;board.ply=79;board.checkerQuietPlies=79;
     board.checkerHistory.clear();
     board.checkerHistory.emplace(board.CurrentCheckerPosition(),1);
@@ -195,17 +195,16 @@ static void CheckerQuietFortyTurnSaveBoundary(){
           at80.board.ClaimCheckerDraw(),
           "all three states accept the same single legal draw claim");
     Check(at80.board.finished&&at80.board.winner==0&&
-          !at80.board.ClaimCheckerDraw()&&!at80.board.CheckerMove(41,32),
+          !at80.board.ClaimCheckerDraw()&&!at80.board.CheckerMove(40,33),
           "draw is terminal, neither duplicate claims nor further moves count");
     Check(Encode(3,at79)==Encode(3,resumed)&&
           Encode(3,at79)==Encode(3,at80),
           "claimed terminal state is byte-identical after reload");
 
     // A genuine man advancement resets an otherwise claimable clock.
-    auto man=RoundTrip(3,at79); // overwritten below by pre-claim fixture
-    man.board=Initial(3).board;
+    auto man=Initial(3);
     man.board.cells.fill(0);
-    man.board.cells[41]=2;man.board.cells[14]=-2;man.board.cells[1]=-1;
+    man.board.cells[40]=2;man.board.cells[14]=-2;man.board.cells[1]=-1;
     man.board.side=-1;man.board.ply=79;man.board.checkerQuietPlies=79;
     man.board.checkerHistory.clear();
     man.board.checkerHistory.emplace(man.board.CurrentCheckerPosition(),1);
@@ -219,7 +218,7 @@ static void CheckerQuietFortyTurnSaveBoundary(){
     Check(Encode(3,man)==Encode(3,manLoaded),
           "man-reset save and restored state agree");
     auto manAfter=RoundTrip(3,man);
-    Check(man.board.CheckerMove(41,32)&&manAfter.board.CheckerMove(41,32),
+    Check(man.board.CheckerMove(40,33)&&manAfter.board.CheckerMove(40,33),
           "next ordinary king turn remains playable following the reset");
     Check(man.board.checkerQuietPlies==1&&
           Encode(3,man)==Encode(3,manAfter),
@@ -228,7 +227,7 @@ static void CheckerQuietFortyTurnSaveBoundary(){
     // A mandatory real capture also resets the clock and round-trips.
     auto captured=Initial(3);
     captured.board.cells.fill(0);
-    captured.board.cells[41]=2;captured.board.cells[14]=-2;
+    captured.board.cells[40]=2;captured.board.cells[14]=-2;
     captured.board.cells[21]=1; // Black king 14 -> 28 jumps White man
     captured.board.side=-1;captured.board.ply=79;
     captured.board.checkerQuietPlies=79;
