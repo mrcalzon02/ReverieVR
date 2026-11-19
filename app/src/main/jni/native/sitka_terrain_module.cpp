@@ -26,6 +26,7 @@
 #include "sitka_boat_session.h"
 #include "sitka_helm.h"
 #include "sitka_harbor_shop.h"
+#include "sitka_input_focus.h"
 #include "sitka_boat_mesh.h"
 #include "sitka_boat_panels.h"
 #include "reverie_native_lato_text.h"
@@ -83,6 +84,7 @@ struct State {
     reverie::nativetext::LatoLayer harbor_text;
     std::vector<reverie::sitka::HarborShopSite> harbor_sites;
     reverie::sitka::HarborShopSession harbor_shop;
+    reverie::sitka::InputFocusGate input_focus;
     std::string harbor_last_text;
     int last_aimed_shop=-1;
     float shop_rx=1.f,shop_rz=0.f,shop_y=1.5f;
@@ -820,10 +822,15 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->seafloor_plan.Reset();
     }
 }
-void Resume(void*) {}
+void Resume(void* instance) {
+    auto* state=static_cast<State*>(instance);
+    if(state)state->input_focus.RequireNeutral();
+}
 void Pause(void* instance) {
     auto* state=static_cast<State*>(instance);
-    if(state&&!state->fishing.Flush(Store(state)))
+    if(!state)return;
+    state->input_focus.RequireNeutral();
+    if(!state->fishing.Flush(Store(state)))
         Log(state->host,"Sitka journal flush failed on pause");
 }
 int32_t PrepareExit(void* instance) {
@@ -833,6 +840,14 @@ int32_t PrepareExit(void* instance) {
 void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
+    // Quick Menu/control loss owns the entire guest: no shop transaction,
+    // boat launch/docking, cast, survey award, walking or simulation advance.
+    // Only after all buttons and analog directions return to neutral can a
+    // valid controller (or legacy base-only host) resume the saved session.
+    if(!state->input_focus.Allow(input)){
+        state->last_aimed_shop=-1;
+        return;
+    }
     // The default secondary action (Volume Up) plus rightward touch toggles
     // the land chart. A held chord can toggle only once.
     const bool dock_chord=state->geo_tiles&&!state->crescent_deck.indices.empty()&&

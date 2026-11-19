@@ -85,6 +85,8 @@ on:
       - 'app/src/test/native/sitka_lighting_test.cpp'
       - 'app/src/main/jni/native/sitka_fishing_*.h'
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
+      - 'app/src/main/jni/native/sitka_input_focus.h'
+      - 'app/src/test/native/sitka_input_focus_test.cpp'
       - 'app/src/main/jni/native/sitka_harbor_shop.h'
       - 'app/src/test/native/sitka_harbor_shop_test.cpp'
       - 'app/src/main/jni/native/reverie_vr_workshop.h'
@@ -231,7 +233,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_fishing_test sitka_fishing_session_test sitka_fishing_spots_test sitka_beach_discoveries_test sitka_intertidal_models_test sitka_character_progression_test sitka_city_discoveries_test sitka_helm_test sitka_harbor_shop_test; do
+          for test_name in sitka_input_focus_test sitka_fishing_test sitka_fishing_session_test sitka_fishing_spots_test sitka_beach_discoveries_test sitka_intertidal_models_test sitka_character_progression_test sitka_city_discoveries_test sitka_helm_test sitka_harbor_shop_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
                 -Iapp/src/main/jni/native \
