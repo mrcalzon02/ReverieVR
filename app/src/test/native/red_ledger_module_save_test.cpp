@@ -109,6 +109,111 @@ static void PlayPremiumPendingReceipt(const ReverieNativeHostV1 &host) {
                 state->market.stock_snack(0));
     ReleaseGlContext(state);Destroy(state);audit::saves.clear();
 }
+// Patron-facing no-stock boundary: finish the last branded drink/snack,
+// reject a second attempted patron sale without a prepared product, and
+// preserve the deliberately declined customer's cost across restart.
+static void PlayDepletedPatronOffer(const ReverieNativeHostV1 &host) {
+    audit::saves.clear();
+    auto *state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && OnGlContextCreated(state)==1 && !state->load_blocked,
+                 "depleted offer: real opening module");
+    const auto choose=[&](WorkTarget target) {
+        const auto bounds=std::find_if(std::begin(kWorkTargets),std::end(kWorkTargets),
+            [target](const TargetBounds& b){return b.target==target;});
+        audit::Check(bounds!=std::end(kWorkTargets),"depleted offer: choice exists");
+        auto input=audit::Input();
+        input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+        input.pointer_origin[0]=bounds->center[0];
+        input.pointer_origin[1]=bounds->center[1];
+        input.pointer_origin[2]=bounds->center[2]+0.45f;
+        input.pointer_direction[2]=-1.f;
+        Update(state,&input);
+        audit::Check(state->hovered_target==target,"depleted offer: tracked ray focuses choice");
+        input.primary_down=1u;Update(state,&input);
+        input.primary_down=0u;Update(state,&input);
+    };
+    const int opening_cash=state->simulation.cash_cents();
+    choose(WorkTarget::DrinkChoice);choose(WorkTarget::SnackChoice);
+    audit::Check(state->market.drink()==1 && state->market.snack()==0 &&
+                 state->market.stock_drink(1)==1 && state->market.stock_snack(0)==1,
+                 "depleted offer: exactly one unit left of both chosen products");
+    Service(state);
+    const int owed=state->simulation.pending_payment_cents();
+    audit::Check(owed>0 && state->simulation.cash_cents()==opening_cash &&
+                 state->market.stock_drink(1)==0 && state->market.stock_snack(0)==0 &&
+                 state->simulation.patrons_remaining()==4 && state->clientele.services()==1,
+                 "depleted offer: final stock sold once, payment still owed");
+    Tap(state,WorkTarget::Payment);
+    const int settled_cash=opening_cash+owed;
+    audit::Check(state->simulation.cash_cents()==settled_cash &&
+                 state->simulation.pending_payment_cents()==0 &&
+                 state->simulation.patrons_remaining()==3,
+                 "depleted offer: single completed charge");
+    // The physical product selectors must skip now-empty SKUs rather
+    // than manufacturing a second sale against an exhausted shelf.
+    choose(WorkTarget::DrinkChoice);choose(WorkTarget::SnackChoice);
+    audit::Check(state->market.drink()==4 && state->market.snack()==2 &&
+                 state->market.stock_drink(1)==0 && state->market.stock_snack(0)==0,
+                 "depleted offer: choices bypass the unavailable branded stock");
+    const int reputation=state->simulation.reputation();
+    const int pressure=state->simulation.pressure();
+    const int cleanliness=state->clientele.cleanliness();
+    const int service_count=state->clientele.services();
+    const auto saved_before_rejection=audit::saves.at(kSaveSlot);
+    const auto writes_before_rejection=audit::writes;
+    const auto patron=std::find_if(std::begin(kWorkTargets),std::end(kWorkTargets),
+        [](const TargetBounds& b){return b.target==WorkTarget::Patron;});
+    audit::Check(patron!=std::end(kWorkTargets),"depleted offer: physical patron exists");
+    auto invalid=audit::Pointer(patron->center[0],patron->center[1],patron->center[2]);
+    Update(state,&invalid);
+    audit::Check(state->hovered_target!=WorkTarget::Patron,
+                 "depleted offer: no patron sale target without a stocked prepared drink");
+    invalid.primary_down=1u;Update(state,&invalid);
+    invalid.primary_down=0u;Update(state,&invalid);
+    audit::Check(state->simulation.cash_cents()==settled_cash &&
+                 state->simulation.pending_payment_cents()==0 &&
+                 state->simulation.reputation()==reputation &&
+                 state->simulation.pressure()==pressure &&
+                 state->clientele.cleanliness()==cleanliness &&
+                 state->clientele.services()==service_count &&
+                 state->market.stock_drink(1)==0 && state->market.stock_snack(0)==0 &&
+                 state->simulation.patrons_remaining()==3 &&
+                 audit::saves.at(kSaveSlot)==saved_before_rejection &&
+                 audit::writes==writes_before_rejection,
+                 "depleted offer: rejected physical sale leaves inventory, cash, conditions and checkpoint untouched");
+    // A deliberate turn-away is an actual lost customer: unlike an invalid
+    // click it may reduce reputation and increase pressure, but not cleanliness.
+    Tap(state,WorkTarget::ExitDoor);
+    audit::Check(state->simulation.reputation()==reputation-1 &&
+                 state->simulation.pressure()==pressure+1 &&
+                 state->simulation.patrons_remaining()==2 &&
+                 state->simulation.cash_cents()==settled_cash &&
+                 state->clientele.cleanliness()==cleanliness &&
+                 state->clientele.services()==service_count &&
+                 state->simulation.pending_payment_cents()==0,
+                 "depleted offer: declined patron has only documented lost-customer effects");
+    const auto declined_checkpoint=audit::saves.at(kSaveSlot);
+    audit::Check(PrepareExit(state)==1,"depleted offer: saved decline may exit");
+    ReleaseGlContext(state);Destroy(state);
+    state=static_cast<ModuleState*>(Create(&host));
+    audit::Check(state && OnGlContextCreated(state)==1 && !state->load_blocked &&
+                 state->simulation.cash_cents()==settled_cash &&
+                 state->simulation.pending_payment_cents()==0 &&
+                 state->simulation.patrons_remaining()==2 &&
+                 state->simulation.reputation()==reputation-1 &&
+                 state->simulation.pressure()==pressure+1 &&
+                 state->clientele.cleanliness()==cleanliness &&
+                 state->clientele.services()==service_count &&
+                 state->market.stock_drink(1)==0 && state->market.stock_snack(0)==0 &&
+                 audit::saves.at(kSaveSlot)==declined_checkpoint,
+                 "depleted offer: restart retains one sale, one decline and exhausted inventory");
+    audit::Check(!IsTargetAvailable(state,WorkTarget::Payment),
+                 "depleted offer: restart cannot collect a settled receipt twice");
+    std::printf("PASS_RED_DEPLETED_PATRON cash=%d stock1=0 snack0=0 served=%d remaining=2\n",
+                state->simulation.cash_cents(),state->clientele.services());
+    ReleaseGlContext(state);Destroy(state);audit::saves.clear();
+}
+
 static void PlayOpeningShift(const ReverieNativeHostV1 &host){
     auto *state=static_cast<ModuleState*>(Create(&host));
     audit::Check(state&&OnGlContextCreated(state)==1,"fresh opening shift");
@@ -269,6 +374,7 @@ int main(int argc,char** argv){
     audit::Check(argc==2,"capture directory argument");audit::output=argv[1];audit::GL context;auto host=audit::Host();
     ReadPreviousBooks(host);
     PlayPremiumPendingReceipt(host);
+    PlayDepletedPatronOffer(host);
     PlayOpeningShift(host);
     PlayDistrictAccount(host);
     auto* state=static_cast<ModuleState*>(Create(&host));audit::Check(state&&!state->load_blocked,"fresh game");
