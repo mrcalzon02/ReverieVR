@@ -70,6 +70,10 @@ struct DayLedger {
 
 class Simulation {
 public:
+    // Both the checked current checkpoint and the older day ledger reject
+    // stock counts above this limit. Keep purchasing below it, not merely
+    // deserialization, so an ordinary legitimate sale cannot poison a save.
+    static constexpr int32_t kMaxStockUnits = 100000;
     static constexpr int32_t kDailyDebtServiceCents = 150;
     static constexpr int32_t kProtectionCostCents = 600;
     static constexpr int32_t kInspectionFineCents = 450;

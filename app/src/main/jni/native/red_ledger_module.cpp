@@ -1825,7 +1825,17 @@ void RefreshStatusBoard(ModuleState *state) {
                 trade::kSnackCatalog[sku-trade::kDrinks].units));
         std::snprintf(rows[2],sizeof(rows[2]),"ON HAND: %d",stock);
         std::snprintf(rows[3],sizeof(rows[3]),"CASH: %d",sim.cash_cents());
-        std::snprintf(rows[4],sizeof(rows[4]),"SELECT CARD THEN BUY");
+        const int price=sku==0?900:market.offer_cost();
+        const bool stock_room=sku==0?
+            sim.beer_units()<=Simulation::kMaxStockUnits-8:
+            market.CanAcceptStock();
+        if(!stock_room)
+            std::snprintf(rows[4],sizeof(rows[4]),"STOCK LIMIT  /  SELL BEFORE BUYING");
+        else if(sim.cash_cents()<price)
+            std::snprintf(rows[4],sizeof(rows[4]),"NEED %d MORE CENTS",
+                          price-sim.cash_cents());
+        else
+            std::snprintf(rows[4],sizeof(rows[4]),"SELECT CARD THEN BUY");
         if(sim.current_event()==EventType::SupplyInterruption)
             std::snprintf(rows[5],sizeof(rows[5]),"SUPPLIER BLOCKED TODAY");
         else

@@ -484,9 +484,9 @@ bool Simulation::Deserialize(
             0,
             1000000000
         )
-        || !InRange(beer, 0, 100000)
-        || !InRange(clean, 0, 100000)
-        || !InRange(dirty, 0, 100000)
+        || !InRange(beer, 0, kMaxStockUnits)
+        || !InRange(clean, 0, kMaxStockUnits)
+        || !InRange(dirty, 0, kMaxStockUnits)
         || !InRange(
             reputation,
             -100000,
@@ -922,8 +922,13 @@ bool Simulation::BuySupply(
         FindOffer(item);
 
     if (offer == nullptr
-        || cash_cents_
-            < offer->cost_cents) {
+        || cash_cents_ < offer->cost_cents
+        || offer->beer_units < 0 || offer->clean_cups < 0
+        || beer_units_ > kMaxStockUnits - offer->beer_units
+        || clean_cups_ > kMaxStockUnits - offer->clean_cups
+        // The day-ledger's supply spending is also checked on load.
+        // Reject overflow before debiting a legitimate player's cash.
+        || supply_spend_cents_ > 1000000000 - offer->cost_cents) {
         return false;
     }
 

@@ -1,5 +1,6 @@
 #include "red_ledger_simulation.h"
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -46,7 +47,68 @@ void ServeAndCollect(Simulation *simulation) {
 
 }  // namespace
 
+// A checkpoint near the legal inventory ceiling is still a valid game, not
+// a corrupted save. Use the production codec to seed those rare long-run
+// levels; then exercise the real purchase and round-trip boundaries.
+static Simulation StockLimitFixture(int32_t beer,int32_t cups,int32_t spent=0) {
+    Simulation base;
+    std::array<uint8_t,Simulation::kSerializedSize> bytes{};
+    size_t count=0;
+    assert(base.Serialize(bytes.data(),bytes.size(),&count));
+    assert(count==bytes.size());
+    const auto write=[&bytes](size_t offset,uint32_t value) {
+        for(size_t b=0;b<4u;++b)
+            bytes[offset+b]=static_cast<uint8_t>(value>>(b*8u));
+    };
+    write(20u,static_cast<uint32_t>(beer));
+    write(24u,static_cast<uint32_t>(cups));
+    write(60u,static_cast<uint32_t>(spent));
+    Simulation loaded;
+    assert(loaded.Deserialize(bytes.data(),bytes.size()));
+    return loaded;
+}
+static void RoundTripStock(const Simulation& original) {
+    std::array<uint8_t,Simulation::kSerializedSize> bytes{};
+    size_t size=0;
+    assert(original.Serialize(bytes.data(),bytes.size(),&size));
+    Simulation restored;
+    assert(restored.Deserialize(bytes.data(),size));
+    assert(restored.cash_cents()==original.cash_cents());
+    assert(restored.beer_units()==original.beer_units());
+    assert(restored.clean_cups()==original.clean_cups());
+}
 int main() {
+    static_assert(Simulation::kMaxStockUnits==100000,
+                  "Purchased inventory must fit the same checked save bounds");
+    Simulation nearBeer=StockLimitFixture(99993,3);
+    assert(!nearBeer.BuySupply(SupplierItem::BeerCrate));
+    assert(nearBeer.beer_units()==99993&&nearBeer.cash_cents()==2200);
+    RoundTripStock(nearBeer);
+    Simulation exactBeer=StockLimitFixture(99992,3);
+    assert(exactBeer.BuySupply(SupplierItem::BeerCrate));
+    assert(exactBeer.beer_units()==Simulation::kMaxStockUnits);
+    assert(exactBeer.cash_cents()==1300);
+    assert(!exactBeer.BuySupply(SupplierItem::BeerCrate));
+    RoundTripStock(exactBeer);
+    Simulation nearCups=StockLimitFixture(6,99997);
+    assert(!nearCups.BuySupply(SupplierItem::CupSet));
+    assert(nearCups.clean_cups()==99997&&nearCups.cash_cents()==2200);
+    RoundTripStock(nearCups);
+    Simulation exactCups=StockLimitFixture(6,99996);
+    assert(exactCups.BuySupply(SupplierItem::CupSet));
+    assert(exactCups.clean_cups()==Simulation::kMaxStockUnits);
+    assert(exactCups.cash_cents()==1880);
+    assert(!exactCups.BuySupply(SupplierItem::CupSet));
+    RoundTripStock(exactCups);
+    // The checked daily supply ledger has the same billion-cent ceiling.
+    Simulation spentCap=StockLimitFixture(6,3,999999700);
+    assert(!spentCap.BuySupply(SupplierItem::BeerCrate));
+    assert(!spentCap.BuySupply(SupplierItem::CupSet));
+    assert(spentCap.cash_cents()==2200&&spentCap.beer_units()==6&&
+           spentCap.clean_cups()==3);
+    RoundTripStock(spentCap);
+    std::cout<<"PASS Red Ledger house-stock and supply-ledger purchase caps remain reloadable\n";
+
     Simulation sim;
 
     assert(sim.day() == 1);
