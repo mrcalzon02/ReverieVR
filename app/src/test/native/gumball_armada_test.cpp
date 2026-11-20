@@ -190,6 +190,7 @@ int main(){
     const ShipVolumePoint escortCenter=EnemyWorldPoint(escortTarget);
     Shot escort{};
     escort.active=true;escort.ally=true;escort.damage=2;
+    escort.x=escortTarget.x;escort.y=escortTarget.y; // old XY rectangle would hit
     const ShipVolumePoint escortFarA{escortCenter.x,escortCenter.y-.25f,escortCenter.z+.80f};
     const ShipVolumePoint escortFarB{escortCenter.x,escortCenter.y+.25f,escortCenter.z+.80f};
     const ShipVolumePoint escortNearA{escortCenter.x,escortCenter.y-.25f,escortCenter.z-.10f};
