@@ -219,7 +219,8 @@ int main(int argc,char** argv){
     const auto valid=audit::saves;Destroy(state);
     audit::saves["campaign.v1"][26]^=1u;const auto damaged=audit::saves;const auto writes=audit::writes;
     state=static_cast<Module*>(Create(&host));audit::Check(state->loadBlocked&&PrepareExit(state)==0,"corrupt full currency state blocked");
-    for(int i=0;i<30;++i)Update(state,&input);Pause(state);
+    for(int i=0;i<30;++i)Update(state,&input);
+    Pause(state);
     audit::Check(audit::saves==damaged&&audit::writes==writes,"corrupt data not silently replaced");
     audit::Check(GlStart(state)==1,"Gumball recovery screen GL");audit::Capture(Render,state,"gumball-load-recovery");
     audit::saves=valid;Resume(state);audit::Check(!state->loadBlocked&&state->sim.cash()==30,"recovered bytes loaded on Resume");
