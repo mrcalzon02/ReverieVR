@@ -1115,6 +1115,17 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             panels.Add(reverie::sitka::BoatRodHint(
                            rod.status,state->fishing.fishing,nearby_rod_site),
                        0.f,1.63f,.498f,1.15f,.011f,.94f,.94f,.72f);
+            // A second compact line helps the player return to the only
+            // authored berth. Hide dock instructions while a fish is active.
+            if(state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready){
+                const std::string berth_cue=reverie::sitka::BoatBerthCue(
+                    state->skiff->Pose(),state->skiff->LaunchPoint(),
+                    state->waters,state->terrain.origin_east,
+                    state->terrain.origin_north);
+                if(!berth_cue.empty())
+                    panels.Add(berth_cue,0.f,1.57f,.498f,
+                               1.15f,.010f,.82f,.90f,1.f);
+            }
             const std::string signature=panels.Signature();
             if(signature!=state->last_boat_text){
                 state->boat_text.Clear();

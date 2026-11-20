@@ -36,7 +36,6 @@ inline std::string BoatRodSiteCue(const BoatPose& boat,
     const std::vector<FishingSpot>& spots,const std::vector<Water>& waters,
     double terrain_east,double terrain_north) {
     if(!boat.launched||!std::isfinite(boat.heading)||
-       std::abs(boat.heading)>6.283185307179586||
        !std::isfinite(terrain_east)||!std::isfinite(terrain_north))
         return {};
     const double east=boat.east-terrain_east,north=boat.north-terrain_north;
@@ -62,10 +61,13 @@ inline std::string BoatRodSiteCue(const BoatPose& boat,
     }
     if(!found)return {};
     if(best_dist2<=best_radius*best_radius)return "ROD SITE HERE";
-    const double forward=std::sin(boat.heading)*best_de+
-                         std::cos(boat.heading)*best_dn;
-    const double right=std::cos(boat.heading)*best_de-
-                       std::sin(boat.heading)*best_dn;
+    // The 30 Hz steering simulation accumulates continuous yaw. A player
+    // can turn through many revolutions without losing the HUD direction.
+    const double heading=std::remainder(boat.heading,6.28318530717958647692);
+    const double forward=std::sin(heading)*best_de+
+                         std::cos(heading)*best_dn;
+    const double right=std::cos(heading)*best_de-
+                       std::sin(heading)*best_dn;
     const char* direction=std::abs(forward)>=std::abs(right)?
         (forward>=0.?"AHEAD":"ASTERN"):
         (right>=0.?"STARBOARD":"PORT");

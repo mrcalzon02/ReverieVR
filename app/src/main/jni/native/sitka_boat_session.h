@@ -1,6 +1,6 @@
 #ifndef REVERIE_SITKA_BOAT_SESSION_H
 #define REVERIE_SITKA_BOAT_SESSION_H
-// Source-only Sitka skiff mode: projected geographic authority, sampled
+// Integrated Sitka skiff mode: projected geographic authority, sampled
 // surveyed/procedural bathymetry and deterministic 30 Hz boat motion.
 // No user GPS, physical sonar, inferred boat start or per-eye mutation.
 #include "sitka_boat_navigation.h"
@@ -102,6 +102,43 @@ inline const Water* SitkaNamedWorldWater(const std::vector<Water>& waters,
                                            static_cast<float>(north)))
             return &water;
     return nullptr;
+}
+// Read-only return-to-berth prompt for the *existing* authored skiff
+// launch. Coordinates are game-projected metres; it is a straight-line
+// orientation cue, never a navigable route, GPS fix, or marine advice.
+// A missing/different named water footprint fails closed.
+inline std::string BoatBerthCue(const BoatPose& boat,const SkiffLaunch& berth,
+    const std::vector<Water>& waters,
+    double terrain_east,double terrain_north) {
+    if(!boat.launched||!std::isfinite(boat.east)||
+       !std::isfinite(boat.north)||!std::isfinite(boat.heading)||
+       !std::isfinite(boat.speed_mps)||boat.speed_mps<0.||
+       !std::isfinite(berth.east)||!std::isfinite(berth.north)||
+       !std::isfinite(berth.radius_m)||berth.radius_m<=0.||
+       !ValidSkiffWaterId(berth.water_id)||
+       !std::isfinite(terrain_east)||!std::isfinite(terrain_north))
+        return {};
+    if(!SitkaNamedWorldWater(waters,berth.water_id,terrain_east,
+            terrain_north,boat.east,boat.north)||
+       !SitkaNamedWorldWater(waters,berth.water_id,terrain_east,
+            terrain_north,berth.east,berth.north))
+        return {};
+    const double de=berth.east-boat.east,dn=berth.north-boat.north;
+    const double distance=std::hypot(de,dn);
+    if(!std::isfinite(distance)||distance>40000.)return {};
+    if(distance<=berth.radius_m)
+        return boat.speed_mps>.4?"BERTH HERE / SLOW DOWN":
+            "BERTH HERE / SELECT+VOL UP";
+    // Continuous rudder rotation is legal. Reducing the heading for
+    // display avoids disappearing cues beyond a full 360-degree turn.
+    const double heading=std::remainder(boat.heading,6.28318530717958647692);
+    const double forward=std::sin(heading)*de+std::cos(heading)*dn;
+    const double right=std::cos(heading)*de-std::sin(heading)*dn;
+    const char* direction=std::abs(forward)>=std::abs(right)?
+        (forward>=0.?"AHEAD":"ASTERN"):
+        (right>=0.?"STARBOARD":"PORT");
+    return "BERTH "+std::to_string(
+        static_cast<unsigned>(std::ceil(distance)))+"M "+direction;
 }
 enum class SkiffSessionEvent : uint8_t {
     None, Launched, Docked, Rejected, Advanced, BlockedLand,

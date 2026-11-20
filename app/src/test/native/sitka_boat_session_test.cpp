@@ -73,6 +73,10 @@ static void TestBoatRodSiteCues() {
     assert(cue()=="ROD SITE 32M AHEAD");
     boat.heading=3.141592653589793;
     assert(cue()=="ROD SITE 32M PORT");
+    boat.heading=1.5707963267948966+6.283185307179586;
+    assert(cue()=="ROD SITE 32M AHEAD"); // beyond one steering revolution
+    boat.heading=1.5707963267948966-12.566370614359172;
+    assert(cue()=="ROD SITE 32M AHEAD"); // negative multi-turn heading
     boat.heading=0.;
     boat.east+=30.;boat.north+=10.;
     assert(cue()=="ROD SITE HERE");
@@ -103,8 +107,51 @@ static void TestBoatRodSiteCues() {
     assert(cue().empty());
     std::cout<<"PASS Sitka boat rod site cue, nearest same-water authored site, bow-relative directions, idle/depth gates and invalid-site refusal\\n";
 }
+static void TestBoatBerthCue() {
+    SkiffLaunch berth{};
+    berth.datum_id=BathyDatumId("NAVD88");
+    berth.water_id="harbor";berth.east=500000.;berth.north=6200000.;
+    berth.radius_m=4.;
+    Water harbor{};
+    harbor.id="harbor";harbor.shape="SQUARE";
+    harbor.width=200.f;harbor.depth=200.f;
+    const std::vector<Water> waters{harbor};
+    BoatPose boat{};
+    boat.launched=true;boat.east=berth.east+30.;
+    boat.north=berth.north+10.;boat.heading=0.;
+    const auto cue=[&]{
+        return BoatBerthCue(boat,berth,waters,500000.,6200000.);
+    };
+    assert(cue()=="BERTH 32M PORT");
+    boat.heading=1.5707963267948966;
+    assert(cue()=="BERTH 32M ASTERN");
+    boat.heading=3.141592653589793;
+    assert(cue()=="BERTH 32M STARBOARD");
+    boat.heading=1.5707963267948966+12.566370614359172;
+    assert(cue()=="BERTH 32M ASTERN");
+    boat.east=berth.east+3.;boat.north=berth.north;
+    boat.speed_mps=.401;
+    assert(cue()=="BERTH HERE / SLOW DOWN");
+    boat.speed_mps=.4;
+    assert(cue()=="BERTH HERE / SELECT+VOL UP");
+    boat.speed_mps=0.;
+    assert(cue()=="BERTH HERE / SELECT+VOL UP");
+    boat.east=berth.east+201.;
+    assert(cue().empty()); // cannot direct across a missing water footprint
+    boat.east=berth.east;
+    Water other=harbor;other.id="other";
+    assert(BoatBerthCue(boat,berth,{other},500000.,6200000.).empty());
+    boat.heading=std::numeric_limits<double>::quiet_NaN();
+    assert(cue().empty());
+    boat.heading=0.;boat.speed_mps=std::numeric_limits<double>::infinity();
+    assert(cue().empty());
+    boat.speed_mps=0.;boat.launched=false;
+    assert(cue().empty());
+    std::cout<<"PASS Sitka authored berth HUD, directional return, multi-turn yaw, docking speed chord, other-water and invalid input refusal\n";
+}
 int main(){
     TestBoatRodSiteCues();
+    TestBoatBerthCue();
     // Actual native touch/joystick sign, idle deadzone and release.
     assert(SkiffForwardThrottle(-1.)==1.);
     assert(SkiffForwardThrottle(1.)==0.);
@@ -268,6 +315,8 @@ int main(){
     assert(session.Update(.1,0.,0.,true,500190.,6200400.,
         cache,generated,waters,ox,oz)==SkiffSessionEvent::Launched);
     assert(session.Active());
+    assert(BoatBerthCue(session.Pose(),session.LaunchPoint(),waters,
+                       ox,oz)=="BERTH HERE / SELECT+VOL UP");
     assert(session.InstrumentLines()[1].find("PROCEDURAL")!=std::string::npos);
     assert(session.InstrumentLines()[2]=="SIMULATED - NOT FOR NAVIGATION");
     assert(std::abs(session.Pose().east-500190.)<1e-8);

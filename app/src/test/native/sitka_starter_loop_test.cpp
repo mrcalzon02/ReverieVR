@@ -351,6 +351,10 @@ int main(){
     assert(range->fishing.fishing.phase==FishingPhase::Ready);
     player.primary_down=1u;Update(range,&player);
     assert(range->skiff->Active());
+    // The actual hosted Sitka module must send the berth cue to its
+    // existing Lato panel, not merely expose a standalone CPU helper.
+    assert(range->last_boat_text.find("BERTH HERE / SELECT+VOL UP")!=
+           std::string::npos);
     player.primary_down=player.secondary_down=0u;player.move_y=-1.f;
     // Trackpad throttle drag and even a depressed Select during that drag
     // belong to the skiff; neither is a fresh fishing cast.

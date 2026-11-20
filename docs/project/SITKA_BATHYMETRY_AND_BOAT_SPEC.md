@@ -25,6 +25,33 @@ stationary-hull gating. Android emulator and physical S9 acceptance are
 separate from native host test results. Earlier source-only snapshots below
 are historical and do not override the current 17-game launcher registration.
 
+## Return-to-berth assist and steering wrap — 2026-11-20
+
+The existing unified Sitka module now adds a **BERTH distance and
+bow-relative AHEAD/ASTERN/PORT/STARBOARD** prompt to the same physical
+Lato boat-helm HUD while rod fishing is inactive. The berth is exclusively
+the verified, author-provided skiff launch point; the cue requires the
+current vessel and authored berth to lie inside the same named game-water
+footprint. A ship within docking radius sees **BERTH HERE / SLOW DOWN**
+above 0.4 m/s, or **BERTH HERE / SELECT+VOL UP** at or below 0.4 m/s,
+matching the existing edge-triggered docking chord. Missing water
+footprints produce no fabricated route.
+
+Continuous helm steering can exceed 360 degrees: previously the nearby
+rod-site direction cue silently disappeared beyond one revolution.
+Both cues now reduce finite yaw by one full turn only for their display
+calculations; authoritative boat heading, fixed 30 Hz physics, rudder,
+collision, source depth, saves and chart data remain unchanged.
+These are *video-game straight-line orientation cues*, emphatically
+**not navigable routes or real-world boating directions**.
+
+Host tests cover every direction, repeated steering revolutions,
+actual skiff launch integration, invalid/other-water failure,
+dock-speed threshold, and native Lato HUD wiring. CI and installed
+Android tests are necessary for implementation acceptance; physical
+Galaxy S9 binocular readability/controls and sustained framerate
+remain separate evidence gates.
+
 ## 1. Data authority for a multi-mile world
 
 - **Land:** USGS Alaska IfSAR / 3DEP bare-earth 5 m DEM for broad coverage, with the higher-resolution Alaska DGGS/NOAA 2018 Sitka DTM where its real license and tile footprint overlap the selected world cells. Do not use the vegetation/building DSM as the bare-earth terrain.
