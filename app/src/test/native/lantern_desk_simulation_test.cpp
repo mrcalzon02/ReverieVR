@@ -1,4 +1,5 @@
 #include "lantern_desk_simulation.h"
+#include "recon_projects_save.h"
 #include <cassert>
 #include <cstdint>
 #include <iostream>
@@ -82,7 +83,78 @@ static void TestFollowUpPhotoOwnershipAndOneTimeReport() {
     std::cout << "PASS: Lantern Desk sector-scoped follow-up photos and one-time report accounting\\n";
 }
 
+// A rejected report is not a filed report: the original photographic
+// evidence and its uncredited assessment must survive a checked host reload.
+static void TestRejectedReportCheckpointReload() {
+    using reverie::recon::Checkpoint;
+    using reverie::recon::LanternState;
+    LanternState uninterrupted;
+    auto& mission = uninterrupted.simulation;
+    assert(mission.AssignRecon(Sector::RailApproach));
+    assert(mission.CompleteRecon());
+    const Photograph original = *mission.photo();
+    assert(original.sector == Sector::RailApproach && original.clarity > 0);
+
+    Checkpoint::Bytes banked{};
+    assert(Checkpoint::Encode(uninterrupted, &banked));
+    ReportResult refused{901, 902};
+    assert(!mission.SubmitReport(static_cast<Assessment>(255), &refused));
+    assert(!mission.SubmitReport(Assessment::VehicleColumn, nullptr));
+    assert(refused.credibility_delta == 901 && refused.operational_effect == 902);
+    assert(mission.phase() == Phase::PhotoReady);
+    assert(mission.credibility() == 0 && mission.operational_effect() == 0);
+    assert(mission.photo() && mission.photo()->sector == original.sector);
+    assert(mission.photo()->clarity == original.clarity);
+    assert(mission.photo()->pixels == original.pixels);
+    Checkpoint::Bytes after_refusal{};
+    assert(Checkpoint::Encode(uninterrupted, &after_refusal));
+    assert(after_refusal == banked);
+
+    LanternState restored;
+    assert(Checkpoint::Decode(&restored, banked.data(), banked.size()));
+    Checkpoint::Bytes restored_bytes{};
+    assert(Checkpoint::Encode(restored, &restored_bytes));
+    assert(restored_bytes == banked);
+    const Photograph* pending = restored.simulation.evidence_photo();
+    assert(pending && pending->sector == original.sector);
+    assert(pending->clarity == original.clarity && pending->pixels == original.pixels);
+    assert(restored.simulation.phase() == Phase::PhotoReady);
+    assert(restored.simulation.credibility() == 0);
+    assert(restored.simulation.operational_effect() == 0);
+    assert(!restored.simulation.SubmitReport(static_cast<Assessment>(255), &refused));
+    assert(refused.credibility_delta == 901 && refused.operational_effect == 902);
+    assert(Checkpoint::Encode(restored, &restored_bytes) && restored_bytes == banked);
+
+    ReportResult uninterrupted_result{}, restored_result{};
+    assert(mission.SubmitReport(Assessment::VehicleColumn, &uninterrupted_result));
+    assert(restored.simulation.SubmitReport(Assessment::VehicleColumn, &restored_result));
+    assert(uninterrupted_result.credibility_delta == 3 &&
+           uninterrupted_result.operational_effect == 2);
+    assert(restored_result.credibility_delta == uninterrupted_result.credibility_delta &&
+           restored_result.operational_effect == uninterrupted_result.operational_effect);
+    assert(mission.credibility() == 3 && mission.operational_effect() == 2);
+    assert(restored.simulation.credibility() == 3 &&
+           restored.simulation.operational_effect() == 2);
+    assert(mission.evidence_photo() && mission.evidence_photo()->pixels == original.pixels);
+    assert(restored.simulation.evidence_photo() &&
+           restored.simulation.evidence_photo()->pixels == original.pixels);
+    assert(!restored.simulation.SubmitReport(Assessment::VehicleColumn, &refused));
+    assert(refused.credibility_delta == 901 && refused.operational_effect == 902);
+    Checkpoint::Bytes filed_original{}, filed_restored{};
+    assert(Checkpoint::Encode(uninterrupted, &filed_original));
+    assert(Checkpoint::Encode(restored, &filed_restored));
+    assert(filed_original == filed_restored);
+    assert(mission.NextSortie() && restored.simulation.NextSortie());
+    assert(!mission.NextSortie() && !restored.simulation.NextSortie());
+    assert(!mission.evidence_photo() && !restored.simulation.evidence_photo());
+    assert(Checkpoint::Encode(uninterrupted, &filed_original));
+    assert(Checkpoint::Encode(restored, &filed_restored));
+    assert(filed_original == filed_restored);
+    std::cout << "PASS Lantern Desk rejected report checked reload retains unfiled evidence and one valid credit\n";
+}
+
 int main() {
+    TestRejectedReportCheckpointReload();
     TestFollowUpPhotoOwnershipAndOneTimeReport();
     Simulation rail;
     assert(rail.phase() == Phase::Briefing && rail.photo() == nullptr);
