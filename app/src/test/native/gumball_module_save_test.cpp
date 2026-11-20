@@ -195,6 +195,12 @@ int main(int argc,char** argv){
     audit::Check(!restored->resumeFlight&&StateBytes(restored)==before,"resume edge does not shoot or advance saved state");
     audit::Check(GlStart(restored)==1,"restored flight actual GL");
     audit::Check(frame==audit::Capture(Render,restored,"gumball-flight-after-recreate"),"full flight both-eye frames exactly restored");
+    // The original instance was Pause-gated; the fresh restored one used
+    // the deliberate continuation flow. Rearm the original with an idle
+    // released frame before comparing identical active simulation ticks.
+    auto rearmOriginal=LegacyInput();
+    Update(state,&rearmOriginal);
+    audit::Check(StateBytes(state)==before,"neutral release cannot advance paused original");
     for(int i=0;i<120&&state->sim.phase()==Phase::Flight;++i){
         input.move_x=i%31<16?.6f:-.6f;input.primary_down=i%9!=0;
         Update(state,&input);Update(restored,&input);
