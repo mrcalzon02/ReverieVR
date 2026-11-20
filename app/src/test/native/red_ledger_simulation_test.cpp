@@ -50,7 +50,8 @@ void ServeAndCollect(Simulation *simulation) {
 // A checkpoint near the legal inventory ceiling is still a valid game, not
 // a corrupted save. Use the production codec to seed those rare long-run
 // levels; then exercise the real purchase and round-trip boundaries.
-static Simulation StockLimitFixture(int32_t beer,int32_t cups,int32_t spent=0) {
+static Simulation StockLimitFixture(int32_t beer,int32_t cups,int32_t spent=0,
+                                   int32_t dirty=0,int32_t held=0) {
     Simulation base;
     std::array<uint8_t,Simulation::kSerializedSize> bytes{};
     size_t count=0;
@@ -62,7 +63,9 @@ static Simulation StockLimitFixture(int32_t beer,int32_t cups,int32_t spent=0) {
     };
     write(20u,static_cast<uint32_t>(beer));
     write(24u,static_cast<uint32_t>(cups));
+    write(28u,static_cast<uint32_t>(dirty));
     write(60u,static_cast<uint32_t>(spent));
+    write(92u,static_cast<uint32_t>(held));
     Simulation loaded;
     assert(loaded.Deserialize(bytes.data(),bytes.size()));
     return loaded;
@@ -76,6 +79,8 @@ static void RoundTripStock(const Simulation& original) {
     assert(restored.cash_cents()==original.cash_cents());
     assert(restored.beer_units()==original.beer_units());
     assert(restored.clean_cups()==original.clean_cups());
+    assert(restored.dirty_cups()==original.dirty_cups());
+    assert(restored.work_drink_state()==original.work_drink_state());
 }
 int main() {
     static_assert(Simulation::kMaxStockUnits==100000,
@@ -100,6 +105,35 @@ int main() {
     assert(exactCups.cash_cents()==1880);
     assert(!exactCups.BuySupply(SupplierItem::CupSet));
     RoundTripStock(exactCups);
+    // All physical cups count, whether clean, dirty or temporarily held.
+    Simulation combinedOverflow=StockLimitFixture(6,99996,0,1);
+    assert(!combinedOverflow.BuySupply(SupplierItem::CupSet));
+    assert(combinedOverflow.clean_cups()==99996&&combinedOverflow.dirty_cups()==1);
+    RoundTripStock(combinedOverflow);
+    Simulation combinedExact=StockLimitFixture(6,99994,0,2);
+    assert(combinedExact.BuySupply(SupplierItem::CupSet));
+    assert(combinedExact.clean_cups()==99998&&combinedExact.dirty_cups()==2);
+    assert(combinedExact.WashOneCup()&&combinedExact.clean_cups()==99999);
+    assert(combinedExact.WashOneCup()&&combinedExact.clean_cups()==100000);
+    assert(!combinedExact.BuySupply(SupplierItem::CupSet));
+    RoundTripStock(combinedExact);
+    // Valid high-stock legacy saves must remain readable; unsafe transfer
+    // attempts must leave the saved fields and held work state untouched.
+    Simulation olderFullClean=StockLimitFixture(6,100000,0,1);
+    assert(!olderFullClean.WashOneCup());
+    RoundTripStock(olderFullClean);
+    Simulation olderHeld=StockLimitFixture(6,100000,0,0,
+                                          static_cast<int32_t>(DrinkState::EmptyCup));
+    assert(!olderHeld.ReturnHeldCup());
+    assert(olderHeld.work_drink_state()==DrinkState::EmptyCup);
+    RoundTripStock(olderHeld);
+    Simulation olderDirty=StockLimitFixture(6,3,0,100000,
+                                           static_cast<int32_t>(DrinkState::FilledCup));
+    assert(!olderDirty.ServeHeldCup());
+    assert(olderDirty.pending_payment_cents()==0);
+    assert(olderDirty.WashOneCup());
+    assert(olderDirty.ServeHeldCup());
+    RoundTripStock(olderDirty);
     // The checked daily supply ledger has the same billion-cent ceiling.
     Simulation spentCap=StockLimitFixture(6,3,999999700);
     assert(!spentCap.BuySupply(SupplierItem::BeerCrate));

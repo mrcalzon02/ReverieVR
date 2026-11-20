@@ -770,7 +770,8 @@ bool Simulation::ReturnHeldCup() {
     if (!day_open_
         || work_drink_state_
             != DrinkState::EmptyCup
-        || pending_payment_cents_ != 0) {
+        || pending_payment_cents_ != 0
+        || clean_cups_ >= kMaxStockUnits) {
         return false;
     }
 
@@ -845,7 +846,8 @@ bool Simulation::ServeHeldCup() {
         || patron == nullptr
         || work_drink_state_
             != DrinkState::FilledCup
-        || pending_payment_cents_ != 0) {
+        || pending_payment_cents_ != 0
+        || dirty_cups_ >= kMaxStockUnits) {
         return false;
     }
 
@@ -900,7 +902,8 @@ bool Simulation::TurnAwayCurrentPatron() {
 
 bool Simulation::WashOneCup() {
     if (!day_open_
-        || dirty_cups_ <= 0) {
+        || dirty_cups_ <= 0
+        || clean_cups_ >= kMaxStockUnits) {
         return false;
     }
 
@@ -920,12 +923,17 @@ bool Simulation::BuySupply(
 
     const SupplierOffer *offer =
         FindOffer(item);
+    // Cups are clean, dirty, or in hand. Existing saves check each count;
+    // prevent new cup sets from overfilling their combined physical pool.
+    const int64_t all_cups=static_cast<int64_t>(clean_cups_)+dirty_cups_
+        +(work_drink_state_==DrinkState::None?0:1);
 
     if (offer == nullptr
         || cash_cents_ < offer->cost_cents
         || offer->beer_units < 0 || offer->clean_cups < 0
         || beer_units_ > kMaxStockUnits - offer->beer_units
         || clean_cups_ > kMaxStockUnits - offer->clean_cups
+        || (offer->clean_cups>0 && all_cups+offer->clean_cups>kMaxStockUnits)
         // The day-ledger's supply spending is also checked on load.
         // Reject overflow before debiting a legitimate player's cash.
         || supply_spend_cents_ > 1000000000 - offer->cost_cents) {
