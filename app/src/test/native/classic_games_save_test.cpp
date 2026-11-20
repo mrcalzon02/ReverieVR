@@ -471,4 +471,72 @@ static void BreakoutFirstWallSaveBoundary(){
           "restored and uninterrupted second-wall ball/brick states stay identical");
     std::cout<<"Breakout wall-one boundary, write interruption, wall-two continuation PASS\n";
 }
-int main(){BreakoutFirstWallSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();ChessPinnedEnPassantCheckpoint();CheckerQuietFortyTurnSaveBoundary();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
+// Cross the *last* life-loss boundary using production ball physics, both
+// uninterrupted and from a checked, durably reloaded near-miss checkpoint.
+// Prior terminal fixtures never resumed the pending final miss from storage.
+static void BreakoutLastLifeSaveBoundary(){
+    auto before=Initial(6);
+    auto &ball=before.breakout;
+    ball.Press();
+    ball.ballX=reverie::classics::Breakout::BrickX(0);
+    ball.ballY=reverie::classics::Breakout::BrickY(0)-.080f;
+    ball.velocityY=.7f;
+    ball.Tick(); // genuine brick hit: retain its score over game over/reload.
+    Check(ball.score==7&&ball.remaining==111,"real Breakout score before last-life checkpoint");
+    for(int miss=0;miss<2;++miss){
+        ball.ballX=.5f;ball.ballY=-.985f;ball.velocityY=-.7f;
+        ball.Step(.01f,0.f);
+        Check(ball.lives==2-miss&&!ball.finished&&!ball.moving,
+              "first two real floor misses decrement once and await serve");
+        ball.Press();
+    }
+    Check(ball.lives==1&&ball.moving,"third served ball is live on final life");
+    ball.ballX=.5f;ball.ballY=-.985f;ball.velocityY=-.7f;
+    const auto nearMissBytes=Encode(6,before);
+    const auto checked=RoundTrip(6,before);
+    Check(Encode(6,checked)==nearMissBytes,"near-miss checked bytes are stable");
+
+    slots.clear();writes=failWrite=0;failReads=lateManifestError=false;
+    const auto host=Host();cs::Store store;store.Bind(&host,6);
+    store.dirty=true;
+    Check(store.Flush(before.game,before.breakout,before.board),
+          "near-miss checkpoint committed to real banked host store");
+    cs::Snapshot restored;cs::Store reader;reader.Bind(&host,6);
+    Check(reader.Load(restored)==1&&Encode(6,restored)==nearMissBytes,
+          "last-life pending floor crossing survives real host reload");
+
+    before.breakout.Step(.01f,0.f);
+    restored.breakout.Step(.01f,0.f);
+    Check(before.breakout.lives==0&&before.breakout.finished&&
+          !before.breakout.moving&&!before.breakout.won&&
+          before.breakout.score==7&&before.breakout.remaining==111,
+          "actual bottom crossing ends match exactly once without losing points");
+    const auto terminalBytes=Encode(6,before);
+    Check(Encode(6,restored)==terminalBytes,
+          "restored last-life crossing matches uninterrupted simulation byte-for-byte");
+    store.dirty=true;
+    Check(store.Flush(before.game,before.breakout,before.board),
+          "terminal score and game-over durably checkpoint once");
+    cs::Snapshot terminal;cs::Store finalReader;finalReader.Bind(&host,6);
+    Check(finalReader.Load(terminal)==1&&Encode(6,terminal)==terminalBytes,
+          "new module load preserves terminal score with no phantom served ball");
+    for(int frame=0;frame<16;++frame){
+        before.breakout.Step(.1f,0.f);
+        terminal.breakout.Step(.1f,0.f);
+    }
+    Check(Encode(6,before)==terminalBytes&&Encode(6,terminal)==terminalBytes,
+          "repeated idle frames cannot award extra life, decrement twice or serve");
+    auto again=RoundTrip(6,terminal);
+    Check(Encode(6,again)==terminalBytes,"repeated terminal reload remains stable");
+    terminal.breakout.Press();again.breakout.Press();
+    Check(terminal.breakout.lives==3&&terminal.breakout.score==0&&
+          terminal.breakout.remaining==112&&!terminal.breakout.finished&&
+          !terminal.breakout.moving,"explicit restart resets result without auto-serving");
+    terminal.breakout.Press();again.breakout.Press();
+    terminal.breakout.Step(.03f,.2f);again.breakout.Step(.03f,.2f);
+    Check(terminal.breakout.moving&&terminal.breakout.lives==3&&
+          Encode(6,terminal)==Encode(6,again),
+          "fresh legal serve advances identically after restored game-over");
+    std::cout<<"Breakout last-life checked checkpoint, game-over and fresh serve PASS\\n";
+}
+int main(){BreakoutFirstWallSaveBoundary();BreakoutLastLifeSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();ChessPinnedEnPassantCheckpoint();CheckerQuietFortyTurnSaveBoundary();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
