@@ -3,7 +3,18 @@
 **Game:** Sitka, inside the single main ReverieVR Android APK.
 **Decision (2026-11-04):** Model land and underwater terrain from real, provenance-checked datasets, using the existing deterministic native simulation and GLES2 terrain engine. The seabed and boat depth finder share one geographically anchored world. Real hydrography remains authoritative where known. Unmeasured ocean floor is filled with deterministic **PROCEDURAL** game geometry, never mislabeled as a surveyed sounding.
 
-**Current state:** An offline bathymetry raster exporter, native tile parser/sampler, boat depth and skiff movement rules, a NoData-safe low-poly seabed triangulator and optional seafloor VBO rendering in the source-only Sitka terrain module. Synthetic-data native and real-Mesa regression fixtures exist. This remains **source-only**: Sitka is unregistered, without approved geographic data, a launched boat, an on-screen depth gauge, a legally sourced coastal scene or physical Galaxy S9 evidence.
+**Current state (2026-11-20):** Sitka is a **registered native game** in the
+single ReverieVR Android APK (17 native launcher entries). Installed Android
+10 integration tests have launched/rendered its real native GLES2 menu.
+The playable non-geographic practice range has authored fishing locations,
+a skiff with 30 Hz collision/depth admission, Lato helm instruments,
+and game-only rod-site/berth cues. A separate preview stages source-verified
+NOAA ENC chart-land and USGS 3DEP terrain tiles; it is not a certified
+navigable coastline, surveyed marine bathymetry or safe passage model.
+No physical Galaxy S9/Daydream binocular readability, actual controller
+feel or sustained thermal/frame-rate acceptance is claimed. The dated
+November 4 source-only milestones below are **historical records**, not
+statements that the current game remains unregistered or unplayable.
 
 ## In-game rod-site wayfinding — 2026-11-20
 
@@ -107,7 +118,13 @@ The water-surface level must come from an authored game tide model in the *same 
 
 The skiff model is fixed 30 Hz, gently accelerates with a 4 m/s target cap, responds to bounded throttle/rudder, blocks movement into off-water, unsafe-depth or NoData zones, and never forces head/camera roll or yaw. The vessel draft is a gameplay attribute, not a factual real-boat measurement.
 
-**Next visible HUD — designed, not implemented:** Lato text inside the virtual console: DEPTH 8.4 m / KEEL 8.0 m / SAFE / SURVEY (or COMPOSITE), with NO DATA for gaps, and SIMULATED — NOT FOR NAVIGATION underneath. No actual phone sonar sensor is implied. The measurements are geographically sourced *game simulation*, never suitable for real-world marine navigation.
+**Earlier HUD design, now source-implemented:** The licensed Lato
+instrument system emits available DEPTH, KEEL, SAFE/SHALLOW, SURVEY/
+COMPOSITE/PROCEDURAL, NO DATA and SIM - NOT FOR NAV labels when the
+relevant physical helm equipment is owned. It reads native game
+bathymetry/simulation, not a phone sonar sensor. Android installed-menu
+and host GLES tests do not establish physical Galaxy S9 in-headset
+legibility; no value here is suitable for marine navigation.
 
 ## 4. Exact development order and acceptance
 
