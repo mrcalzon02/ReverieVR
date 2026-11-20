@@ -180,6 +180,38 @@ int main(){
     assert(targetVolume.hp==4);
     assert(DamageEnemyVolume(targetVolume,0u,nearA,nearB,2));
     assert(targetVolume.hp==2);
+    // A hired or guest ally must use the exact voxel path, not the old
+    // narrow 2D hit rectangle. These two paths share identical XY and
+    // would BOTH hit under the former ally-only rectangle. The displaced
+    // depth is empty, while a finite sweep through the actual core hits.
+    Enemy escortTarget{};
+    escortTarget.x=.17f;escortTarget.y=.20f;escortTarget.hp=4;
+    escortTarget.active=true;escortTarget.kind=EnemyKind::Scout;
+    const ShipVolumePoint escortCenter=EnemyWorldPoint(escortTarget);
+    Shot escort{};
+    escort.active=true;escort.ally=true;escort.damage=2;
+    const ShipVolumePoint escortFarA{escortCenter.x,escortCenter.y-.25f,escortCenter.z+.80f};
+    const ShipVolumePoint escortFarB{escortCenter.x,escortCenter.y+.25f,escortCenter.z+.80f};
+    const ShipVolumePoint escortNearA{escortCenter.x,escortCenter.y-.25f,escortCenter.z-.10f};
+    const ShipVolumePoint escortNearB{escortCenter.x,escortCenter.y+.25f,escortCenter.z+.10f};
+    assert(std::fabs(escort.x-escortTarget.x)<.19f);
+    assert(!FriendlyShotHitsEnemyVolume(escortTarget,0u,escort,escortFarA,escortFarB));
+    assert(escortTarget.hp==4);
+    assert(FriendlyShotHitsEnemyVolume(escortTarget,0u,escort,escortNearA,escortNearB));
+    assert(escortTarget.hp==2);
+    escort.ally=false; // pilot gunfire must take the identical real hull path
+    assert(FriendlyShotHitsEnemyVolume(escortTarget,0u,escort,escortNearA,escortNearB));
+    assert(escortTarget.hp==0);
+    escortTarget.hp=3;escort.active=false;escort.ally=true;
+    assert(!FriendlyShotHitsEnemyVolume(escortTarget,0u,escort,escortNearA,escortNearB));
+    escort.active=true;escort.hostile=true;
+    assert(!FriendlyShotHitsEnemyVolume(escortTarget,0u,escort,escortNearA,escortNearB));
+    assert(escortTarget.hp==3);
+    escort.hostile=false;
+    const ShipVolumePoint escortMissA{escortCenter.x+.9f,escortCenter.y-.25f,escortCenter.z};
+    const ShipVolumePoint escortMissB{escortCenter.x+.9f,escortCenter.y+.25f,escortCenter.z};
+    assert(!FriendlyShotHitsEnemyVolume(escortTarget,0u,escort,escortMissA,escortMissB));
+    assert(escortTarget.hp==3);
     // The hostile path is the opposite of player-to-enemy collision: the
     // player's actual construction and rendered world depth decide damage.
     // Both sweeps share XY; only the occupied Z interval may damage HP.

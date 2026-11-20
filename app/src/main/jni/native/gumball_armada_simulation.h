@@ -71,6 +71,20 @@ inline bool DamageEnemyVolume(Enemy& e,uint32_t node,
     e.hp-=amount;
     return true;
 }
+// One real swept 3D collision path for ALL friendly gunfire: pilot, hired
+// Capitaine Eclair and guest escorts. The old ally-only XY rectangle could
+// remove an enemy through empty space beside its visible constructed hull.
+// Use a cheap swept XY broadphase before inspecting occupied voxel cubes.
+inline bool FriendlyShotHitsEnemyVolume(Enemy& e,uint32_t node,const Shot& shot,
+        ShipVolumePoint from,ShipVolumePoint to){
+    if(!shot.active||shot.hostile||shot.damage<=0||!e.active)return false;
+    const ShipVolumePoint center=EnemyWorldPoint(e);
+    if(std::max(from.x,to.x)<center.x-.55f ||
+       std::min(from.x,to.x)>center.x+.55f ||
+       std::max(from.y,to.y)<center.y-.55f ||
+       std::min(from.y,to.y)>center.y+.55f)return false;
+    return DamageEnemyVolume(e,node,from,to,shot.damage);
+}
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
 struct SnapshotV1 {
     uint32_t magic=0x474D4231u, version=1, seed=0, node=0;
@@ -630,20 +644,11 @@ public:
                 }
             }else{
                 for(auto& e:enemies_)if(e.active){
-                    bool hit=false;
-                    if(!s.hostile&&!s.ally){
-                        // Broadphase bounds only reject distant pairs. The
-                        // fitted XYZ voxels, never this rectangle, decide HP.
-                        if(std::fabs(s.x-e.x)>.55f
-                           ||std::fabs(s.y-e.y)>.55f)continue;
-                        hit=DamageEnemyVolume(e,node_,previous,
-                            {s.x,s.y*.75f+.18f,PlayerShotDepth(s.y)},s.damage);
-                    }else if(std::fabs(s.x-e.x)<(e.boss?.32f:.19f)
-                             &&std::fabs(s.y-e.y)<(e.boss?.25f:.16f)){
-                        // NPC escort/contract shots retain their established
-                        // mission-plane hit behavior for this bounded slice.
-                        e.hp-=s.damage;hit=true;
-                    }
+                    // A friendly ally projectile is not a magic 2D aim box.
+                    // Both bought support and guest gunfire intersect the
+                    // exact same yawed voxel geometry as the pilot's bolts.
+                    const bool hit=FriendlyShotHitsEnemyVolume(e,node_,s,previous,
+                        {s.x,s.y*.75f+.18f,PlayerShotDepth(s.y)});
                     if(!hit)continue;
                     s.active=false;
                     if(!s.ally)++shots_hit_;
