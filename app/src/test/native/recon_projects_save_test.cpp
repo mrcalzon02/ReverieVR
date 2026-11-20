@@ -19,6 +19,75 @@ static void Rehash(Checkpoint::Bytes& bytes){
     for(size_t i=0;i<bytes.size()-8;++i)hash=(hash^bytes[i])*1099511628211ull;
     for(size_t i=bytes.size()-8;i<bytes.size();++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
 }
+// Compare uninterrupted and host-codec-restored campaigns across a filed
+// debrief, a *new* briefing's explicit refit, and a second actual patrol.
+static void TestForwardFiledDebriefRefitCheckpointParity(){
+    ForwardState uninterrupted;
+    auto& original=uninterrupted.simulation;
+    forward::Debrief filed;
+    assert(original.BeginPatrol(forward::Route::MainRoad));
+    assert(original.ReachContact());
+    assert(original.ResolveContact(forward::Decision::Engage));
+    assert(original.ReturnToBase());
+    assert(original.FileDebrief(&filed));
+    assert(filed.information_value==-3 && filed.vehicle_condition==75 &&
+           filed.fuel_remaining==10 && filed.unnecessary_force);
+    const auto banked=Bytes(uninterrupted);
+    ForwardState resumed;
+    assert(Checkpoint::Decode(&resumed,banked.data(),banked.size()));
+    assert(Bytes(resumed)==banked);
+
+    const auto continueCampaign=[](ForwardState& campaign){
+        auto& sim=campaign.simulation;
+        forward::Debrief rejected{777,777,777,true};
+        assert(!sim.FileDebrief(&rejected));
+        assert(rejected.information_value==777 && rejected.vehicle_condition==777 &&
+               rejected.fuel_remaining==777 && rejected.unnecessary_force);
+        assert(sim.phase()==forward::Phase::Debriefed);
+        assert(sim.LastRouteIntel(forward::Route::MainRoad)==-3);
+        assert(sim.LastRouteIntel(forward::Route::RidgeBypass)==0);
+        assert(sim.NextPatrol() && !sim.NextPatrol());
+        assert(sim.phase()==forward::Phase::Briefing);
+        assert(!sim.FileDebrief(&rejected) && !sim.ReachContact());
+        assert(!sim.ResolveContact(forward::Decision::Avoid));
+        assert(!sim.CanBeginPatrol(forward::Route::RidgeBypass));
+        assert(sim.fuel_remaining()==10 && sim.vehicle_condition()==75);
+        campaign.confirm_refit=true;
+        campaign.choice=1;
+        const auto refitPrompt=Bytes(campaign);
+        ForwardState promptRestored;
+        assert(Checkpoint::Decode(&promptRestored,refitPrompt.data(),refitPrompt.size()));
+        assert(Bytes(promptRestored)==refitPrompt);
+        campaign=promptRestored;
+        campaign.confirm_refit=false;
+        campaign.choice=0;
+        assert(sim.RefitAtBase());
+        assert(sim.fuel_remaining()==20 && sim.vehicle_condition()==100);
+        assert(sim.LastRouteIntel(forward::Route::MainRoad)==-3);
+        assert(sim.BeginPatrol(forward::Route::RidgeBypass));
+        assert(!sim.RefitAtBase() && !sim.ReachContact());
+        for(int step=0;step<forward::Simulation::kRidgeExit;++step){
+            assert(sim.WalkRidge(1));
+            if(sim.ObservationHere()) assert(sim.RecordObservation());
+        }
+        assert(sim.trail_notes()==(forward::Simulation::kGaugeNote|forward::Simulation::kShelterNote));
+        assert(sim.ReachContact());
+        assert(sim.ResolveContact(forward::Decision::Avoid));
+        assert(sim.ReturnToBase());
+        forward::Debrief second;
+        assert(sim.FileDebrief(&second) && !sim.FileDebrief(&second));
+        assert(second.information_value==6 && second.vehicle_condition==100 &&
+               second.fuel_remaining==4 && !second.unnecessary_force);
+        assert(sim.LastRouteIntel(forward::Route::MainRoad)==-3 &&
+               sim.LastRouteIntel(forward::Route::RidgeBypass)==6);
+    };
+    continueCampaign(uninterrupted);
+    continueCampaign(resumed);
+    assert(Bytes(uninterrupted)==Bytes(resumed));
+    assert(Bytes(Restore(resumed))==Bytes(uninterrupted));
+    std::puts("PASS Iron Sight filed-debrief reload, briefing refit, next patrol parity");
+}
+
 int main(){
     LanternState ministry;
     assert(!ministry.simulation.NextSortie());
@@ -190,5 +259,6 @@ int main(){
     assert(!Checkpoint::Decode(&untouchedForward,impossibleRepair.data(),impossibleRepair.size()));
     auto inventedPhoto=lanternBytes;inventedPhoto[16]^=1;Rehash(inventedPhoto);
     assert(!Checkpoint::Decode(&untouchedLantern,inventedPhoto.data(),inventedPhoto.size()));
+    TestForwardFiledDebriefRefitCheckpointParity();
     std::puts("PASS recon exact-phase/choice/evidence/results, cumulative sorties, finite patrol fuel, explicit refit, corrupt transactional rejection");
 }
