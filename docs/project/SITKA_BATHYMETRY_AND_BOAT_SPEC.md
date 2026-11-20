@@ -5,6 +5,26 @@
 
 **Current state:** An offline bathymetry raster exporter, native tile parser/sampler, boat depth and skiff movement rules, a NoData-safe low-poly seabed triangulator and optional seafloor VBO rendering in the source-only Sitka terrain module. Synthetic-data native and real-Mesa regression fixtures exist. This remains **source-only**: Sitka is unregistered, without approved geographic data, a launched boat, an on-screen depth gauge, a legally sourced coastal scene or physical Galaxy S9 evidence.
 
+## In-game rod-site wayfinding — 2026-11-20
+
+The registered Sitka native game in the unified ReverieVR APK now shows
+a rounded, compact **ROD SITE distance and bow-relative direction** on the
+skiff's existing Lato helm panel when the nearest valid authored fishing
+site is within the boat's current named water footprint. At the site it
+says **ROD SITE HERE**; underway it also says **IDLE TO CAST**. With no
+qualified same-water site it retains the old truthful missing-site prompt.
+The cue uses no new assets, sensors, GPS, synthetic fish spots or navigation
+network. It is a video-game proximity cue, **not safe passage guidance**.
+
+The existing survey-only real geography / explicit procedural practice
+exception, still-hull cast limit, fish journal, controls, save format and
+30 Hz fixed simulation remain unchanged. A deterministic boat-session
+regression checks bearings relative to the vessel, nearest same-water spot,
+cross-water refusal, invalid in-memory site data, surveyed-depth and
+stationary-hull gating. Android emulator and physical S9 acceptance are
+separate from native host test results. Earlier source-only snapshots below
+are historical and do not override the current 17-game launcher registration.
+
 ## 1. Data authority for a multi-mile world
 
 - **Land:** USGS Alaska IfSAR / 3DEP bare-earth 5 m DEM for broad coverage, with the higher-resolution Alaska DGGS/NOAA 2018 Sitka DTM where its real license and tile footprint overlap the selected world cells. Do not use the vegetation/building DSM as the bare-earth terrain.

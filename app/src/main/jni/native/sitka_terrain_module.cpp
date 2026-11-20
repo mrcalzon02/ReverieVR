@@ -1104,7 +1104,16 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->skiff->Pose(),throttle,state->skiff->Sounder().reading(),
                 state->integration_range,state->fishing_spots,state->waters,
                 state->terrain.origin_east,state->terrain.origin_north);
-            panels.Add(reverie::sitka::BoatRodHint(rod.status,state->fishing.fishing),
+            const std::string nearby_rod_site=
+                state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready&&
+                (rod.status==reverie::sitka::BoatRodStatus::Underway||
+                 rod.status==reverie::sitka::BoatRodStatus::NoAuthoredSite)?
+                reverie::sitka::BoatRodSiteCue(
+                    state->skiff->Pose(),state->fishing_spots,state->waters,
+                    state->terrain.origin_east,state->terrain.origin_north):
+                std::string{};
+            panels.Add(reverie::sitka::BoatRodHint(
+                           rod.status,state->fishing.fishing,nearby_rod_site),
                        0.f,1.63f,.498f,1.15f,.011f,.94f,.94f,.72f);
             const std::string signature=panels.Signature();
             if(signature!=state->last_boat_text){

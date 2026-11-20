@@ -1,4 +1,5 @@
 #include "../../main/jni/native/sitka_boat_session.h"
+#include "../../main/jni/native/sitka_boat_angling.h"
 #include <cassert>
 #include <cmath>
 #include <cstring>
@@ -46,7 +47,64 @@ static bool Bad(const std::string& text,uint32_t datum){
     try{(void)ParseSkiffLaunch(text,datum);return false;}
     catch(const std::invalid_argument&){return true;}
 }
+static void TestBoatRodSiteCues() {
+    Water harbor{};
+    harbor.id="harbor";harbor.shape="SQUARE";
+    harbor.width=200.f;harbor.depth=200.f;
+    std::vector<Water> waters{harbor};
+    std::vector<FishingSpot> sites{
+        {"east-pocket","harbor",30.f,10.f,3.f,9.f},
+        {"far-pocket","harbor",60.f,50.f,3.f,12.f}
+    };
+    BoatPose boat{};
+    boat.launched=true;boat.east=500000.;boat.north=6200000.;
+    boat.heading=0.;
+    const double origin_east=500000.,origin_north=6200000.;
+    const auto cue=[&]{
+        return BoatRodSiteCue(boat,sites,waters,origin_east,origin_north);
+    };
+    assert(cue()=="ROD SITE 32M STARBOARD");
+    Fishing fishing{};
+    assert(BoatRodHint(BoatRodStatus::NoAuthoredSite,fishing,cue())==
+           "ROD SITE 32M STARBOARD");
+    assert(BoatRodHint(BoatRodStatus::Underway,fishing,cue())==
+           "ROD SITE 32M STARBOARD / IDLE TO CAST");
+    boat.heading=1.5707963267948966;
+    assert(cue()=="ROD SITE 32M AHEAD");
+    boat.heading=3.141592653589793;
+    assert(cue()=="ROD SITE 32M PORT");
+    boat.heading=0.;
+    boat.east+=30.;boat.north+=10.;
+    assert(cue()=="ROD SITE HERE");
+    DepthReading sounding{};
+    sounding.status=DepthStatus::Safe;
+    sounding.quality=BedQuality::Survey;
+    sounding.water_depth_m=9.;
+    assert(BoatRodCastTarget(boat,0.,sounding,false,sites,waters,
+                            origin_east,origin_north).status==BoatRodStatus::Ready);
+    boat.speed_mps=.25;
+    assert(BoatRodCastTarget(boat,0.,sounding,false,sites,waters,
+                            origin_east,origin_north).status==BoatRodStatus::Underway);
+    boat.speed_mps=0.;
+    sounding.quality=BedQuality::Procedural;
+    assert(BoatRodCastTarget(boat,0.,sounding,false,sites,waters,
+                            origin_east,origin_north).status==BoatRodStatus::NoDepth);
+    assert(BoatRodCastTarget(boat,0.,sounding,true,sites,waters,
+                            origin_east,origin_north).status==BoatRodStatus::Ready);
+    FishingSpot bad=sites.front();
+    bad.east=std::numeric_limits<float>::quiet_NaN();
+    assert(BoatRodSiteCue(boat,{bad},waters,origin_east,origin_north).empty());
+    assert(BoatRodCastTarget(boat,0.,sounding,true,{bad},waters,
+                            origin_east,origin_north).status==BoatRodStatus::NoAuthoredSite);
+    assert(BoatRodSiteCue(boat,sites,{},origin_east,origin_north).empty());
+    boat.heading=std::numeric_limits<double>::quiet_NaN();
+    assert(cue().empty());
+    boat.heading=0.;boat.launched=false;
+    assert(cue().empty());
+    std::cout<<"PASS Sitka boat rod site cue, nearest same-water authored site, bow-relative directions, idle/depth gates and invalid-site refusal\\n";
+}
 int main(){
+    TestBoatRodSiteCues();
     // Actual native touch/joystick sign, idle deadzone and release.
     assert(SkiffForwardThrottle(-1.)==1.);
     assert(SkiffForwardThrottle(1.)==0.);
