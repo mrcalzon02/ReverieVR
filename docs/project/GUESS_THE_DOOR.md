@@ -1,5 +1,29 @@
 # Guess the Door — native ReverieVR memory game
 
+## Quick Menu full-neutral lever handoff — 2026-11-20
+
+A full native pointer prefix carrying `POINTER_NONE` or an invalid ray
+still freezes gameplay and clears transient lever targeting, but the
+returned controller now requires **Select, Back, and both analog axes**
+to be fully neutral before restoring guest ownership. Merely releasing
+Select while the rocker or Back remains held can no longer change the
+selected lever, emit a false focus cue or advance clue/door animations.
+Malformed analog input does not masquerade as a release. The completely
+neutral frame is **consumed** rather than advancing maze timing; only
+the following deliberate input can act. Old native hosts with a short
+base-only input ABI retain their no-ray rocker/Select fallback.
+
+The existing real-module persistence suite now covers 45 held
+post-pause frames, mixed held Back/rocker, invalid axis refusal, consumed
+neutral release, fresh lever commit and animation-time freeze across
+pause/resume. The unified hub's existing installed Android 10 JNI/GLES2
+test adds actual shell-owned frames, retained held controls,
+native checkpoint comparison, a new deliberate lever action and a real
+stereo framebuffer. These are **automated validation gates**, not
+evidence of physical Galaxy S9/Daydream controller or optic acceptance.
+No save schema, animation speed, game rules, native ABI, new APK or
+input binding changed.
+
 ## Save and readability repair (2026-11-08 source)
 
 The native module now writes `maze-v1.bin`, a bounded 36-byte schema-1
@@ -31,9 +55,12 @@ captures cover these changes; this is source acceptance, with physical
 headset readability, audio and comfort still open. Details and commands
 are in `docs/project/NATIVE_RECENT_GAMES_REPAIR_2026-11-08.md`.
 
-**Status (2026-11-04):** Development-only source stage. Android builds,
-S9/headset runtime, requested spoken line and Mechanist sprite import
-remain pending, not accepted.
+**Historical stage (2026-11-04):** This was development-only and had
+neither an installed Android acceptance run nor the voice cue. As of
+November 20, the game is registered in the unified native launcher,
+and the packaged 2.073-second original generated voice cue has passed
+installed Android tests. Physical Galaxy S9/Daydream acceptance and
+approved Mechanist door-art imports remain open.
 
 ## Gameplay
 Twelve seeded rooms. A brief 2.3-second clue describes a **visible

@@ -472,12 +472,8 @@ void Update(void* v,const ReverieNativeInputV1* in){
     const bool pointerPrefix=ReverieNativeInputHasPointerV1(&input)!=0;
     const bool hasPointer=ReverieNativeSanitizePointerV1(&input)!=0;
     const float dt=input.delta_seconds;
-    bool primary=input.primary_down!=0u;
+    const bool primary=input.primary_down!=0u;
     const bool axis=std::fabs(input.move_x)>.55f;
-    if(s->require_release) {
-        if(!primary)s->require_release=false;
-        primary=false;
-    }
     if(s->save_dirty && !Recovering(s)) {
         s->save_retry-=dt;
         if(s->save_retry<=0.f)FlushMaze(s);
@@ -494,6 +490,23 @@ void Update(void* v,const ReverieNativeInputV1* in){
         s->reset_confirm=false;s->rockerSelection=false;
         s->doorGaze=s->leverGaze=-1;s->gazeSeconds=0.f;
         if(redraw)Scene(s); // Rebuild once, never repeatedly per lost-ray frame.
+        return;
+    }
+    // A returned controller is not immediately a fresh action. Require
+    // Select, Back AND both analog axes to be fully neutral; holding the
+    // rocker while releasing Select must not silently change the chosen
+    // lever, progress a clue, or produce a focus tick. Even the release
+    // frame itself is consumed, including when a legacy short ABI resumes.
+    if(s->require_release) {
+        const bool neutral=!primary&&!input.secondary_down&&
+            std::isfinite(in->move_x)&&std::isfinite(in->move_y)&&
+            std::fabs(input.move_x)<=.20f&&
+            std::fabs(input.move_y)<=.20f;
+        if(neutral) {
+            s->require_release=false;
+            s->held=false;
+            s->axisHeld=false;
+        }
         return;
     }
     if(Recovering(s)) {

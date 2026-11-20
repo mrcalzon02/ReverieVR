@@ -3,6 +3,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <limits>
 #include <string>
 namespace {
 std::map<std::string,std::vector<uint8_t>> disk;
@@ -196,5 +197,55 @@ int main() {
     for(int frame=0;frame<8;++frame)Update(s,&lever);
     assert(s->game.phase==Phase::Opening);
     Destroy(s);
+
+    // Real module pause/resume cannot interpret the menu's retained Back or
+    // rocker as a new selection. An all-neutral frame is NOT a game tick.
+    disk.erase(reverie::doors::kMazeSaveSlot);
+    s=New(host);
+    assert(s->game.phase==Phase::Ready && s->game.room==0u);
+    const auto initial=disk.at(reverie::doors::kMazeSaveSlot);
+    kApi.pause(s);kApi.resume(s);
+    ReverieNativeInputV1 focus{};
+    focus.struct_size=sizeof(focus);focus.delta_seconds=.10f;
+    focus.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    focus.pointer_origin[0]=-2.f;focus.pointer_direction[2]=-1.f;
+    focus.primary_down=focus.secondary_down=1u;
+    focus.move_x=.86f;focus.move_y=.4f;
+    feedback=0u;
+    const float initialTimer=s->game.timer;
+    for(int frame=0;frame<45;++frame)Update(s,&focus);
+    assert(s->require_release&&s->game.phase==Phase::Ready);
+    assert(s->game.timer==initialTimer&&s->choice==0);
+    assert(!s->rockerSelection&&feedback==0u);
+    assert(disk.at(reverie::doors::kMazeSaveSlot)==initial);
+    focus.primary_down=0u;Update(s,&focus);
+    assert(s->require_release); // Back and rocker remain depressed
+    focus.secondary_down=0u;Update(s,&focus);
+    assert(s->require_release); // Analog not neutral
+    focus.move_x=0.f;
+    focus.move_y=std::numeric_limits<float>::quiet_NaN();
+    Update(s,&focus);
+    assert(s->require_release); // malformed axis is not a release
+    focus.move_y=.30f;Update(s,&focus);
+    assert(s->require_release);
+    focus.move_y=0.f;Update(s,&focus);
+    assert(!s->require_release&&s->game.timer==initialTimer);
+    assert(s->choice==0&&feedback==0u); // consumed neutral frame
+    focus.primary_down=1u;Update(s,&focus);
+    assert(s->game.phase==Phase::Pulling&&s->game.side==0);
+    assert(disk.at(reverie::doors::kMazeSaveSlot)!=initial);
+    const float animatedAt=s->game.timer;
+    kApi.pause(s);kApi.resume(s);
+    focus.secondary_down=1u;focus.move_x=.85f;focus.move_y=.40f;
+    for(int frame=0;frame<35;++frame)Update(s,&focus);
+    assert(s->game.phase==Phase::Pulling&&s->game.timer==animatedAt);
+    focus.primary_down=focus.secondary_down=0u;
+    focus.move_x=focus.move_y=0.f;
+    Update(s,&focus);
+    assert(!s->require_release&&s->game.timer==animatedAt);
+    Update(s,&focus);
+    assert(s->game.timer>animatedAt); // next authentic active frame
+    Destroy(s);
+    std::cout<<"PASS Guess the Door full neutral ownership, held Back/rocker, invalid axis, consumed return frame and paused animation\n";
     std::cout<<"Guess module: safe resume, New Seed, save/read faults, backup recovery, lost-pointer freeze and rocker PASS\n";
 }

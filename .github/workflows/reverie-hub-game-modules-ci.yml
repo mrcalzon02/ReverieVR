@@ -23,6 +23,10 @@ on:
       - 'scripts/verify-gumball-native-module.sh'
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
+      # The actual Guess the Door shell/lever ownership gate also needs
+      # installed Android tests whenever production or persistence changes.
+      - 'app/src/main/jni/native/guess_the_door_module.cpp'
+      - 'app/src/test/native/guess_the_door_persistence_test.cpp'
       # Installed all-eight Classic Quick Menu ownership test must execute
       # whenever its shared production input path or lifecycle tests change.
       - 'app/src/main/jni/native/classic_games_module.cpp'
@@ -261,6 +265,9 @@ jobs:
             # and retain a genuine post-Select GLES2 framebuffer in the
             # existing hub evidence artifact. No fixed launcher/game count.
             for GAME in classic-pong classic-snake classic-chutes-ladders classic-checkers classic-go classic-chess classic-breakout classic-reversi; do grep -F "PASS installed Classic shell focus id=${GAME} pointerLoss=true held120=true neutralRearm=true deliberateSelect=true save=true GLES2CRC=" validation/hub/logcat.txt; adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/classic-shell-${GAME}.png" > "validation/hub/classic-shell-${GAME}.png"; test -s "validation/hub/classic-shell-${GAME}.png"; done
+            grep -F 'PASS installed Guess shell neutral handoff pointerLoss=true heldBackRocker=true consumedNeutral=true deliberateLever=true save=true GLES2CRC=' validation/hub/logcat.txt
+            adb exec-out run-as io.github.mrcalzon02.reverievr cat files/guess-shell-handoff.png > validation/hub/guess-shell-handoff.png
+            test -s validation/hub/guess-shell-handoff.png
             grep -F 'PASS installed Chess pointer legality, blocked queen, White e4, Black-first CPU transition and actual GLES2 frames' validation/hub/logcat.txt
             grep -F 'PASS real downloaded between-deliveries-red-ledger assets=24' validation/hub/logcat.txt
             grep -F 'PASS Red Ledger original 606 selected/purchased/save-reopen native GLES2' validation/hub/logcat.txt

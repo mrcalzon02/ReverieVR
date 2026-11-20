@@ -93,6 +93,85 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
     }
 
 
+    // Installed Java -> JNI -> true native maze. A full POINTER_NONE frame
+    // and held shell controls must not advance clues or choose a door.
+    @Test public void guessTheDoorQuickMenuRequiresFullNeutralHandoff()
+        throws Exception {
+        final Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        final Context tests=InstrumentationRegistry.getInstrumentation().getContext();
+        final File sandbox=new File(app.getCacheDir(),
+            "guess-shell-"+System.nanoTime());
+        final File home=new File(sandbox,"native-modules");
+        assertTrue("Guess shell sandbox",home.mkdirs());
+        final File save=new File(home,"guess-the-door/maze-v1.bin");
+        final VirtualInputBus controls=new VirtualInputBus();
+        final VirtualOutput select=VirtualOutput.joystickButton(0);
+        final VirtualOutput back=VirtualOutput.joystickButton(1);
+        final VirtualOutput rocker=VirtualOutput.joystickAxisX();
+        final VirtualOutput forwardAxis=VirtualOutput.joystickAxisY();
+        final float[] origin={-2.f,0.f,0.f};
+        final float[] direction={0.f,0.f,-1.f};
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime game=new NativeModuleRuntime(
+                home,app.getAssets(),controls,true,
+                new ReveriePreferences(tests))) {
+            assertTrue("Native Guess not launched",game.start("guess-the-door"));
+            assertTrue("Native Guess GLES context",game.onSurfaceCreated());
+            class Controller {
+                long now=System.nanoTime();
+                int tick(int pointer){
+                    now+=50000000L;
+                    return game.updateAt(pointer,origin,direction,null,null,now);
+                }
+            }
+            Controller input=new Controller();
+            input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+            assertTrue("No initial native maze checkpoint",save.isFile());
+            final byte[] initial=Files.readAllBytes(save.toPath());
+            assertEquals("Actual native maze checkpoint length",36,initial.length);
+            controls.applyDigital(select,true);
+            controls.applyDigital(back,true);
+            controls.applyAnalog(rocker,.85f);
+            controls.applyAnalog(forwardAxis,.45f);
+            for(int n=0;n<80;++n)
+                assertEquals("Shell-owned Guess delivered action "+n,0,
+                    input.tick(NativeModuleRuntime.POINTER_NONE));
+            assertArrayEquals("Shell-owned Guess changed a saved puzzle",
+                initial,Files.readAllBytes(save.toPath()));
+            for(int n=0;n<12;++n)
+                assertEquals("Held returned Guess controls produced action",0,
+                    input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER));
+            controls.applyDigital(select,false);
+            input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+            controls.applyDigital(back,false);
+            input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+            controls.applyAnalog(rocker,0.f);
+            input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+            controls.applyAnalog(forwardAxis,0.f);
+            assertEquals("Neutral handoff emitted a focus action",0,
+                input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER));
+            assertArrayEquals("Neutral handoff changed checkpoint",initial,
+                Files.readAllBytes(save.toPath()));
+            controls.applyDigital(select,true);
+            input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+            controls.applyDigital(select,false);
+            input.tick(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+            final byte[] chosen=Files.readAllBytes(save.toPath());
+            assertFalse("Fresh legal lever select did not commit puzzle",
+                Arrays.equals(initial,chosen));
+            assertEquals("Chosen native puzzle checkpoint length",36,chosen.length);
+            final File frame=new File(app.getFilesDir(),"guess-shell-handoff.png");
+            long crc=omegaFrame(game,frame);
+            assertTrue("Actual Guess GLES frame missing",
+                frame.isFile()&&frame.length()>300);
+            assertTrue("Post-choice native checkpoint rejected",game.prepareForExit());
+            game.releaseSurface();game.stop();
+            Log.i(TAG,"PASS installed Guess shell neutral handoff "+
+                "pointerLoss=true heldBackRocker=true consumedNeutral=true "+
+                "deliberateLever=true save=true GLES2CRC="+crc);
+        }finally{remove(sandbox);}
+    }
+
     private static class Pbuffer implements AutoCloseable {
         final EGLDisplay display;
         final EGLContext context;
