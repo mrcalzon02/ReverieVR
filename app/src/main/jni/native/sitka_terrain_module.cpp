@@ -92,6 +92,7 @@ struct State {
     bool boat_dirty=false;
     reverie::nativetext::LatoLayer boat_text; // real licensed glyph atlas
     std::string last_boat_text;
+    reverie::sitka::SkiffActionNotice boat_notice;
     std::vector<reverie::sitka::Water> waters;
     reverie::sitka::Weather weather;
     reverie::sitka::WaterGl water_gl;
@@ -825,12 +826,16 @@ void ReleaseGl(void* instance) {
 }
 void Resume(void* instance) {
     auto* state=static_cast<State*>(instance);
-    if(state)state->input_focus.RequireNeutral();
+    if(state){
+        state->input_focus.RequireNeutral();
+        state->boat_notice.Reset();
+    }
 }
 void Pause(void* instance) {
     auto* state=static_cast<State*>(instance);
     if(!state)return;
     state->input_focus.RequireNeutral();
+    state->boat_notice.Reset();
     if(!state->fishing.Flush(Store(state)))
         Log(state->host,"Sitka journal flush failed on pause");
 }
@@ -847,6 +852,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     // valid controller (or legacy base-only host) resume the saved session.
     if(!state->input_focus.Allow(input)){
         state->last_aimed_shop=-1;
+        state->boat_notice.Reset();
         return;
     }
     // The default secondary action (Volume Up) plus rightward touch toggles
@@ -1090,6 +1096,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             boat_chord,listener_east,listener_north,
             *state->stream,*state->generated,state->waters,
             state->terrain.origin_east,state->terrain.origin_north);
+        const bool failure_cue=state->boat_notice.Observe(
+            event,input->delta_seconds);
         if(state->skiff->Active()){
             state->instruments=reverie::sitka::HelmReadouts(
                 state->helm,state->skiff->Pose(),state->weather,
@@ -1112,9 +1120,14 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                     state->skiff->Pose(),state->fishing_spots,state->waters,
                     state->terrain.origin_east,state->terrain.origin_north):
                 std::string{};
-            panels.Add(reverie::sitka::BoatRodHint(
+            // Priority warning occupies the existing rod-prompt line, not
+            // another overlay that could crowd the small headset display.
+            const bool warning=state->boat_notice.Visible();
+            panels.Add(warning?state->boat_notice.Text():
+                       reverie::sitka::BoatRodHint(
                            rod.status,state->fishing.fishing,nearby_rod_site),
-                       0.f,1.63f,.498f,1.15f,.011f,.94f,.94f,.72f);
+                       0.f,1.63f,.498f,1.15f,.011f,
+                       .94f,warning?.76f:.94f,warning?.61f:.72f);
             // A second compact line helps the player return to the only
             // authored berth. Hide dock instructions while a fish is active.
             if(state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready){
@@ -1149,10 +1162,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
            event==reverie::sitka::SkiffSessionEvent::Docked)
             ReverieNativeRequestFeedbackV1(state->host,
                                             REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-        else if(event==reverie::sitka::SkiffSessionEvent::Rejected||
-                event==reverie::sitka::SkiffSessionEvent::BlockedLand||
-                event==reverie::sitka::SkiffSessionEvent::BlockedShallow||
-                event==reverie::sitka::SkiffSessionEvent::BlockedNoData)
+        else if(failure_cue)
             ReverieNativeRequestFeedbackV1(state->host,
                                             REVERIE_NATIVE_FEEDBACK_FAILURE);
     }

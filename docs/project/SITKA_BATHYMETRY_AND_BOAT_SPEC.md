@@ -16,6 +16,31 @@ feel or sustained thermal/frame-rate acceptance is claimed. The dated
 November 4 source-only milestones below are **historical records**, not
 statements that the current game remains unregistered or unplayable.
 
+## Skiff refusal feedback and speed clarity — 2026-11-20
+
+The launched skiff now reports short, explicit game-only causes of blocked
+motion or rejected boat actions on the **existing rod-prompt Lato line**:
+shore/water edge, shallow seabed, missing depth data, refused
+boarding/docking or invalid control input. These transient captions
+temporarily replace the ordinary rod hint, avoiding a third crowded
+HUD overlay; normal movement, a completed launch/dock, focus loss and
+pause/resume clear stale warnings. The existing host failure feedback now
+fires **once for a continuing rejection**, with a 0.4-second quiet
+rearm and at least one second between rapidly alternating refusal types,
+rather than sounding on every 30 Hz collision attempt.
+
+When the optional overhead instrument has been purchased, its existing
+heading/throttle readout gains a second, smaller **SPEED n.n M/S** line
+from the *actual simulated hull velocity*, not the throttle value.
+The 0.1 m/s display quantization bounds costly glyph-buffer rebuilds;
+the berth prompt's existing exact 0.4 m/s gating remains authoritative
+even if the displayed speed rounds to the same tenth above that limit.
+The new line remains hidden if overhead equipment is not owned, and
+nonfinite/out-of-range speed is labeled NO DATA. No movement tick,
+physics, save format, native ABI, new sensor, map claim or separate APK
+has changed. Host GCC/Clang, real GLES and installed Android CI should
+be considered separately from unverified physical S9/headset acceptance.
+
 ## In-game rod-site wayfinding — 2026-11-20
 
 The registered Sitka native game in the unified ReverieVR APK now shows

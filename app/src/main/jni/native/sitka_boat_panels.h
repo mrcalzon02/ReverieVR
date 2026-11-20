@@ -117,6 +117,13 @@ inline BoatPanelLayout BuildBoatPanels(const HelmProgress& progress,
         info<<"HDG "<<std::setw(3)<<std::setfill('0')<<degrees
             <<"  THR "<<percent<<"%";
         panel.Add(info.str(),0.f,1.484f,.498f,.72f,.012f,.83f,.96f,1.f);
+        // Throttle position is not vessel speed: inertia persists after
+        // release. A second small line shows bounded actual simulation
+        // speed, rounded to 0.1 m/s to avoid 30 Hz text-buffer churn.
+        const std::string speed=std::isfinite(boat.speed_mps)&&
+            boat.speed_mps>=0.&&boat.speed_mps<=6.?
+            "SPEED "+HelmNumber(boat.speed_mps)+" M/S":"SPEED NO DATA";
+        panel.Add(speed,0.f,1.449f,.498f,.72f,.009f,.88f,.95f,.83f);
     }
     return panel;
 }

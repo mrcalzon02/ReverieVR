@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <limits>
 using namespace reverie::sitka;
 static bool has(const BoatPanelLayout& p,const std::string& needle){
     for(size_t i=0;i<p.count;++i)
@@ -39,6 +40,16 @@ int main(){
     assert(has(all,"CHARTPLOTTER")&&has(all,"NO MAP DATA"));
     assert(has(all,"WEATHER RAIN")&&has(all,"RADAR UNAVAILABLE"));
     assert(has(all,"HDG 090")&&has(all,"THR 50%"));
+    assert(has(all,"SPEED 0.0 M/S"));
+    boat.speed_mps=2.36;
+    const auto underway=BuildBoatPanels(progress,boat,weather,procedural,.5);
+    assert(has(underway,"SPEED 2.4 M/S"));
+    assert(underway.Signature()!=all.Signature());
+    boat.speed_mps=std::numeric_limits<double>::infinity();
+    assert(has(BuildBoatPanels(progress,boat,weather,procedural,.5),
+               "SPEED NO DATA"));
+    boat.speed_mps=0.;
+    assert(!has(sonar,"SPEED"));
     assert(!has(all,"FUEL 100")&&!has(all,"STORM DISTANCE"));
     assert(all.Signature()!=sonar.Signature());
     weather.kind="FOG";

@@ -144,6 +144,65 @@ enum class SkiffSessionEvent : uint8_t {
     None, Launched, Docked, Rejected, Advanced, BlockedLand,
     BlockedShallow, BlockedNoData, InvalidInput
 };
+// Transient HUD+rejection feedback, driven once by Update, never from an eye
+// render. Repeated boundary collision events must not request an audible/haptic
+// failure every 30 Hz tick. The 0.4 s quiet rearm admits a new attempt after
+// releasing throttle; a 1.0 s minimum sound gap also bounds rapid changes
+// between different blocked conditions. Nothing here affects vessel physics.
+class SkiffActionNotice {
+public:
+    void Reset() {
+        label_.clear();
+        visible_seconds_=0.;
+        quiet_seconds_=1.;
+        sound_cooldown_=0.;
+        last_failure_=SkiffSessionEvent::None;
+    }
+    bool Visible() const { return visible_seconds_>0.&&!label_.empty(); }
+    const std::string& Text() const { return label_; }
+    // Returns true exactly when the host should play one failure cue.
+    bool Observe(SkiffSessionEvent event,double seconds) {
+        if(!std::isfinite(seconds)||seconds<=0.||seconds>.1)return false;
+        sound_cooldown_=std::max(0.,sound_cooldown_-seconds);
+        if(event==SkiffSessionEvent::Launched||
+           event==SkiffSessionEvent::Docked){
+            Reset();return false;
+        }
+        const char* message=Reason(event);
+        if(message){
+            const bool new_attempt=event!=last_failure_||quiet_seconds_>=.4;
+            const bool sound=new_attempt&&sound_cooldown_<=0.;
+            if(sound)sound_cooldown_=1.;
+            last_failure_=event;
+            quiet_seconds_=0.;
+            visible_seconds_=1.25;
+            label_=message;
+            return sound;
+        }
+        quiet_seconds_=std::min(5.,quiet_seconds_+seconds);
+        if(quiet_seconds_>=.4)last_failure_=SkiffSessionEvent::None;
+        if(event==SkiffSessionEvent::Advanced)visible_seconds_=0.;
+        else visible_seconds_=std::max(0.,visible_seconds_-seconds);
+        if(visible_seconds_==0.)label_.clear();
+        return false;
+    }
+private:
+    static const char* Reason(SkiffSessionEvent event) {
+        switch(event) {
+        case SkiffSessionEvent::Rejected:return "BOARD/DOCK REFUSED";
+        case SkiffSessionEvent::BlockedLand:return "BLOCKED: SHORE/WATER EDGE";
+        case SkiffSessionEvent::BlockedShallow:return "BLOCKED: SHALLOW WATER";
+        case SkiffSessionEvent::BlockedNoData:return "BLOCKED: DEPTH DATA MISSING";
+        case SkiffSessionEvent::InvalidInput:return "BOAT INPUT INVALID";
+        default:return nullptr;
+        }
+    }
+    std::string label_;
+    double visible_seconds_=0.;
+    double quiet_seconds_=1.;
+    double sound_cooldown_=0.;
+    SkiffSessionEvent last_failure_=SkiffSessionEvent::None;
+};
 class SitkaSkiffSession {
 public:
     explicit SitkaSkiffSession(SkiffLaunch launch)

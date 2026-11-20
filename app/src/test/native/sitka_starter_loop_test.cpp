@@ -355,7 +355,16 @@ int main(){
     // existing Lato panel, not merely expose a standalone CPU helper.
     assert(range->last_boat_text.find("BERTH HERE / SELECT+VOL UP")!=
            std::string::npos);
-    player.primary_down=player.secondary_down=0u;player.move_y=-1.f;
+    // Independent renderer wiring check: a controlled refusal caption
+    // replaces the same Lato rod line and does not enter save state.
+    assert(range->boat_notice.Observe(
+        SkiffSessionEvent::BlockedLand,.05));
+    player.primary_down=player.secondary_down=0u;
+    Update(range,&player);
+    assert(range->last_boat_text.find("BLOCKED: SHORE/WATER EDGE")!=
+           std::string::npos);
+    range->boat_notice.Reset();
+    player.move_y=-1.f;
     // Trackpad throttle drag and even a depressed Select during that drag
     // belong to the skiff; neither is a fresh fishing cast.
     for(int n=0;n<52;++n){

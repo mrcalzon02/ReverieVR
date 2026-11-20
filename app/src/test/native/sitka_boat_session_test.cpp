@@ -149,9 +149,46 @@ static void TestBoatBerthCue() {
     assert(cue().empty());
     std::cout<<"PASS Sitka authored berth HUD, directional return, multi-turn yaw, docking speed chord, other-water and invalid input refusal\n";
 }
+static void TestBoatActionNotice() {
+    SkiffActionNotice notice;
+    assert(!notice.Visible());
+    assert(!notice.Observe(SkiffSessionEvent::BlockedLand,
+        std::numeric_limits<double>::quiet_NaN()));
+    assert(!notice.Visible());
+    assert(notice.Observe(SkiffSessionEvent::BlockedLand,1./30.));
+    assert(notice.Visible()&&notice.Text()=="BLOCKED: SHORE/WATER EDGE");
+    // A sustained throttle against land must not request 300 failure
+    // sounds for 300 native simulation updates (including cooldown expiry).
+    for(int n=0;n<300;++n)
+        assert(!notice.Observe(SkiffSessionEvent::BlockedLand,1./30.));
+    assert(notice.Visible());
+    // Changing the actual cause can sound again, but immediate alternation
+    // between causes is bounded by the one-second failure sound gap.
+    assert(notice.Observe(SkiffSessionEvent::BlockedNoData,1./30.));
+    assert(notice.Text()=="BLOCKED: DEPTH DATA MISSING");
+    assert(!notice.Observe(SkiffSessionEvent::BlockedShallow,1./30.));
+    assert(notice.Text()=="BLOCKED: SHALLOW WATER");
+    for(int n=0;n<60;++n)
+        assert(!notice.Observe(SkiffSessionEvent::None,1./30.));
+    assert(!notice.Visible());
+    assert(notice.Observe(SkiffSessionEvent::Rejected,1./30.));
+    assert(notice.Text()=="BOARD/DOCK REFUSED");
+    assert(!notice.Observe(SkiffSessionEvent::Advanced,1./30.));
+    assert(!notice.Visible());
+    notice.Reset();
+    assert(notice.Observe(SkiffSessionEvent::InvalidInput,1./30.));
+    assert(notice.Text()=="BOAT INPUT INVALID");
+    assert(!notice.Observe(SkiffSessionEvent::Docked,1./30.));
+    assert(!notice.Visible());
+    assert(notice.Observe(SkiffSessionEvent::BlockedShallow,1./30.));
+    assert(!notice.Observe(SkiffSessionEvent::Launched,1./30.));
+    assert(!notice.Visible());
+    std::cout<<"PASS Sitka skiff refusal captions, 300-frame no-spam feedback, error-change cooldown, quiet rearm, motion success and lifecycle clearing\n";
+}
 int main(){
     TestBoatRodSiteCues();
     TestBoatBerthCue();
+    TestBoatActionNotice();
     // Actual native touch/joystick sign, idle deadzone and release.
     assert(SkiffForwardThrottle(-1.)==1.);
     assert(SkiffForwardThrottle(1.)==0.);
