@@ -2,6 +2,29 @@
 
 **Status:** Source-implemented; Galaxy S9 + Daydream controller acceptance pending. Eight built-in classics use the native ABI v1 module host and the common `classic_games_module.cpp` renderer, compiled separately for Pong, Snake, Chutes and Ladders, Checkers, Go, Chess, Breakout and Reversi. This is game-private implementation documentation; the platform contract remains `docs/native/README.md`.
 
+## Shared Classic Quick Menu input ownership — 2026-11-20
+
+All eight native Classic games now distinguish **a complete optional native
+pointer prefix saying POINTER_NONE** from an older **base-only gamepad input
+prefix**. The former indicates that the shell/Quick Menu owns input; the
+guest must not interpret shell-held Select, Back or analog movement as an
+arcade serve, Snake turn, board selection, die roll, or CPU/simulation tick.
+An invalid full ray likewise suspends action. Existing host save-retry
+cadence can continue while gameplay is disarmed. Returning a valid tracked
+or virtual ray still requires a completely neutral control frame before
+a fresh button press can act; a neutral POINTER_NONE frame cannot rearm.
+Pausing/returning continues to use the existing release gate.
+
+Older hosts that provide only the base v1 prefix retain their genuine
+controller/rocker input path without requiring an invented tracked ray.
+No change to rules, AI difficulty, actual graphics, save schema, ABI,
+input mapping, or the unified single APK. The existing all-eight
+production-module lifecycle tests now cover 120 simultaneous shell-owned
+held-control frames, malformed ray, held return, consumed neutral frame,
+fresh legitimate Select and short-prefix gamepad parity. Source-only
+GCC/Clang acceptance and installed Android/physical Galaxy S9 evidence
+remain distinct; device acceptance is not implied by those host tests.
+
 ## Home movement, legible classics and indexed Chess (2026-10-16)
 
 - **Shell locomotion:** Home and DOS Library traverse at exactly 1.40 m/s, twice the preceding 0.70 m/s cap at full touch. Opt-in hosted native-game locomotion remains 0.70 m/s; controller release, click, deadzone, bounded travel and menu gates are unchanged. Deterministic JVM regressions assert both rates.

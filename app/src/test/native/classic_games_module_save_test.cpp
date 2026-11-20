@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <map>
+#include <limits>
 #include <thread>
 
 static int checks=0,reads=0,writes=0;
@@ -33,7 +34,11 @@ static ReverieNativeHostV1 Host(){
     h.read_save=Read;h.write_save=Write;h.request_feedback=Feedback;return h;
 }
 static ReverieNativeInputV1 Input(float seconds=.02f){
-    ReverieNativeInputV1 input{};input.struct_size=sizeof(input);input.delta_seconds=seconds;return input;
+    // These pre-pointer classic tests exercise an actual legacy gamepad ABI,
+    // not a full host prefix that explicitly says the shell owns the ray.
+    ReverieNativeInputV1 input{};
+    input.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    input.delta_seconds=seconds;return input;
 }
 static std::vector<uint8_t> Bytes(Module *m){
     std::vector<uint8_t> data;
@@ -41,6 +46,8 @@ static std::vector<uint8_t> Bytes(Module *m){
     return data;
 }
 static void Ray(ReverieNativeInputV1 &input,float x,float y,float z){
+    // A real tracked controller supplies the complete optional ray prefix.
+    input.struct_size=sizeof(input);
     input.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
     const float length=std::sqrt(x*x+y*y+z*z);
     input.pointer_direction[0]=x/length;input.pointer_direction[1]=y/length;input.pointer_direction[2]=z/length;
@@ -338,7 +345,109 @@ static void PaddleWithLiveRay(){
     std::cout<<kId<<" sustained touchpad movement and pointer handoff PASS\n";
 }
 #endif
+// Directly exercise the production guest Update for every one of the eight
+// CLASSIC_GAME_KIND builds. The old bug accepted shell-owned Select while
+// POINTER_NONE was supplied in a *full* pointer prefix.
+static void ShellPointerOwnership(){
+    slots.clear();failReads=failWrites=false;feedback=0;
+    const auto host=Host();
+    auto* m=static_cast<Module*>(Create(&host));
+    Check(m!=nullptr&&!m->saves.loadBlocked,"fresh shell focus fixture");
+#if CLASSIC_GAME_KIND == 3
+    m->boardCursorX=0;m->boardCursorY=5; // an actual human checker
+#elif CLASSIC_GAME_KIND == 5
+    m->boardCursorX=4;m->boardCursorY=6; // White e2 pawn
+#elif CLASSIC_GAME_KIND == 7
+    m->boardCursorX=3;m->boardCursorY=2; // genuine legal Reversi play
+#endif
+    const auto baseline=Bytes(m);
+#if CLASSIC_GAME_KIND >= 3 && CLASSIC_GAME_KIND != 6
+    const int start_ply=m->board.ply,start_selection=m->board.selected;
+#endif
+    auto stolen=Input(.04f);
+    stolen.struct_size=sizeof(stolen);
+    stolen.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    stolen.primary_down=stolen.secondary_down=1u;
+    stolen.move_x=stolen.move_y=0.f;
+    for(int n=0;n<120;++n){
+        Update(m,&stolen);
+        Check(Bytes(m)==baseline,"120 shell-owned frames preserve actual game");
+        Check(m->releaseToArm,"missing pointer never rearms classic controls");
+    }
+#if CLASSIC_GAME_KIND >= 3 && CLASSIC_GAME_KIND != 6
+    Check(m->board.ply==start_ply&&m->board.selected==start_selection,
+          "shell-owned Select cannot choose a board piece or make a move");
+#endif
+    Check(feedback==0u,"shell-owned frames emit no guest UI confirmation");
+    stolen.primary_down=stolen.secondary_down=0u;
+    Update(m,&stolen);
+    Check(m->releaseToArm&&Bytes(m)==baseline,
+          "neutral full POINTER_NONE must not rearm guest");
+    // Return a valid controller ray while the old shell buttons remain
+    // held. A new click is legal only after a wholly neutral frame.
+    auto tracked=Input(.04f);
+#if CLASSIC_GAME_KIND == 3
+    Ray(tracked,BoardX(m->board,0),BoardY(m->board,5),-2.91f);
+#elif CLASSIC_GAME_KIND == 4
+    Ray(tracked,BoardX(m->board,0),BoardY(m->board,0),-2.91f);
+#elif CLASSIC_GAME_KIND == 5
+    Ray(tracked,BoardX(m->board,4),BoardY(m->board,6),-2.91f);
+#elif CLASSIC_GAME_KIND == 7
+    Ray(tracked,BoardX(m->board,3),BoardY(m->board,2),-2.91f);
+#else
+    Ray(tracked,0.f,0.f,-2.91f);
+#endif
+    tracked.primary_down=tracked.secondary_down=1u;
+    tracked.move_x=.9f;tracked.move_y=-.9f;
+    for(int n=0;n<12;++n)Update(m,&tracked);
+    Check(Bytes(m)==baseline&&m->releaseToArm,
+          "held returned ray cannot repeat shell actions or advance clock");
+    auto malformed=tracked;
+    malformed.pointer_direction[1]=std::numeric_limits<float>::quiet_NaN();
+    Update(m,&malformed);
+    Check(Bytes(m)==baseline&&m->releaseToArm,
+          "invalid full-pointer ray stays shell-owned");
+    tracked.primary_down=tracked.secondary_down=0u;
+    tracked.move_x=tracked.move_y=0.f;
+    Update(m,&tracked);
+    Check(Bytes(m)==baseline&&!m->releaseToArm,
+          "first valid all-neutral ray frame consumes rearm");
+    tracked.primary_down=1u;
+    Update(m,&tracked);
+#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+    Check(m->board.selected!=start_selection,
+          "deliberate new Select chooses human piece after rearm");
+#elif CLASSIC_GAME_KIND == 4 || CLASSIC_GAME_KIND == 7
+    Check(m->board.ply>start_ply,
+          "deliberate new Select performs one legal board placement");
+#else
+    Check(Bytes(m)!=baseline,"deliberate new Select starts native classic");
+#endif
+    Destroy(m);
+    // Fresh historical host still has only the base ABI: no pointer
+    // presence should be inferred, and no hardware ray is mandatory.
+    slots.clear();m=static_cast<Module*>(Create(&host));
+    Check(m!=nullptr,"base-only fallback fixture");
+    auto legacy=Input(.04f);
+    const auto old=Bytes(m);
+#if CLASSIC_GAME_KIND == 3
+    m->boardCursorX=0;m->boardCursorY=5;
+#elif CLASSIC_GAME_KIND == 5
+    m->boardCursorX=4;m->boardCursorY=6;
+#elif CLASSIC_GAME_KIND == 7
+    m->boardCursorX=3;m->boardCursorY=2;
+#endif
+    legacy.primary_down=1u;Update(m,&legacy);
+#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+    Check(m->board.selected>=0,"legacy gamepad selects a human piece");
+#else
+    Check(Bytes(m)!=old,"legacy gamepad still activates without ray tail");
+#endif
+    Destroy(m);
+    std::cout<<kId<<" shell POINTER_NONE 120-frame freeze, invalid ray, held-return neutral rearm, fresh Select, base-only legacy input PASS\n";
+}
 int main(){Lifecycle();
+    ShellPointerOwnership();
 #if CLASSIC_GAME_KIND==0
     PongPointCheckpointServe();
 #endif

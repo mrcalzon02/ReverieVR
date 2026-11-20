@@ -7,6 +7,13 @@
 
 namespace {
 using audit::Check;
+// Preserve historical gamepad-only gameplay in real EGL campaign tests.
+// A current full ABI POINTER_NONE instead belongs to the shell's menu.
+ReverieNativeInputV1 ClassicLegacyInput(){
+    auto input=audit::Input();
+    input.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    return input;
+}
 void Tap(Module *m,ReverieNativeInputV1 in){
     in.primary_down=0;Update(m,&in);
     in.primary_down=1;Update(m,&in);
@@ -20,7 +27,7 @@ Module *Open(const ReverieNativeHostV1 &host){
     auto *m=static_cast<Module*>(Create(&host));
     Check(m&&GlCreate(m),"open real game and create its GL context");
     Resume(m);
-    auto neutral=audit::Input();Update(m,&neutral);
+    auto neutral=ClassicLegacyInput();Update(m,&neutral);
     return m;
 }
 void Close(Module *m){
@@ -38,7 +45,7 @@ void Reopen(Module *&m,const ReverieNativeHostV1 &host){
 #if CLASSIC_GAME_KIND == 2
 void Play(Module *&m,const ReverieNativeHostV1 &host){
     bool chute=false,ladder=false,overshoot=false,playerWin=false,cpuWin=false,shared=false;
-    auto neutral=audit::Input();
+    auto neutral=ClassicLegacyInput();
     int games=0,turns=0;
     auto record=[&](const State::Roll &roll,int tile){
         if(roll.Overshot()&&!overshoot){overshoot=true;Capture(m,"overshoot");}
@@ -71,7 +78,7 @@ auto Square(Module *m,int x,int y){
     return audit::Pointer(BoardX(m->board,x),BoardY(m->board,y),-2.91f);
 }
 [[maybe_unused]] void WaitForPlayer(Module *m){
-    auto neutral=audit::Input();
+    auto neutral=ClassicLegacyInput();
     const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(20);
     while(m->board.side==-1&&!m->board.finished){
         Check(std::chrono::steady_clock::now()<deadline&&!m->cpuFailed,"CPU finishes a legal reply");
@@ -103,12 +110,12 @@ void Play(Module *&m,const ReverieNativeHostV1 &host){
     Check(m->board.finished&&jumps>0,"complete checkers with forced captures");
     Reopen(m,host);Capture(m,"finish");
     std::cout<<"Checkers: "<<m->board.ply<<" plies, "<<jumps<<" human captures, winner "<<m->board.winner<<".\n";
-    Tap(m,audit::Input());Check(m->board.ply==0&&!m->board.finished,"restart checkers");
+    Tap(m,ClassicLegacyInput());Check(m->board.ply==0&&!m->board.finished,"restart checkers");
 }
 #elif CLASSIC_GAME_KIND == 5
 void Play(Module *&m,const ReverieNativeHostV1 &host){
     const auto panel=[](float y){return audit::Pointer(2.22f,y,reverie::chesspanel::kPanelZ);};
-    auto neutral=audit::Input();
+    auto neutral=ClassicLegacyInput();
     for(int color:{1,-1}){
         Tap(m,panel(1.423f));Tap(m,audit::Pointer(color==1?-.66f:.66f,.08f,-2.75f));
         Check(m->board.chessHumanColor==color&&!m->chessNewGameOpen,"choose human color");
@@ -159,14 +166,14 @@ void Play(Module *&m,const ReverieNativeHostV1 &host){
     Tap(m,pass);WaitForPlayer(m);Check(m->board.goReview,"return to review");
     Tap(m,pass);Check(m->board.finished&&m->board.goBlackScore==initial.first&&
         m->board.goWhiteScore==initial.second,"accept exactly the reviewed score");
-    Reopen(m,host);Capture(m,"finish");Tap(m,audit::Input());
+    Reopen(m,host);Capture(m,"finish");Tap(m,ClassicLegacyInput());
     Check(!m->board.finished&&m->board.ply==0,"replay starts fresh");
     std::cout<<"Go: connected pair marked, restored, unmarked, resumed, scored "<<initial.first<<" to "<<initial.second<<" and replayed.\n";
 }
 #else
 void Play(Module *&m,const ReverieNativeHostV1 &host){
     bool pass=false;
-    auto neutral=audit::Input();
+    auto neutral=ClassicLegacyInput();
     int games=0;
     do{
         const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(60);
@@ -197,7 +204,7 @@ void Play(Module *&m,const ReverieNativeHostV1 &host){
 #endif
 #elif CLASSIC_GAME_KIND == 6
 void Play(Module *&m,const ReverieNativeHostV1 &host){
-    auto neutral=audit::Input();
+    auto neutral=ClassicLegacyInput();
     // Miss a serve deliberately, then restore the inter-serve state.
     Tap(m,neutral);
     for(int i=0;i<2000&&m->breakout.moving;++i){
@@ -222,7 +229,7 @@ void Play(Module *&m,const ReverieNativeHostV1 &host){
 }
 #elif CLASSIC_GAME_KIND == 0 || CLASSIC_GAME_KIND == 1
 void Play(Module *&m,const ReverieNativeHostV1 &host){
-    auto neutral=audit::Input();
+    auto neutral=ClassicLegacyInput();
 #if CLASSIC_GAME_KIND == 0
     for(int frame=0;frame<20000&&!m->game.finished;++frame){
         if(!m->game.moving)Tap(m,neutral);

@@ -31,10 +31,11 @@ static std::string Signature(Module* m){
 #endif
     return out.str();
 }
-static ReverieNativeInputV1 Input(){ReverieNativeInputV1 i={};i.struct_size=sizeof(i);i.delta_seconds=.02f;return i;}
+static ReverieNativeInputV1 Input(){ReverieNativeInputV1 i={};i.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;i.delta_seconds=.02f;return i;}
 #if CLASSIC_GAME_KIND>=3 && CLASSIC_GAME_KIND!=6
 static void Click(Module* m,int cell){
-    auto i=Input();i.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    auto i=Input();i.struct_size=sizeof(i);
+    i.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
     float x=BoardX(m->board,cell%8),y=BoardY(m->board,cell/8);
 #if CLASSIC_GAME_KIND==4
     x=BoardX(m->board,cell%19);y=BoardY(m->board,cell/19);

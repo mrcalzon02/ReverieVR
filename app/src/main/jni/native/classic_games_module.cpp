@@ -1576,8 +1576,33 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     ReverieNativeInputV1 copy{};
     std::memcpy(&copy,input,std::min<size_t>(input->struct_size,sizeof(copy)));
     ReverieNativeSanitizeBaseInputV1(&copy);
-    if(!ReverieNativeSanitizePointerV1(&copy))
-        copy.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    // A full pointer prefix with POINTER_NONE (or a corrupt ray) means
+    // the shell/Quick Menu has withdrawn game ownership. The old *short*
+    // ABI has no pointer tail and must remain usable by legacy gamepads.
+    const bool pointer_supplied=ReverieNativeInputHasPointerV1(input)!=0;
+    const bool pointer_valid=ReverieNativeSanitizePointerV1(&copy)!=0;
+    if(!pointer_valid)copy.pointer_kind=REVERIE_NATIVE_POINTER_NONE;
+    if(pointer_supplied&&!pointer_valid){
+        const bool lost=!m->releaseToArm || m->padFocus.active ||
+            m->saveHover || m->snakeHover>=0 || m->boardControlHover!=0;
+        m->releaseToArm=true;
+        m->down=m->previousSecondary=true;
+        m->padFocus.active=m->padFocus.hasAnchor=false;
+        m->cursorRepeat=.17f;
+        m->saveHover=false;
+        m->snakeHover=-1;
+        m->boardControlHover=0;
+#if CLASSIC_GAME_KIND == 5
+        const bool chessLost=m->chessThreatHover!=0 ||
+            m->chessColorHover!=0 || m->chessNewGameHover ||
+            m->chessPanelHover || m->chessHoverSquare>=0;
+        m->chessThreatHover=m->chessColorHover=0;
+        m->chessNewGameHover=m->chessPanelHover=false;
+        m->chessHoverSquare=-1;
+        if(chessLost)m->dirty=true;
+#endif
+        if(lost)m->dirty=true;
+    }
     if(m->releaseToArm){
         // Storage recovery must not depend on a controller becoming neutral.
         // Keep gameplay disarmed while still retrying a failed checkpoint.
@@ -1587,7 +1612,12 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         }
         const bool neutral=copy.primary_down==0&&copy.secondary_down==0&&
             std::abs(copy.move_x)<.12f&&std::abs(copy.move_y)<.12f;
-        if(neutral){m->releaseToArm=false;m->down=m->previousSecondary=false;}
+        // The shell may send an all-neutral POINTER_NONE frame. It must
+        // never rearm the guest until a real ray is back, or until the
+        // historical base-only ABI genuinely supplies the next frame.
+        if(neutral&&(!pointer_supplied||pointer_valid)){
+            m->releaseToArm=false;m->down=m->previousSecondary=false;
+        }
         return;
     }
     const bool pressed=copy.primary_down!=0;
