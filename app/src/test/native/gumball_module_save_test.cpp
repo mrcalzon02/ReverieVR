@@ -169,7 +169,13 @@ int main(int argc,char** argv){
     audit::Check(state->sim.phase()==Phase::Flight&&state->sim.deployed_support()==SupportKind::CapitaineEclair
         &&state->sim.support_pulses()>0,"real live paid escort has acted");
     Pause(state);audit::Check(!state->saveDirty&&!state->campaignSaveError&&PrepareExit(state)==1,"exact flight flush before exit");
-    audit::ambiguous_writes=true;Update(state,&input);Pause(state);
+    // Pause now requires a genuine neutral rearm before simulation can
+    // dirty another checkpoint. Preserve the ambiguous-write test itself.
+    audit::ambiguous_writes=true;
+    auto neutralAfterPause=LegacyInput();
+    Update(state,&neutralAfterPause); // consume the return-to-game release
+    Update(state,&neutralAfterPause); // next real tick becomes save-dirty
+    Pause(state);
     const auto unacknowledged=audit::saves;const auto current=StateBytes(state);
     audit::Check(state->saveDirty&&PrepareExit(state)==0&&StateBytes(state)==current,
         "visible but unacknowledged checkpoint keeps exact live flight and exit guard");
