@@ -43,6 +43,24 @@ for source in "$root"/app/src/test/native/omega_front_*_test.cpp; do
         failures=$((failures + 1))
     fi
 done
+# The terminal-result-to-campaign handoff is a durable save boundary.
+# Exercise its real public-input regression under Clang as well as the
+# suite's default C++17 compiler, without altering older test requirements.
+if [[ "${CXX:-c++}" != "clang++" ]]; then
+    count=$((count + 1))
+    clang_case="$root/app/src/test/native/omega_front_terminal_handoff_test.cpp"
+    if ! clang++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+       -I "$root/app/src/main/jni/native" "$clang_case" \
+       -o "$tmp/omega_front_terminal_handoff_clang"; then
+        echo "FAIL BUILD clang++: omega_front_terminal_handoff_test" >&2
+        failures=$((failures + 1))
+    elif "$tmp/omega_front_terminal_handoff_clang"; then
+        echo "PASS clang++: omega_front_terminal_handoff_test"
+    else
+        echo "FAIL EXECUTION clang++: omega_front_terminal_handoff_test" >&2
+        failures=$((failures + 1))
+    fi
+fi
 echo "Omega Front full headless suite: $((count - failures))/$count passed"
 if ((failures > 0)); then
     echo "FAIL: $failures Omega Front tests need root-cause repair" >&2
