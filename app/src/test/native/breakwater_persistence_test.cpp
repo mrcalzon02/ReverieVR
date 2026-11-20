@@ -243,6 +243,12 @@ int main() {
     Interact(state,At(menu::ShopCard(1)),true); // owned, not another charge
     assert(state->campaign.credits()==after_buy && !state->save_dirty);
     assert(BeginActiveWave(state,false));
+    // The wave starts from a durable Shop checkpoint. In-combat rack changes
+    // and firing must never turn into an unearned mid-wave checkpoint.
+    const auto durable_rack_shop=saved.at(CheckpointSlot(0));
+    const unsigned writes_at_rack_wave_start=writes;
+    assert(Stored(0).phase()==Phase::Shop &&
+           Stored(0).selected_weapon()==WeaponKind::HeavyGun);
 
     const auto rack_input=[](uint8_t id) {
         ReverieNativeInputV1 aim{};
@@ -336,7 +342,25 @@ int main() {
     assert(state->campaign.magazine_left()==ammo_before_rack);
     assert(MountedGunInScene(state,WeaponKind::MachineGun));
     assert(!MountedGunInScene(state,WeaponKind::HeavyGun));
+    assert(writes==writes_at_rack_wave_start &&
+           saved.at(CheckpointSlot(0))==durable_rack_shop);
+    // Simulate a process relaunch while the old instance is still in combat.
+    // The fresh instance must load only the paid Shop snapshot, not a temporary
+    // machine-gun selection, spent combat magazine or a free Flak purchase.
+    auto* interrupted=static_cast<State*>(Create(&host));
+    assert(interrupted);
+    SelectSlot(interrupted,0);
+    assert(interrupted->campaign.phase()==Phase::Shop);
+    assert(interrupted->campaign.selected_weapon()==WeaponKind::HeavyGun);
+    assert(interrupted->campaign.owns_weapon(WeaponKind::HeavyGun));
+    assert(!interrupted->campaign.owns_weapon(WeaponKind::Flak));
+    assert(interrupted->campaign.credits()==after_buy);
+    Destroy(interrupted);
+    assert(writes==writes_at_rack_wave_start &&
+           saved.at(CheckpointSlot(0))==durable_rack_shop);
     FinishWave(state);
+    assert(writes>writes_at_rack_wave_start &&
+           saved.at(CheckpointSlot(0))!=durable_rack_shop);
     assert(state->campaign.phase()==Phase::Shop && state->round_summary);
     assert(Stored(0).selected_weapon()==WeaponKind::MachineGun);
     assert(Stored(0).owns_weapon(WeaponKind::HeavyGun));
