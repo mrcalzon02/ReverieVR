@@ -7,6 +7,22 @@ static void Tap(Controller &c,bool primary,bool secondary=false){
     c.Input({0,0,0,primary,secondary,-1,-1});
 }
 int main(){
+    // An occupied enemy destination gives a visible rejected Select press.
+    Controller occupancy(104);
+    assert(occupancy.Input({0,0,0,false,false,4,11}));
+    assert(occupancy.Input({0,0,0,true,false,-1,-1}));
+    assert(occupancy.selected==0&&occupancy.issued==1u);
+    occupancy.Input({0,0,0,false,false,19,10});
+    const auto before=occupancy.battle.Checksum();
+    assert(occupancy.Input({0,0,0,true,false,-1,-1}));
+    assert(occupancy.rejected&&occupancy.selected==0);
+    assert(occupancy.battle.Checksum()==before);
+    assert(occupancy.issued==1u&&occupancy.battle.queued(0)==0);
+    occupancy.Input({0,0,0,false,false,5,11});
+    assert(occupancy.Input({0,0,0,true,false,-1,-1}));
+    assert(!occupancy.rejected&&occupancy.issued==2u);
+    assert(occupancy.battle.queued(0)==1&&occupancy.battle.ticks()==0);
+
     Controller c(104), b(104);
     assert(c.Input({0,0,0,false,false,4,11}));
     assert(c.cursor_x==4 && c.cursor_y==11);

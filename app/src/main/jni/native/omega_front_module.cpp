@@ -1026,7 +1026,7 @@ void Draw(State *s){
             doctrine_name,battle.ammo_stock(),battle.stolen_rounds());
     }else std::snprintf(status,sizeof(status),"%s",doctrine_name);
     Text(s,status,-.866f,.010f,.82f,.76f,.52f);
-    const char *mode_names[]={"MOVE","ATTACK","REPAIR","RESUPPLY"};
+    const char *mode_names[]={"MOVE","ATTACK","REPAIR PUMP","DEPOT RESUPPLY"};
     char action[90];
     if(battle.result()==game::Result::Defended)
         std::snprintf(action,sizeof(action),defendingConvoy?
@@ -1042,6 +1042,12 @@ void Draw(State *s){
         "HOLD ACTIVE  MINUS WITH NO SELECTION TO RESUME");
     else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),
         "SELECT UNIT  /  ORDERS RESOLVE ON END TURN");
+    else if(s->session.tactical.mode==game::CommandMode::Move &&
+            s->session.tactical.CursorUnit()>=0 &&
+            s->session.tactical.CursorUnit()!=s->session.tactical.selected &&
+            battle.unit(s->session.tactical.CursorUnit())->side==game::Side::Raiders)
+        std::snprintf(action,sizeof(action),
+                      "ENEMY OCCUPIES TILE  /  SWITCH TO ATTACK");
     else {
         const int id=s->session.tactical.selected;
         const auto *unit=battle.unit(id);

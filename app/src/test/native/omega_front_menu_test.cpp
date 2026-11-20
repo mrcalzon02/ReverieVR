@@ -1,6 +1,7 @@
 #include "omega_front_menu.h"
 #include <cassert>
 #include <iostream>
+#include <string>
 
 using reverie::omega::Menu;
 using reverie::omega::MenuCommand;
@@ -48,6 +49,8 @@ int main(){
     menu.OpenOrders(true,0,false,false);
     assert(menu.screen==MenuScreen::TacticalOrders);
     assert(menu.Count(true)==6);
+    assert(std::string(menu.Label(2,true))=="REPAIR PUMP");
+    assert(std::string(menu.Label(3,true))=="RESUPPLY AT DEPOT");
     assert(Tap(menu,true,3)==MenuCommand::SetCommandMode);
     assert(menu.mode_choice==3);
     assert(menu.screen==MenuScreen::Playing);

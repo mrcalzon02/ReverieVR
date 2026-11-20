@@ -156,8 +156,11 @@ public:
     int queued(int id) const { return Valid(id) ? queues_[id].size : 0; }
 
     bool QueueMove(int id, int x, int y) {
+        // Terrain-only reachability does not make an occupied square usable.
+        // Refuse an impossible destination at order time, before spending
+        // the tactical turn on a move that execution would immediately pop.
         if (!PlayerCanOrder(id) || !Walkable(x,y) ||
-            (x == pump_x_ && y == pump_y_) ||
+            (x == pump_x_ && y == pump_y_) || Occupant(x,y) >= 0 ||
             !PathExists(units_[id].x, units_[id].y, x, y)) return false;
         return Enqueue(id, Order{OrderType::Move, static_cast<int16_t>(x), static_cast<int16_t>(y)});
     }

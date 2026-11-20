@@ -105,7 +105,8 @@ public:
             return index>=0&&index<8?v[index]:"";
         }
         case MenuScreen::TacticalOrders: {
-            const char *v[]={"MOVE","ATTACK","REPAIR SELF","RESUPPLY SELF",
+            // Engineers repair the pump; all resupply uses a finite depot.
+            const char *v[]={"MOVE","ATTACK","REPAIR PUMP","RESUPPLY AT DEPOT",
                              "END TURN / RESOLVE","CLEAR UNIT ORDERS"};
             return index>=0&&index<6?v[index]:"";
         }

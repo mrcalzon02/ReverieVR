@@ -16,6 +16,25 @@ int main() {
     assert(b.QueueMove(0, 8, 11));
     assert(!a.QueueAttack(1,4)); // unseen foe cannot be tracked
     assert(!b.QueueAttack(1,4));
+    // Occupancy is a separate constraint from pathfinding. Invalid move
+    // targets must not enter the queue or change the deterministic state.
+    Battle occupied(101);
+    occupied.ClearUnits();
+    assert(occupied.AddUnit(Side::Hearthwell,Class::Rifle,2,2)==0);
+    assert(occupied.AddUnit(Side::Hearthwell,Class::Engineer,3,2)==1);
+    assert(occupied.AddUnit(Side::Raiders,Class::Rifle,8,8)==2);
+    const uint64_t occupiedBefore=occupied.Checksum();
+    assert(!occupied.QueueMove(0,3,2)); // allied unit
+    assert(!occupied.QueueMove(0,8,8)); // enemy unit
+    assert(!occupied.QueueMove(0,2,2)); // same unit
+    assert(occupied.queued(0)==0&&occupied.Checksum()==occupiedBefore);
+    assert(occupied.QueueMove(0,2,4)); // empty reachable square
+    assert(occupied.queued(0)==1);
+    occupied.Step();
+    assert(occupied.unit(0)->x==2&&occupied.unit(0)->y==3);
+    occupied.Step();
+    assert(occupied.unit(0)->x==2&&occupied.unit(0)->y==4);
+    assert(occupied.queued(0)==0);
     for(int t=0;t<25;++t) {
         a.Step();b.Step();
         assert(a.Checksum()==b.Checksum());
