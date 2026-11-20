@@ -1,32 +1,34 @@
 #ifndef REVERIE_BREAKWATER_POINTER_FOCUS_H
 #define REVERIE_BREAKWATER_POINTER_FOCUS_H
+#include <cmath>
 
 namespace reverie { namespace breakwater {
-// The shell sends POINTER_NONE while its Quick Menu owns input, or when the
-// controller ray is unavailable. Suspend game time and require a fresh
-// release before another press can reach gameplay on regained focus.
+// Shell Quick Menu and headset pause own all gameplay input until the guest
+// sees a valid pointer AND a complete neutral release. Back/Select and the
+// touchpad share the shell, so held analog cannot accidentally cycle guns.
+// The neutral frame itself is consumed: the next action must be deliberate.
 class PointerFocusGate {
 public:
-    void RequireRelease() {
-        primary_blocked_ = true;
-        secondary_blocked_ = true;
-    }
-    bool Filter(bool pointer_available, bool &primary, bool &secondary) {
-        if (!pointer_available) {
+    void RequireRelease() { awaiting_neutral_=true; }
+    bool Filter(bool pointer_available,bool &primary,bool &secondary,
+                float move_x=0.f,float move_y=0.f) {
+        if(!pointer_available) {
             RequireRelease();
-            primary = false;
-            secondary = false;
+            primary=secondary=false;
             return false;
         }
-        if (!primary) primary_blocked_ = false;
-        else if (primary_blocked_) primary = false;
-        if (!secondary) secondary_blocked_ = false;
-        else if (secondary_blocked_) secondary = false;
+        if(awaiting_neutral_) {
+            const bool neutral=!primary&&!secondary &&
+                std::isfinite(move_x)&&std::isfinite(move_y) &&
+                std::fabs(move_x)<=.20f && std::fabs(move_y)<=.20f;
+            primary=secondary=false;
+            if(neutral)awaiting_neutral_=false;
+            return false;
+        }
         return true;
     }
 private:
-    bool primary_blocked_ = false;
-    bool secondary_blocked_ = false;
+    bool awaiting_neutral_=false;
 };
-}} // namespace reverie::breakwater
+}} // reverie::breakwater
 #endif

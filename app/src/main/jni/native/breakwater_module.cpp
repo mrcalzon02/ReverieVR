@@ -2106,7 +2106,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     // Quick Menu/temporary controller loss withdraws the gameplay ray.
     // Do not advance enemies, reloads, effects, or score while defenseless.
     if(!s->pointer_focus.Filter(
-            copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE,down,secondary)) {
+            copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE,down,secondary,
+            copy.move_x,copy.move_y)) {
         s->held=false;
         s->secondary_held=false;
         s->combat_input.Release();
@@ -2136,7 +2137,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->audio_loops.Flush(s->host,copy.delta_seconds);
         return;
     }
-    // Only fresh post-focus button presses can enter any game action.
+    // The full neutral frame is consumed after controller/shell focus loss.
+    // Otherwise a held shell touch direction could instantly switch guns
+    // through the weapon-axis shortcut on returning to the battery.
     copy.primary_down=down?1u:0u;
     copy.secondary_down=secondary?1u:0u;
     s->pointer_visible=true;

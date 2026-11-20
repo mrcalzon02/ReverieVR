@@ -1039,44 +1039,51 @@ int main() {
             0,1.6f,-9.0f,2.4f,1.3f,.22f));
         assert(sprites.size()==before+30);
     }
-    // Quick Menu takes away the pointer: enemy waves, shop and held buttons
-    // cannot act again until a valid pointer returns and buttons release.
+    // Quick Menu/lifecycle pause must not transfer held shell input to
+    // combat. This includes the touchpad: RIGHT/LEFT cycles owned weapons.
+    // A full release frame does not advance game simulation either.
     {
         PointerFocusGate focus;
         bool primary=true, secondary=true;
-        assert(focus.Filter(true,primary,secondary) && primary && secondary);
-        assert(!focus.Filter(false,primary,secondary));
-        assert(!primary && !secondary);
-        primary=secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(!primary && !secondary);
-        primary=false;secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(!primary && !secondary);
-        primary=secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(primary && !secondary);
+        assert(focus.Filter(true,primary,secondary,0.f,0.f)&&primary&&secondary);
+        assert(!focus.Filter(false,primary,secondary,.99f,-.8f));
+        assert(!primary&&!secondary);
+        unsigned accepted=0;
+        for(int frame=0;frame<120;++frame){
+            primary=secondary=true;
+            if(focus.Filter(true,primary,secondary,.99f,0.f))++accepted;
+            assert(!primary&&!secondary);
+        }
+        assert(accepted==0); // no weapon cycles, firing or enemy time
         primary=secondary=false;
-        assert(focus.Filter(true,primary,secondary));
+        assert(!focus.Filter(true,primary,secondary,.95f,0.f));
+        assert(!focus.Filter(true,primary,secondary,0.f,-.94f));
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
         primary=secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(primary && secondary);
-        focus.RequireRelease(); // Android lifecycle pause
-        primary=secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(!primary && !secondary);
+        assert(focus.Filter(true,primary,secondary,.91f,0.f));
+        assert(primary&&secondary);
+        // A physical Pause/Resume is identical to a lost controller ray.
+        focus.RequireRelease();
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
+        assert(!primary&&!secondary);
         primary=secondary=false;
-        assert(focus.Filter(true,primary,secondary));
-        primary=secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(primary && secondary);
-        assert(!focus.Filter(false,primary,secondary));
-        primary=secondary=false;
-        assert(!focus.Filter(false,primary,secondary));
-        assert(focus.Filter(true,primary,secondary));
-        primary=secondary=true;
-        assert(focus.Filter(true,primary,secondary));
-        assert(primary && secondary);
+        assert(!focus.Filter(true,primary,secondary,.96f,0.f));
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
+        primary=true;
+        assert(focus.Filter(true,primary,secondary,0.f,0.f)&&primary);
+        // A second pointer outage during rearming cannot consume release.
+        assert(!focus.Filter(false,primary,secondary,0.f,0.f));
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
+        assert(!focus.Filter(false,primary,secondary,0.f,0.f));
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f)); // new neutral
+        assert(focus.Filter(true,primary,secondary,0.f,0.f));
+        // Nonfinite axes are never accepted as a neutral release.
+        focus.RequireRelease();
+        assert(!focus.Filter(true,primary,secondary,
+                             std::numeric_limits<float>::quiet_NaN(),0.f));
+        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
+        assert(focus.Filter(true,primary,secondary,0.f,0.f));
     }
     // Pressing FIRE TO RESTART must atomically invalidate the previous
     // inter-wave save. This is a game-private zero-byte ABI-v1 slot, not
