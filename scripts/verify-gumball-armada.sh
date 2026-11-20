@@ -15,6 +15,7 @@ FLIGHT="$ROOT/app/src/test/native/gumball_flight_control_test.cpp"
 READINESS="$ROOT/app/src/test/native/gumball_shipyard_readiness_test.cpp"
 SHIP3D="$ROOT/app/src/test/native/gumball_ship_3d_test.cpp"
 SAVE="$ROOT/app/src/test/native/gumball_campaign_save_test.cpp"
+FOCUS="$ROOT/app/src/test/native/gumball_input_focus_test.cpp"
 INCLUDE="$ROOT/app/src/main/jni/native"
 for compiler in g++ clang++; do
     if ! command -v "$compiler" >/dev/null 2>&1; then
@@ -22,6 +23,9 @@ for compiler in g++ clang++; do
         continue
     fi
     echo "Testing Gumball Armada with $compiler"
+    "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+        -I"$INCLUDE" "$FOCUS" -o "$WORK/focus-$compiler"
+    "$WORK/focus-$compiler"
     "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
         -I"$INCLUDE" "$SOURCE" -o "$WORK/gumball-$compiler"
     "$WORK/gumball-$compiler"
@@ -60,6 +64,10 @@ for compiler in g++ clang++; do
     "$WORK/save-$compiler"
 done
 if command -v clang++ >/dev/null 2>&1; then
+    clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
+        -fsanitize=address,undefined -fno-omit-frame-pointer \
+        -I"$INCLUDE" "$FOCUS" -o "$WORK/focus-sanitized"
+    "$WORK/focus-sanitized"
     clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
         -fsanitize=address,undefined -fno-omit-frame-pointer \
         -I"$INCLUDE" "$SOURCE" -o "$WORK/gumball-sanitized"

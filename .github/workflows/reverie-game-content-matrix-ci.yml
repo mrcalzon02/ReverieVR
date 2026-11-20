@@ -31,6 +31,8 @@ on:
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
       - 'app/src/main/jni/native/gumball_armada_module.cpp'
+      - 'app/src/main/jni/native/gumball_input_focus.h'
+      - 'app/src/test/native/gumball_input_focus_test.cpp'
       - 'app/src/main/jni/native/gumball_menu_layout.h'
       - 'app/src/main/jni/native/gumball_menu_hit.h'
       - 'app/src/test/native/gumball_menu_layout_test.cpp'

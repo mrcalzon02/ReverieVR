@@ -255,6 +255,29 @@ jobs:
       - uses: actions/checkout@v4
       - name: Execute full existing real Gumball Armada gameplay suite
         run: bash scripts/verify-gumball-armada.sh
+      - name: Install real GLES2 headers for Gumball module lifecycle regression
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dri
+      - name: Run actual hosted Gumball flight focus, persistence and stereo in GCC and Clang
+        shell: bash
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p validation/gumball-module
+          for cc in g++ clang++; do
+            "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
+              -Iapp/src/main/jni/native -Iapp/src/test/native \
+              app/src/test/native/gumball_module_save_test.cpp \
+              -lEGL -lGLESv2 -lz -o "${RUNNER_TEMP}/gumball-module-${cc}"
+            "${RUNNER_TEMP}/gumball-module-${cc}" validation/gumball-module \
+              | tee "validation/gumball-module/${cc}.log"
+            grep -F 'PASS Gumball actual module shell loss:' \
+              "validation/gumball-module/${cc}.log"
+          done
 
   omega-campaign:
     name: Omega Front boot-to-battle, campaign, sprites and input regressions

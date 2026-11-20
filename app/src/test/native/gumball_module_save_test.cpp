@@ -2,11 +2,18 @@
 #include "featured_module_test_host.h"
 #include <iterator>
 using Checkpoint=reverie::gumball::CampaignSave;
+static ReverieNativeInputV1 LegacyInput(){
+    auto frame=audit::Input();
+    // This older host intentionally exposes only buttons and pad axes.
+    // Full-size POINTER_NONE frames belong to the shell/Quick Menu instead.
+    frame.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    return frame;
+}
 static void Tap(Module* state,float x,float y){auto in=audit::Pointer(-4,0,-2.94f);Update(state,&in);in=audit::Pointer(x,y,-2.94f);Update(state,&in);in.primary_down=1;Update(state,&in);in.primary_down=0;Update(state,&in);}
-static void Back(Module* state){auto in=audit::Input();Update(state,&in);in.secondary_down=1;Update(state,&in);in.secondary_down=0;Update(state,&in);}
+static void Back(Module* state){auto in=LegacyInput();Update(state,&in);in.secondary_down=1;Update(state,&in);in.secondary_down=0;Update(state,&in);}
 static Checkpoint::Bytes StateBytes(const Module* m){Checkpoint::Bytes bytes{};audit::Check(Checkpoint::Encode(m->sim,m->ship,&bytes),"encode full actual module state");return bytes;}
 static void LaunchCrown(Module* state){
-    auto idle=audit::Input();
+    auto idle=LegacyInput();
     Tap(state,0,-.25f);
     for(int i=0;i<12;++i)Update(state,&idle);
     Tap(state,0,-.25f);
@@ -25,7 +32,7 @@ static void RoyalRescueCheckpoint(ReverieNativeHostV1* host){
     const auto cash=state->sim.cash();
     audit::Capture(Render,state,"gumball-crown-chart");
     LaunchCrown(state);
-    auto input=audit::Input();input.primary_down=1;
+    auto input=LegacyInput();input.primary_down=1;
     for(int i=0;i<270;++i)Update(state,&input);
     audit::Check(state->sim.phase()==Phase::SignalLost&&!state->sim.king_rescued(),"holding off-target times out and stays on result");
     audit::Check(state->sim.cash()==cash&&state->sim.support().booked()==SupportKind::CapitaineEclair,
@@ -40,7 +47,7 @@ static void RoyalRescueCheckpoint(ReverieNativeHostV1* host){
         if(leg==0){
             // Untracked fallback uses real pad axes. The next legs use the
             // controller's world-space ray and its independent click.
-            input=audit::Input();
+            input=LegacyInput();
             const auto axes=reverie::gumball::FlightAxesToTarget(state->sim.player_x(),
                 state->sim.player_y(),target,.05f,state->sim.flight_speed());
             input.move_x=axes.x;input.move_y=axes.y;
@@ -70,7 +77,7 @@ static void RoyalRescueCheckpoint(ReverieNativeHostV1* host){
     audit::reject_writes=false;Pause(state);
     audit::Check(PrepareExit(state)==1&&slot[8]==5,"V5 ending durably retried");
     GlEnd(state);Destroy(state);state=static_cast<Module*>(Create(host));audit::Check(GlStart(state)==1,"ending GL");
-    input=audit::Input();input.primary_down=1;Update(state,&input);
+    input=LegacyInput();input.primary_down=1;Update(state,&input);
     audit::Check(state->sim.phase()==Phase::Homecoming,"held restart input cannot skip ending");
     audit::Capture(Render,state,"gumball-king-home");
     input.primary_down=0;Update(state,&input);input.primary_down=1;Update(state,&input);Update(state,&input);
@@ -87,14 +94,74 @@ static void RoyalRescueCheckpoint(ReverieNativeHostV1* host){
     Destroy(state);
     std::puts("PASS Gumball v4 four-fortress save to Crown Route, timeout, retry, pad/ray rescue, interrupted tow, homecoming, credits and saved free flight");
 }
+ static void ShellFocusOwnership(ReverieNativeHostV1* host){
+    audit::saves.clear();
+    auto* m=static_cast<Module*>(Create(host));
+    audit::Check(m&&!m->loadBlocked&&GlStart(m)==1,"focus regression real module creation");
+    auto legacy=LegacyInput();
+    // Real route menu first click arms the lane but never launches it.
+    Tap(m,-1.55f,-.25f);
+    audit::Check(m->sim.phase()==Phase::Chart&&m->routeLaunch.armed==0,
+                 "actual Gumball chart route is armed");
+    auto withdrawn=audit::Input(); // full-sized native pointer prefix
+    withdrawn.primary_down=withdrawn.secondary_down=1u;
+    withdrawn.move_x=1.f;
+    const auto chartBefore=StateBytes(m);
+    for(int i=0;i<35;++i)Update(m,&withdrawn);
+    audit::Check(m->routeLaunch.armed==-1&&m->sim.phase()==Phase::Chart&&
+                 StateBytes(m)==chartBefore,"Quick Menu cancels armed route and preserves chart");
+    auto back=audit::Pointer(-1.55f,-.25f,-2.94f);
+    back.primary_down=1u;back.move_x=1.f;
+    Update(m,&back);
+    audit::Check(m->routeLaunch.armed==-1&&StateBytes(m)==chartBefore,
+                 "held select cannot rearm route on focus return");
+    back.primary_down=0u;back.move_x=0.f;
+    Update(m,&back); // consume neutral rearm frame
+    Tap(m,-1.55f,-.25f);
+    audit::Check(m->routeLaunch.armed==0&&m->sim.phase()==Phase::Chart,
+                 "first intentional route click arms, never instant launch");
+    for(int i=0;i<12;++i)Update(m,&legacy);
+    Tap(m,-1.55f,-.25f);
+    audit::Check(m->sim.phase()==Phase::Flight,"live chart click launches real sortie");
+    const auto flight=StateBytes(m);
+    const auto elapsed=m->sim.elapsed();
+    const auto shots=m->sim.shots_fired();
+    for(int i=0;i<140;++i)Update(m,&withdrawn);
+    audit::Check(m->sim.phase()==Phase::Flight&&m->sim.elapsed()==elapsed
+                 &&m->sim.shots_fired()==shots&&StateBytes(m)==flight,
+                 "withdrawn pointer freezes real flight, firing, and saved game");
+    back=audit::Pointer(.20f,-.10f,-2.94f);
+    back.primary_down=back.secondary_down=1u;
+    back.move_y=-1.f;
+    for(int i=0;i<8;++i)Update(m,&back);
+    audit::Check(StateBytes(m)==flight,"held inputs after pointer return cannot fire or steer");
+    back.primary_down=back.secondary_down=0u;back.move_y=0.f;
+    Update(m,&back);
+    audit::Check(StateBytes(m)==flight,"neutral rearm itself is not gameplay tick");
+    Update(m,&legacy);
+    audit::Check(m->sim.elapsed()>elapsed&&m->sim.shots_fired()==shots,
+                 "legacy button-only gamepad path resumes real flight without firing");
+    Pause(m);
+    const auto paused=StateBytes(m);
+    back.primary_down=1u;
+    for(int i=0;i<8;++i)Update(m,&back);
+    audit::Check(StateBytes(m)==paused,"Pause requires released controller on Resume");
+    back.primary_down=0u;Update(m,&back);
+    audit::Check(StateBytes(m)==paused,"pause return neutral consumes no time");
+    GlEnd(m);Destroy(m);
+    std::puts("PASS Gumball actual module shell loss: armed route cancel, live flight freeze, neutral rearm, legacy gamepad and pause");
+}
+
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     audit::Check(argc==2,"capture directory argument");audit::output=argv[1];audit::GL context;auto host=audit::Host();
-    RoyalRescueCheckpoint(&host);audit::saves.clear();
+    RoyalRescueCheckpoint(&host);
+    ShellFocusOwnership(&host);
+    audit::saves.clear();
     auto* state=static_cast<Module*>(Create(&host));audit::Check(state&&!state->loadBlocked&&GlStart(state)==1,"fresh Gumball actual GL");
     Tap(state,1.55f,-.94f);Tap(state,0,.88f);
     audit::Check(state->sim.cash()==55&&state->sim.support().booked()==SupportKind::CapitaineEclair,"real paid support purchase");
-    Back(state);Tap(state,-1.55f,-.25f);auto input=audit::Input();for(int i=0;i<12;++i)Update(state,&input);
+    Back(state);Tap(state,-1.55f,-.25f);auto input=LegacyInput();for(int i=0;i<12;++i)Update(state,&input);
     const auto booking=audit::saves;audit::reject_writes=true;Tap(state,-1.55f,-.25f);
     audit::Check(state->sim.phase()==Phase::Flight&&state->saveDirty&&state->campaignSaveError,"launch checkpoint failure remains dirty");
     audit::Check(PrepareExit(state)==0&&audit::saves==booking,"paid booking protected while live flight cannot be saved");
@@ -113,7 +180,7 @@ int main(int argc,char** argv){
     const auto elapsed=state->sim.elapsed();const auto pulses=state->sim.support_pulses();const auto cash=state->sim.cash();
     auto* restored=static_cast<Module*>(Create(&host));
     audit::Check(restored&&!restored->loadBlocked&&restored->resumeFlight&&StateBytes(restored)==before,"full sortie/ship restored, waiting deliberate continuation");
-    auto zero=audit::Input();zero.delta_seconds=0;zero.primary_down=1;Update(restored,&zero);
+    auto zero=LegacyInput();zero.delta_seconds=0;zero.primary_down=1;Update(restored,&zero);
     audit::Check(restored->resumeFlight,"held initial click cannot resume saved flight");
     zero.primary_down=0;Update(restored,&zero);
     for(int i=0;i<10;++i)Update(restored,&input);
@@ -135,7 +202,7 @@ int main(int argc,char** argv){
     Tap(state,-1.55f,-.94f);audit::reject_writes=true;Tap(state,-1.82f,.53f);
     audit::Check(state->sim.level(Upgrade::Blaster)==1&&state->sim.cash()==30&&state->saveDirty,"live failed purchase retained");
     audit::Capture(Render,state,"gumball-after-save-warning");
-    const auto attempts=audit::writes;input=audit::Input();for(int i=0;i<40;++i)Update(state,&input);
+    const auto attempts=audit::writes;input=LegacyInput();for(int i=0;i<40;++i)Update(state,&input);
     audit::Check(audit::writes<=attempts+3&&state->saveDirty&&PrepareExit(state)==0,"bounded retry; failed exit preserves pending purchase");
     audit::reject_writes=false;Resume(state);audit::Check(!state->saveDirty&&!state->campaignSaveError,"Resume flushes recovered purchase");
     Back(state);Tap(state,0,-.94f);audit::Check(state->inYard,"actual shipyard navigation");

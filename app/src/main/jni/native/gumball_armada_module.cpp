@@ -5,6 +5,7 @@
 #include "gumball_space_3d.h"
 #include "gumball_shipyard_readiness.h"
 #include "gumball_menu_hit.h"
+#include "gumball_input_focus.h"
 #include "reverie_native_lato_text.h"
 #include "gumball_menu_layout.h"
 #include "reverie_native_sdk.h"
@@ -70,6 +71,7 @@ struct Module {
     bool flightPointer=false;
     float flightTargetX=0.f,flightTargetY=0.f;
     reverie::gumball::MenuPointerFocus pointerFocus{};
+    reverie::gumball::GuestInputFocus guestFocus{};
     char yardFeedback[84]="SELECT PART ON RIGHT / CLICK SHIP TO EDIT";
     Part brush=Part::Frame;
     bool primary=false,campaignSaveError=false,shipSaveError=false,upload=true;
@@ -988,6 +990,10 @@ void GlEnd(void* p){
 }
 void Resume(void* p){
     auto* m=static_cast<Module*>(p);if(!m)return;
+    m->guestFocus.RequireNeutral();
+    m->routeLaunch.reset();
+    m->pointerFocus.screenChanged();
+    m->flightPointer=false;
     if(m->loadBlocked)LoadCheckpoint(m);
     else if(m->saveDirty)Save(m);
     Rebuild(m);
@@ -995,6 +1001,10 @@ void Resume(void* p){
 void Pause(void* p){
     auto* m=static_cast<Module*>(p);if(!m)return;
     if(m->saveDirty&&!m->loadBlocked)Save(m);
+    m->guestFocus.RequireNeutral();
+    m->routeLaunch.reset();
+    m->pointerFocus.screenChanged();
+    m->flightPointer=false;
     m->primary=false;m->secondary=false;
     const auto phase=m->sim.phase();
     m->awaitResultRelease=phase!=Phase::Chart&&phase!=Phase::Flight&&phase!=Phase::Rescue;
@@ -1009,6 +1019,21 @@ void Update(void* p,const ReverieNativeInputV1* in){
     auto* m=static_cast<Module*>(p);
     if(!m||!ReverieNativeInputHasBaseV1(in))return;
     const float dt=std::max(0.f,std::min(.05f,std::isfinite(in->delta_seconds)?in->delta_seconds:0.f));
+    // Durable retries remain serviceable even while Quick Menu owns input.
+    if(m->saveDirty&&!m->loadBlocked) {
+        m->saveRetrySeconds-=dt;
+        if(m->saveRetrySeconds<=0.f){Save(m);Rebuild(m);}
+    }
+    if(!m->guestFocus.Allow(in)){
+        const bool hadRoute=m->routeLaunch.armed>=0;
+        m->routeLaunch.reset();
+        m->pointerFocus.screenChanged();
+        m->flightPointer=false;
+        m->primary=m->secondary=false;
+        m->navTime=0.f;
+        if(hadRoute)Rebuild(m); // remove armed-route highlight once
+        return; // freeze combat, timers, rescue, purchases and editor actions
+    }
     const bool pressed=in->primary_down!=0;
     if(m->loadBlocked){
         if(pressed&&!m->primary){LoadCheckpoint(m);Rebuild(m);}
@@ -1018,10 +1043,6 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(!pressed)m->resumeReady=true;
         if(pressed&&!m->primary&&m->resumeReady){m->resumeFlight=false;Rebuild(m);}
         m->primary=pressed;return; // A restored flight waits for deliberate continuation.
-    }
-    if(m->saveDirty){
-        m->saveRetrySeconds-=dt;
-        if(m->saveRetrySeconds<=0.f){Save(m);Rebuild(m);}
     }
     if(m->awaitResultRelease){
         if(!pressed)m->awaitResultRelease=false;
