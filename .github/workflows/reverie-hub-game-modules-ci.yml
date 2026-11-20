@@ -14,6 +14,11 @@ on:
       - 'app/src/main/jni/native/gumball_*.h'
       - 'app/src/main/jni/native/gumball_*.cpp'
       - 'app/src/test/native/gumball_*_test.cpp'
+      # Red Ledger economy/UI/saving must be exercised in the real installed
+      # Android hub, not only the separate headless and Mesa EGL suites.
+      - 'app/src/main/jni/native/red_ledger_*.h'
+      - 'app/src/main/jni/native/red_ledger_*.cpp'
+      - 'app/src/test/native/red_ledger_*_test.cpp'
       - 'scripts/verify-gumball-armada.sh'
       - 'scripts/verify-gumball-native-module.sh'
       - 'app/src/main/jni/native/omega_front_*.h'
