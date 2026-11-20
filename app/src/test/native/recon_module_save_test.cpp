@@ -1,20 +1,92 @@
 #include "recon_projects_module.cpp"
 #include "featured_module_test_host.h"
+#include <limits>
 using Checkpoint=reverie::recon::Checkpoint;
-static void Click(State* s){auto in=audit::Input();Update(s,&in);in.primary_down=1;Update(s,&in);in.primary_down=0;Update(s,&in);}
-static void Cycle(State* s,int count=1){for(int i=0;i<count;++i){auto in=audit::Input();Update(s,&in);in.secondary_down=1;Update(s,&in);in.secondary_down=0;Update(s,&in);}}
+// The historical button-only host had no pointer ABI tail. A full
+// POINTER_NONE prefix is shell ownership, not equivalent legacy input.
+static ReverieNativeInputV1 LegacyInput(){
+    auto input=audit::Input();
+    input.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    return input;
+}
+static void Click(State* s){auto in=LegacyInput();Update(s,&in);in.primary_down=1;Update(s,&in);in.primary_down=0;Update(s,&in);}
+static void Cycle(State* s,int count=1){for(int i=0;i<count;++i){auto in=LegacyInput();Update(s,&in);in.secondary_down=1;Update(s,&in);in.secondary_down=0;Update(s,&in);}}
 static Checkpoint::Bytes Bytes(State* s){Checkpoint::Bytes bytes{};audit::Check(Checkpoint::Encode(Snapshot(s),&bytes),"actual current-phase checkpoint encodes");return bytes;}
 static State* Recreate(State* s,const ReverieNativeHostV1* host,const std::string& name){
     Pause(s);audit::Check(PrepareExit(s)==1,"durable exit permitted");const auto before=Bytes(s);
     const auto frame=audit::Capture(Render,s,name+"-before");
     GlEnd(s);Destroy(s);s=static_cast<State*>(Create(host));
     audit::Check(s&&!s->loadBlocked&&Bytes(s)==before,"exact actual module restored");
-    auto held=audit::Input();held.primary_down=1;Update(s,&held);
+    auto held=LegacyInput();held.primary_down=1;Update(s,&held);
     audit::Check(Bytes(s)==before,"held input cannot advance a restored phase");
     held.primary_down=0;Update(s,&held);
     audit::Check(GlStart(s)==1,"recreated board actual GL");
     audit::Check(frame==audit::Capture(Render,s,name+"-after"),"both eye frames identical after phase recreation");
     return s;
+}
+static void ShellFocusOwnership(const ReverieNativeHostV1 &host){
+    audit::saves.clear();
+    auto *guest=static_cast<State*>(Create(&host));
+    audit::Check(guest&&!guest->loadBlocked,"real recon guest starts before shell ownership");
+    const auto initial=Bytes(guest);
+    const unsigned writes=audit::writes;
+    auto shell=audit::Input(); // complete native ABI with POINTER_NONE
+    shell.primary_down=shell.secondary_down=1u;shell.move_x=1.f;
+    for(int frame=0;frame<100;++frame)Update(guest,&shell);
+    audit::Check(!guest->inputReady&&Bytes(guest)==initial&&audit::writes==writes,
+        "100 Quick Menu frames cannot choose recon mission, spend patrol fuel or write save");
+    auto ray=audit::Pointer(0.f,0.f,-2.f);
+    ray.primary_down=ray.secondary_down=1u;ray.move_x=1.f;
+    for(int frame=0;frame<12;++frame)Update(guest,&ray);
+    audit::Check(!guest->inputReady&&Bytes(guest)==initial&&audit::writes==writes,
+        "held Select, Back and pad after pointer recovery never trigger a mission");
+    ray.primary_down=ray.secondary_down=0u;ray.move_x=.4f;
+    Update(guest,&ray);
+    audit::Check(!guest->inputReady&&Bytes(guest)==initial,
+        "partially held pad is not a safe neutral release");
+    ray.move_x=0.f;
+    Update(guest,&ray);
+    audit::Check(guest->inputReady&&Bytes(guest)==initial&&audit::writes==writes,
+        "neutral release frame itself does not start a mission");
+    ray.primary_down=1u;Update(guest,&ray);
+#if RECON_PROJECT_KIND == 0
+    audit::Check(guest->simulation.phase()==sim::Phase::InFlight,
+        "fresh tracked Select explicitly starts Lantern recon");
+#else
+    audit::Check(guest->simulation.phase()==sim::Phase::Travelling,
+        "fresh tracked Select explicitly starts Forward patrol");
+#endif
+    audit::Check(audit::writes>writes,"deliberate mission is durably checked");
+    const auto started=Bytes(guest);
+    const auto written=audit::writes;
+    auto invalid=ray;
+    invalid.pointer_direction[0]=std::numeric_limits<float>::quiet_NaN();
+    for(int frame=0;frame<10;++frame)Update(guest,&invalid);
+    audit::Check(!guest->inputReady&&Bytes(guest)==started&&audit::writes==written,
+        "invalid full native ray cannot advance a sortie or modify checkpoint");
+    ray.primary_down=1u;Update(guest,&ray);
+    audit::Check(!guest->inputReady&&Bytes(guest)==started,
+        "tracked Select held across invalid ray cannot act");
+    ray.primary_down=0u;ray.move_y=std::numeric_limits<float>::quiet_NaN();
+    Update(guest,&ray);
+    audit::Check(!guest->inputReady&&Bytes(guest)==started,
+        "NaN pad cannot falsely rearm the controller");
+    ray.move_y=0.f;Update(guest,&ray);
+    audit::Check(guest->inputReady&&Bytes(guest)==started,
+        "neutral release after invalid pointer consumes no mission step");
+    Pause(guest);Resume(guest);
+    ray.primary_down=1u;Update(guest,&ray);
+    audit::Check(!guest->inputReady&&Bytes(guest)==started,
+        "lifecycle Resume refuses still-held Select");
+    ray.primary_down=0u;Update(guest,&ray);
+    audit::Check(guest->inputReady&&Bytes(guest)==started,
+        "lifecycle first neutral frame is consumed without a new sortie");
+    ray.primary_down=1u;Update(guest,&ray);
+    audit::Check(Bytes(guest)!=started&&guest->simulation.phase()!=sim::Phase::Briefing,
+        "new intentional post-pause action advances the existing native mission");
+    Destroy(guest);
+    audit::saves.clear();
+    std::puts("PASS_RECON_SHELL_FOCUS full pointer NONE and invalid rays block actions; neutral rearm and legacy controls");
 }
 #if RECON_PROJECT_KIND == 0
 static void InspectLoupe(State *s,audit::GL &gl){
@@ -52,7 +124,7 @@ static void InspectLoupe(State *s,audit::GL &gl){
     Pause(s);GlEnd(s);gl.Recreate();audit::Check(GlStart(s)==1,"loupe GL restored");Resume(s);
     audit::Check(frame==audit::Capture(Render,s,"lantern-bridge-loupe-restored",scale),
         "both magnified eye frames survive pause and lost GL context");
-    auto neutral=audit::Input();Update(s,&neutral);
+    auto neutral=LegacyInput();Update(s,&neutral);
     auto old=aim;old.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;Update(s,&old);
     audit::Check(s->cropX==4 && s->cropY==6,"old input prefix preserves inspection");
     std::puts("PASS Lantern loupe: all 64 framebuffer cells matched original evidence; no report or save on pan");
@@ -95,10 +167,12 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
 #endif
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);audit::Check(argc==2,"capture directory argument");audit::output=argv[1];
-    audit::GL context;auto host=audit::Host();auto* s=static_cast<State*>(Create(&host));
+    audit::GL context;auto host=audit::Host();
+    ShellFocusOwnership(host); // both module kinds, real Save and Update
+    auto* s=static_cast<State*>(Create(&host));
     audit::Check(s&&!s->loadBlocked&&GlStart(s)==1,"actual recon GL");
     audit::Check(api.prepare_exit==PrepareExit,"published guarded-exit callback");
-    auto pad=audit::Input();
+    auto pad=LegacyInput();
     Update(s,&pad);
     pad.move_x=-1.f;Update(s,&pad);Update(s,&pad);
     audit::Check(s->choice==2,"left wraps to previous choice once while held");
@@ -118,7 +192,7 @@ int main(int argc,char** argv){
         &&s->simulation.operational_effect()==2&&s->saveDirty&&s->saveFailed,"real report retained after failed write");
     audit::Check(PrepareExit(s)==0&&audit::saves==prior,"report exit guarded, prior photo save retained");
     audit::Capture(Render,s,"lantern-save-warning");audit::reject_writes=false;
-    auto input=audit::Input();for(int i=0;i<40;++i)Update(s,&input);
+    auto input=LegacyInput();for(int i=0;i<40;++i)Update(s,&input);
     audit::Check(!s->saveDirty&&!s->saveFailed,"idle report retry recovered");
     s=Recreate(s,&host,"lantern-filed");
     audit::Check(s->hasPhoto&&s->photo.pixels==photo.pixels&&s->result.credibility_delta==3,"filed evidence/result preserved");
@@ -186,7 +260,7 @@ int main(int argc,char** argv){
     audit::Check(s->simulation.OnRidgeTrail() && s->simulation.trail_position()==0,"ridge patrol starts on foot");
     const auto start=audit::Capture(Render,s,"forward-ridge-trailhead");
     auto walk=[&](float direction){
-        auto input=audit::Input();input.move_x=direction;
+        auto input=LegacyInput();input.move_x=direction;
         Update(s,&input);Update(s,&input);input.move_x=0;Update(s,&input);
     };
     walk(1);walk(1);Click(s);

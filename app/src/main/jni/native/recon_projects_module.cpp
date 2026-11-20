@@ -530,16 +530,40 @@ int32_t PrepareExit(void *p){
 void Update(void *p,const ReverieNativeInputV1 *in){
     State *s=static_cast<State *>(p);
     if(!s||!ReverieNativeInputHasBaseV1(in))return;
-    bool first=in->primary_down!=0,second=in->secondary_down!=0;
-    bool axis=std::fabs(in->move_x)>.65f||std::fabs(in->move_y)>.65f;
+    // POINTER_NONE on a full native prefix means the shell or Quick Menu
+    // owns input. A shorter base-only legacy host is intentionally different:
+    // its buttons and pad still work after a neutral rearm.
+    if(ReverieNativeInputHasPointerV1(in)){
+        ReverieNativeInputV1 ray{};
+        std::memcpy(&ray,in,std::min<size_t>(in->struct_size,sizeof(ray)));
+        if(!ReverieNativeSanitizePointerV1(&ray)){
+            s->inputReady=false;s->primary=s->secondary=s->axis=false;
+#if RECON_PROJECT_KIND == 0
+            s->panChord=false;s->lastAimX=s->lastAimY=-1;
+#endif
+            return;
+        }
+    }
+    // Invalid axes cannot stand in for a released trackpad or advance a
+    // saved mission. Even a partially held pad must release before reentry.
+    if(!std::isfinite(in->move_x)||!std::isfinite(in->move_y)){
+        s->inputReady=false;s->primary=s->secondary=s->axis=false;
+#if RECON_PROJECT_KIND == 0
+        s->panChord=false;s->lastAimX=s->lastAimY=-1;
+#endif
+        return;
+    }
+    const bool first=in->primary_down!=0,second=in->secondary_down!=0;
+    const bool axis=std::fabs(in->move_x)>.65f||std::fabs(in->move_y)>.65f;
     if(!s->inputReady){
-        if(!first&&!second&&!axis){
+        if(!first&&!second&&std::fabs(in->move_x)<=.20f&&
+           std::fabs(in->move_y)<=.20f){
             s->inputReady=true;
 #if RECON_PROJECT_KIND == 0
             s->panChord=false;
 #endif
         }
-        return; // Recreated/lifecycle-restored boards require released controls.
+        return; // One complete neutral release frame is never a game tick.
     }
     if(s->loadBlocked){
         if(first&&!s->primary){Load(s);DrawBoard(s);}

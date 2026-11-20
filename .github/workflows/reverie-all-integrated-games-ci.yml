@@ -223,7 +223,7 @@ jobs:
   recon-missions:
     name: Lantern Desk reconnaissance and Iron Sight patrol-to-debrief
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Exercise real mission transitions and choices in both recon games
@@ -246,6 +246,32 @@ jobs:
             done
           done
           echo 'PASS: Lantern Desk and Iron Sight complete mission cycles'
+      - name: Install Mesa EGL/GLES2 for both actual recon module lifecycles
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dri
+      - name: Exercise shell focus, save/reopen and exact stereo in actual recon modules
+        shell: bash
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p validation/recon
+          for cc in g++ clang++; do
+            CXX="$cc" bash scripts/verify-recon-persistence.sh --gles "validation/recon/$cc" \
+              | tee "validation/recon/$cc.log"
+            test "$(grep -c 'PASS_RECON_SHELL_FOCUS' "validation/recon/$cc.log")" -eq 2
+          done
+      - name: Keep native recon GLES screenshots and real-input logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reverie-recon-lifecycle-${{ github.run_id }}
+          path: validation/recon
+          if-no-files-found: warn
+          retention-days: 7
 
   gumball-campaign:
     name: Gumball Armada route select, shipyard and actual combat simulation
