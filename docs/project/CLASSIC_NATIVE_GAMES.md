@@ -2,6 +2,35 @@
 
 **Status:** Source-implemented; Galaxy S9 + Daydream controller acceptance pending. Eight built-in classics use the native ABI v1 module host and the common `classic_games_module.cpp` renderer, compiled separately for Pong, Snake, Chutes and Ladders, Checkers, Go, Chess, Breakout and Reversi. This is game-private implementation documentation; the platform contract remains `docs/native/README.md`.
 
+## Installed Android Quick Menu handoff verification — 2026-11-20
+
+The existing `DownloadedNativeGameAssetsInstrumentedTest` now exercises the
+installed unified hub's actual Java `VirtualInputBus` → JNI →
+`classic_games_module.cpp` path for **all eight registered Classic games**
+under one Android 10 EGL/GLES2 context. Each title first receives a truly
+neutral tracked pointer to clear the host's initial release gate, then 120
+full `POINTER_NONE` frames with Select, Back and partially held analog input.
+A neutral *missing* pointer and twelve inherited tracked held-control
+frames must also be silent. The module then pauses and the test requires
+that the **real private native save manifest has not been created**.
+A fresh valid tracked pointer, neutral release, and genuine Select must
+subsequently create a checked `classic-match.v1` checkpoint and an
+actual stereo GLES2 framebuffer capture. Reversi's first test cursor is
+deliberately placed over a legal opening square so an old empty-square
+no-op cannot falsely pass. Each game writes a `classic-shell-<id>.png`
+diagnostic; the existing Android hub workflow verifies and retains all
+eight PNGs alongside its current 17-game initial-menu gallery.
+
+The existing installed Chess CPU-first integration test now waits with a
+**valid neutral controller ray**, not `POINTER_NONE`: the latter correctly
+means shell ownership and must not be used as a shortcut for active
+gameplay ticks. This preserves the real White CPU transition and exact
+saved-board verification, rather than weakening the assertion.
+This is Android emulator proof only; physical Daydream hardware,
+binocular readability, thermal/frame-time and sound acceptance remain
+separate. No native game ABI, save schema, extra APK, workflow, dependency
+or game-rule change is introduced.
+
 ## Shared Classic Quick Menu input ownership — 2026-11-20
 
 All eight native Classic games now distinguish **a complete optional native

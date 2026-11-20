@@ -996,8 +996,14 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 assertEquals("New game not reset",0,black.ply);
                 ChessNativeState cpu=black;
                 long deadline=System.nanoTime()+25_000_000_000L;
+                final float[] idleOrigin={0.f,0.f,0.f},idleForward={0.f,0.f,-1.f};
                 while(System.nanoTime()<deadline) {
-                    runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                    // CPU polling is actual active gameplay. A full
+                    // POINTER_NONE now correctly freezes the Classic guest
+                    // while the shell owns input, so keep a neutral valid
+                    // headset/controller ray during the opponent's turn.
+                    runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                        idleOrigin,idleForward);
                     cpu=chessNativeState(home);
                     if(cpu.ply==1)break;
                     Thread.sleep(25L);
@@ -1023,6 +1029,134 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                     "White e4, Black-first CPU transition and actual GLES2 frames");
             }finally { runtime.releaseSurface(); runtime.stop(); }
         }finally { remove(sandbox); }
+    }
+
+    /**
+     * Installed Android 10 Java -> JNI -> real Classic C++/GLES2 gate.
+     * A full POINTER_NONE is Quick Menu ownership, not an old gamepad.
+     * Every built-in Classic must refuse 120 held shell frames, a neutral
+     * missing-ray frame and an inherited held controller on return; a fresh
+     * eligible press must still reach the actual checked save. No fake JNI
+     * state injection or separate standalone APK is involved.
+     */
+    @Test public void classicsRequirePointerReturnBeforeFreshSelect()
+        throws Exception {
+        final Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        final Context tests=InstrumentationRegistry.getInstrumentation().getContext();
+        final File sandbox=new File(app.getCacheDir(),
+            "classic-shell-focus-"+System.nanoTime());
+        final File home=new File(sandbox,"native-modules");
+        assertTrue("Classic installed test storage unavailable",home.mkdirs());
+        final String[] ids={
+            "classic-pong","classic-snake","classic-chutes-ladders",
+            "classic-checkers","classic-go","classic-chess",
+            "classic-breakout","classic-reversi"
+        };
+        try(Pbuffer egl=new Pbuffer()){
+            for(String id:ids){
+                final File manifest=new File(home,id+"/classic-match.v1");
+                final VirtualInputBus controls=new VirtualInputBus();
+                final VirtualOutput select=VirtualOutput.joystickButton(0);
+                final VirtualOutput back=VirtualOutput.joystickButton(1);
+                final VirtualOutput padX=VirtualOutput.joystickAxisX();
+                final VirtualOutput padY=VirtualOutput.joystickAxisY();
+                final float[] origin={0.f,0.f,0.f};
+                final float[] forward={0.f,0.f,-1.f};
+                try(NativeModuleRuntime game=new NativeModuleRuntime(
+                    home,app.getAssets(),controls,false,
+                    new ReveriePreferences(tests))){
+                    assertTrue(id+" failed native launch: "+game.getLastError(),
+                        game.start(id));
+                    assertTrue(id+" failed real GLES2 initialization",
+                        game.onSurfaceCreated());
+                    class Controller {
+                        long now=System.nanoTime();
+                        int step(int pointer){
+                            now+=50000000L;
+                            return game.updateAt(pointer,origin,forward,
+                                null,null,now);
+                        }
+                    }
+                    Controller input=new Controller();
+                    // Unpause the exact installed host's initial release gate
+                    // using a genuine neutral ray, before the shell withdraws.
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+                    if("classic-reversi".equals(id)){
+                        // Preposition its live pad cursor over an actual legal
+                        // opening cell (3,2). Otherwise an old broken guest
+                        // could select empty (0,0) and falsely pass this test.
+                        origin[0]=-.48f;origin[1]=.48f;
+                        controls.applyAnalog(padX,.9f);
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+                        controls.applyAnalog(padX,0.f);
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+                    }
+                    assertFalse(id+" started with an unexpected saved match",
+                        manifest.isFile());
+                    controls.applyDigital(select,true);
+                    controls.applyDigital(back,true);
+                    controls.applyAnalog(padX,.4f);
+                    controls.applyAnalog(padY,-.4f);
+                    for(int frame=0;frame<120;frame++)
+                        assertEquals(id+" Quick Menu delivered gameplay feedback "+
+                            frame,0,input.step(NativeModuleRuntime.POINTER_NONE));
+                    controls.applyDigital(select,false);
+                    controls.applyDigital(back,false);
+                    controls.applyAnalog(padX,0.f);
+                    controls.applyAnalog(padY,0.f);
+                    assertEquals(id+" neutral POINTER_NONE rearmed guest",0,
+                        input.step(NativeModuleRuntime.POINTER_NONE));
+                    controls.applyDigital(select,true);
+                    controls.applyDigital(back,true);
+                    controls.applyAnalog(padX,.4f);
+                    controls.applyAnalog(padY,-.4f);
+                    for(int frame=0;frame<12;frame++)
+                        assertEquals(id+" returned held control activated game",0,
+                            input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER));
+                    // Pausing commits the ACTUAL native state, not a Java
+                    // surrogate. A menu-owned hold must leave no checkpoint.
+                    game.setShellPaused(true);
+                    assertFalse(id+" wrote a phantom game during Quick Menu",
+                        manifest.isFile());
+                    game.setShellPaused(false); // host also releases bus inputs
+                    controls.applyAnalog(padX,0.f);
+                    controls.applyAnalog(padY,0.f);
+                    // Freshly returned ray + completely neutral frame is
+                    // required before the next Select is eligible.
+                    if("classic-checkers".equals(id)){
+                        origin[0]=-1.12f;origin[1]=-.48f; // white piece (0,5)
+                    }else if("classic-chess".equals(id)){
+                        origin[0]=.16f;origin[1]=-.80f; // White e2
+                    }else if("classic-reversi".equals(id)){
+                        origin[0]=-.16f;origin[1]=.48f; // legal (3,2)
+                    }else{
+                        origin[0]=origin[1]=0.f; // central Go or arcade controls
+                    }
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+                    assertFalse(id+" neutral rearm wrote a phantom match",
+                        manifest.isFile());
+                    controls.applyDigital(select,true);
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+                    controls.applyDigital(select,false);
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER);
+                    final File frame=new File(app.getFilesDir(),
+                        "classic-shell-"+id+".png");
+                    assertTrue(id+" failed to prepare stereo GLES2 frame",
+                        game.prepareFrame());
+                    long crc=omegaFrame(game,frame);
+                    assertTrue(id+" real GL screenshot absent",
+                        frame.isFile()&&frame.length()>300L);
+                    game.setShellPaused(true);
+                    assertTrue(id+" deliberate new Select did not checkpoint",
+                        manifest.isFile()&&manifest.length()==56L);
+                    game.releaseSurface();
+                    game.stop();
+                    Log.i(TAG,"PASS installed Classic shell focus id="+id+
+                        " pointerLoss=true held120=true neutralRearm=true"+
+                        " deliberateSelect=true save=true GLES2CRC="+crc);
+                }
+            }
+        } finally {remove(sandbox);}
     }
 
     // Drive the real installed Android Java -> JNI -> native recon modules.
