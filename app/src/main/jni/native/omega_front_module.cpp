@@ -546,7 +546,16 @@ void DrawMap(State *s){
         const bool accord=session.action==game::FieldAction::Accord;
         const bool convoy=session.action==game::FieldAction::Forage;
         const bool security=session.action==game::FieldAction::Repair;
-        if(security){
+        if(session.action==game::FieldAction::Recruit){
+            Text(s,f.location()==6?
+                "RECRUIT AT HEARTHWELL / LIMITS APPLY":
+                "RECRUIT ONLY AT HEARTHWELL",
+                -1.098f,.010f,f.location()==6?.86f:1.f,
+                f.location()==6?.94f:.62f,.58f);
+        }else if(session.action==game::FieldAction::Wait){
+            Text(s,"WAIT ONE DAY HERE  CLICK TO ADVANCE",
+                 -1.098f,.011f,.91f,.90f,.64f);
+        }else if(security){
             const bool ready=f.can_secure(session.focused);
             Text(s,ready?"SECURE ROUTE  2 RATIONS 1 SALVAGE":
                 "SECURE BLOCKED  CHECK CLAIMS AND ESCORT",

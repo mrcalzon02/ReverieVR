@@ -80,7 +80,11 @@ public:
         }
         if(in.primary && !primary_){
             bool performed=false;
-            if(focused!=frontier.location()){
+            // RECRUIT and WAIT target the *current* post regardless of
+            // another highlighted sector. A strategic highlight must never
+            // silently convert either command into a paid march.
+            if(focused!=frontier.location() &&
+               action!=FieldAction::Recruit && action!=FieldAction::Wait){
                 if(action==FieldAction::Forage)
                     performed=frontier.Convoy(focused);
                 else if(action==FieldAction::Scout)performed=frontier.Scout(focused);

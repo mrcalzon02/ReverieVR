@@ -7,6 +7,52 @@ static void Tap(Session &s,bool primary,bool secondary=false){
     s.Input({0,0,0,primary,secondary,-1,-1});
 }
 int main(){
+    // A highlighted remote map sector must not hijack RECRUIT or WAIT into
+    // paid travel. The action still executes (or refuses) at the real post.
+    Session local(414);
+    assert(local.frontier.location()==6&&local.frontier.day()==1);
+    local.Input({0,0,0,false,false,2,2});
+    assert(local.focused==10);
+    Tap(local,false,true);Tap(local,false,true);
+    assert(local.action==FieldAction::Recruit);
+    const auto beforeRecruit=local.frontier.Checksum();
+    const int startRations=local.frontier.rations();
+    const unsigned initialOrders=local.orders;
+    Tap(local,true); // Garrison starts at the recruitment cap.
+    assert(local.rejected&&local.orders==initialOrders);
+    assert(local.frontier.Checksum()==beforeRecruit&&
+           local.frontier.location()==6&&local.focused==10);
+    Tap(local,false,true);Tap(local,false,true);
+    assert(local.action==FieldAction::Wait);
+    Tap(local,true);
+    assert(!local.rejected&&local.frontier.day()==2);
+    assert(local.frontier.location()==6&&local.focused==10);
+    assert(local.frontier.rations()==startRations);
+    assert(local.orders==initialOrders+1u);
+    // Existing explicit DEPLOY-on-distant-sector remains the march action.
+    Session marching(414);
+    marching.Input({0,0,0,false,false,2,2});
+    Tap(marching,true);
+    assert(marching.frontier.location()==10&&marching.frontier.day()==2);
+    // Recruit while looking back at home cannot teleport or spend rations.
+    marching.Input({0,0,0,false,false,2,1});
+    assert(marching.focused==6&&marching.frontier.location()==10);
+    Tap(marching,false,true);Tap(marching,false,true);
+    assert(marching.action==FieldAction::Recruit);
+    const auto awayBefore=marching.frontier.Checksum();
+    const auto awayOrders=marching.orders;
+    Tap(marching,true);
+    assert(marching.rejected&&marching.orders==awayOrders);
+    assert(marching.frontier.Checksum()==awayBefore&&
+           marching.frontier.location()==10);
+    // WAIT acts at the physical location even if a different post is focused.
+    Tap(marching,false,true);Tap(marching,false,true);
+    assert(marching.action==FieldAction::Wait);
+    Tap(marching,true);
+    assert(!marching.rejected&&marching.frontier.day()==3);
+    assert(marching.frontier.location()==10&&marching.focused==6);
+    assert(marching.orders==awayOrders+1u);
+
     Session a(414),b(414);
     assert(a.Checksum()==b.Checksum());
     assert(a.view==FrontMode::SectorMap && a.frontier.location()==6);
