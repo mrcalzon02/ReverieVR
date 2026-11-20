@@ -104,9 +104,9 @@
         3,
         1
       ],
-      "bytes": 55546,
-      "eye_frame_crc32": 108537390,
-      "sha256": "4a85cdd75393c13cf085b9d4487fbe088543c154543cf5a11083138e34b12961"
+      "bytes": 55394,
+      "eye_frame_crc32": 2406124486,
+      "sha256": "a0976450ba55cc0e2980361c0fcef3297f83d649ca722de3a908e84f18ce0272"
     },
     "gumball-armada": {
       "atlas_cell": [
@@ -149,9 +149,9 @@
         2,
         1
       ],
-      "bytes": 371120,
-      "eye_frame_crc32": 1266154625,
-      "sha256": "1925e749d47883470a601b390be1ad224f6129436f2aef1eeb52e6ba7e2d294d"
+      "bytes": 371025,
+      "eye_frame_crc32": 2270426683,
+      "sha256": "21de6502b14eee221bc631e3ba37b442bd161c3de9905faf065ecbd256f3449a"
     },
     "sitka": {
       "atlas_cell": [
