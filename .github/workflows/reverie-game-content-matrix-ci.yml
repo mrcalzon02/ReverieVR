@@ -51,6 +51,7 @@ on:
       - 'app/src/test/native/sitka_procedural_seabed_test.cpp'
       - 'app/src/test/native/sitka_bathymetry_stream_test.cpp'
       - 'app/src/main/jni/native/sitka_boat_navigation.h'
+      - 'app/src/main/jni/native/sitka_boat_angling.h'
       - 'app/src/main/jni/native/sitka_helm.h'
       - 'app/src/main/jni/native/sitka_boat_mesh.h'
       - 'app/src/main/jni/native/sitka_boat_panels.h'

@@ -24,6 +24,7 @@
 #include "sitka_seafloor_frame_plan.h"
 #include "sitka_seafloor_sparse_mesh.h"
 #include "sitka_boat_session.h"
+#include "sitka_boat_angling.h"
 #include "sitka_helm.h"
 #include "sitka_harbor_shop.h"
 #include "sitka_input_focus.h"
@@ -1062,6 +1063,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     const bool boat_chord=state->skiff &&
         !state->harbor_shop.open()&&
         !state->harbor_shop.consumes_primary()&&
+        // Finish or cancel a hooked fish before accepting a dock command.
+        state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready&&
         input->primary_down!=0u&&input->secondary_down!=0u;
     if (!input->primary_down) state->boat_primary_latched=false;
     else if (boat_chord) state->boat_primary_latched=true;
@@ -1073,8 +1076,14 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         // Touchpad UP and gamepad forward are both negative native Y.
         // Release immediately drops throttle to zero; 30 Hz hull inertia
         // still governs the deceleration of the vessel itself.
-        const double throttle=reverie::sitka::SkiffForwardThrottle(input->move_y);
-        const double rudder=state->skiff->Active()?
+        const bool boat_angling=state->skiff->Active()&&
+            state->fishing.fishing.phase!=reverie::sitka::FishingPhase::Ready;
+        // A cast does not freeze or teleport the vessel: neutral throttle
+        // lets the existing 30 Hz hull physics coast to a stop while both
+        // rod controls remain owned by fishing rather than helm steering.
+        const double throttle=boat_angling?0.:
+            reverie::sitka::SkiffForwardThrottle(input->move_y);
+        const double rudder=state->skiff->Active()&&!boat_angling?
             state->helm_rudder.Advance(input->delta_seconds,input->move_x):0.;
         const auto event=state->skiff->Update(
             input->delta_seconds,throttle,rudder,
@@ -1088,9 +1097,15 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->helm_rudder.degrees,throttle,1.);
             // Build real Lato text only when data changes. This executes
             // once in the simulation tick, never from a stereo-eye callback.
-            const auto panels=reverie::sitka::BuildBoatPanels(
+            auto panels=reverie::sitka::BuildBoatPanels(
                 state->helm,state->skiff->Pose(),state->weather,
                 state->skiff->Sounder().reading(),throttle);
+            const auto rod=reverie::sitka::BoatRodCastTarget(
+                state->skiff->Pose(),throttle,state->skiff->Sounder().reading(),
+                state->integration_range,state->fishing_spots,state->waters,
+                state->terrain.origin_east,state->terrain.origin_north);
+            panels.Add(reverie::sitka::BoatRodHint(rod.status,state->fishing.fishing),
+                       0.f,1.63f,.498f,1.15f,.011f,.94f,.94f,.72f);
             const std::string signature=panels.Signature();
             if(signature!=state->last_boat_text){
                 state->boat_text.Clear();
@@ -1227,10 +1242,20 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing_spots,state->waters);
         }
     }
+    // At sea, Select starts the same durable rod session as on shore, but
+    // only at an existing authored fishing spot with checked sounding and
+    // a practically stopped hull. There is NO open-ocean invented catch.
+    if(state->skiff&&state->skiff->Active()){
+        const double throttle=reverie::sitka::SkiffForwardThrottle(input->move_y);
+        const auto aboard=reverie::sitka::BoatRodCastTarget(
+            state->skiff->Pose(),throttle,state->skiff->Sounder().reading(),
+            state->integration_range,state->fishing_spots,state->waters,
+            state->terrain.origin_east,state->terrain.origin_north);
+        target=aboard.cast;
+    }
     const bool fishing_control=!boat_chord&&
         !state->harbor_shop.open()&&
-        !state->harbor_shop.consumes_primary()&&
-        !(state->skiff&&state->skiff->Active());
+        !state->harbor_shop.consumes_primary();
     const auto event=state->fishing.Update(input->delta_seconds,
         fishing_control&&!state->beach_primary_latched&&
             !state->boat_primary_latched&&input->primary_down!=0u,

@@ -31,6 +31,11 @@ on:
       - 'app/src/main/jni/native/forward_detachment_simulation.*'
       - 'app/src/test/native/recon_module_save_test.cpp'
       - 'scripts/verify-recon-persistence.sh'
+      # A real native Sitka fishing/boat gameplay change must pass the
+      # existing installed 17-game Android JNI/GLES2 acceptance as well.
+      - 'app/src/main/jni/native/sitka_terrain_module.cpp'
+      - 'app/src/main/jni/native/sitka_boat_angling.h'
+      - 'app/src/test/native/sitka_fishing_spots_test.cpp'
       - 'app/src/main/jni/native/omega_front_png.h'
       - 'app/src/test/native/omega_front_png_test.cpp'
       - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
