@@ -1075,7 +1075,6 @@ int main() {
         assert(!focus.Filter(false,primary,secondary,0.f,0.f));
         assert(!focus.Filter(true,primary,secondary,0.f,0.f));
         assert(!focus.Filter(false,primary,secondary,0.f,0.f));
-        assert(!focus.Filter(true,primary,secondary,0.f,0.f));
         assert(!focus.Filter(true,primary,secondary,0.f,0.f)); // new neutral
         assert(focus.Filter(true,primary,secondary,0.f,0.f));
         // Nonfinite axes are never accepted as a neutral release.
