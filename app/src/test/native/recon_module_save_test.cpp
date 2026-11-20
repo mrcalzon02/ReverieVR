@@ -161,6 +161,29 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
         }
     }
     audit::Check(differences>0,"compared region contains a visible change");
+    audit::Check(VisiblePhotoChangeCount(s)==differences/2,
+                 "visible change count matches both eyes and original photo bits");
+    // Count the different region independently of the current window, and
+    // demonstrate that a pin cannot alter the factual photo delta.
+    const int originallyVisible=VisiblePhotoChangeCount(s);
+    const auto initialPhoto=s->photo.pixels,oldPhoto=s->prior.pixels;
+    const auto checkpoint=Bytes(s);
+    s->photoPins[8]=uint16_t(1u<<8);
+    audit::Check(VisiblePhotoChangeCount(s)==originallyVisible&&
+                 s->photo.pixels==initialPhoto&&s->prior.pixels==oldPhoto,
+                 "manual annotations cannot inflate the change count or modify either film");
+    s->photoPins.fill(0);
+    audit::Check(Bytes(s)==checkpoint,
+                 "temporary marker inspection does not modify the stored evidence");
+    s->cropX=0;s->cropY=0;
+    int independent=0;
+    for(int y=0;y<8;++y)for(int x=0;x<8;++x)
+        independent+=((s->photo.pixels[y]>>x)&1u)!=((s->prior.pixels[y]>>x)&1u);
+    audit::Check(VisiblePhotoChangeCount(s)==independent,
+                 "window delta correctly follows other legitimate loupe crops");
+    s->cropX=4;s->cropY=6;
+    audit::Check(VisiblePhotoChangeCount(s)==originallyVisible,
+                 "original paired film window recovers its exact comparison");
     std::printf("PASS_LANTERN_PAIR samples=256 changed_cells_per_eye=%d crop=%d,%d\n",
                 differences/2,s->cropX,s->cropY);
 }
@@ -172,6 +195,12 @@ static void TestPhotoPinBudget(){
                  "fixture assigns an actual Lantern sector");
     audit::Check(fixture.simulation.CompleteRecon(),"fixture receives film");
     RefreshEvidence(&fixture);
+    audit::Check(VisiblePhotoChangeCount(&fixture)<0,
+                 "first-exposure film never shows imaginary prior-photo differences");
+    fixture.cropX=9;
+    audit::Check(VisiblePhotoChangeCount(&fixture)<0,
+                 "invalid crop cannot manufacture photo comparisons");
+    fixture.cropX=4;
     for(int y=0;y<3;++y)for(int x=0;x<4;++x){
         fixture.cropX=x;fixture.cropY=y;
         audit::Check(TogglePhotoPin(&fixture),

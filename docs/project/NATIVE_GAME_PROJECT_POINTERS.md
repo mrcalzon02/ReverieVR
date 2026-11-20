@@ -93,6 +93,35 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ---
 
+## Lantern Desk readable evidence comparison — 2026-11-20
+
+The actual native GLES2 desk previously squeezed the gold PHOTO PINS
+counter against SOURCE FRAME in its 80-degree headset-oriented view.
+The Lato layout now spaces four separate rows: photo source/loupe labels
+(at -0.64), factual status (at -0.85), concise Minus+pad and
+Minus+Select instructions (at -1.05), and the actionable FILE assessment
+(at -1.30); the shell-owned bottom menu/exit legend remains untouched.
+Text sizes remain legible within the existing panel, without extending
+hit targets or adding an extra page or inert control.
+
+When a previous filed exposure is available, the status row shows
+`WINDOW CHANGED N / 64   PINS P / 12`. N is the actual number of
+photographic pixel differences in the synchronized visible 8x8 loupe
+region, counted from the existing two 16-row image bitfields.
+It changes when the player pans the window, never from annotation marks.
+This is a descriptive visual comparison and **not** an inference of
+military contact, evidence correctness or a recommendation for a report.
+A first-time photograph displays only its real pin count.
+The count is computed only when the existing screen is rebuilt, not every
+stereo eye render; no network, texture, GPU readback, extra save field,
+mission rule or Forward Detachment change is needed.
+
+The host native Mesa suite checks the stated window count against the
+independently observed 64 source pixels in both GL eyes, changes crop
+to a different region, verifies pin overlays cannot change the count,
+and retains the exact saved-photo/score result. Physical Galaxy S9
+optical/comfort acceptance is still a separate gate.
+
 ## Lantern Desk current photograph pins — 2026-11-20
 
 The registered Lantern Desk native game now lets analysts bookmark up to

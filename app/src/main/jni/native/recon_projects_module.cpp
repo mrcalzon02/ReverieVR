@@ -67,6 +67,16 @@ void Text(State *s,const char *str,float y,float size,
 #if RECON_PROJECT_KIND == 0
 constexpr float kPhotoPixel=.083f,kPhotoY=.16f,kPhotoZ=-2.92f,kLoupeX=1.59f;
 constexpr int kFilmSize=16,kWindowSize=8;
+// Distinct physical-Lato rows; source/loupe labels were previously
+// crowded by the new pin counter. Keep the report and shell bar separated.
+constexpr float kPhotoLabelRow=-.64f;
+constexpr float kPhotoStatusRow=-.85f;
+constexpr float kPhotoControlsRow=-1.05f;
+constexpr float kPhotoReportRow=-1.30f;
+static_assert(kPhotoLabelRow-kPhotoStatusRow>=.19f&&
+              kPhotoStatusRow-kPhotoControlsRow>=.19f&&
+              kPhotoControlsRow-kPhotoReportRow>=.24f,
+              "Lantern photograph instructions require distinct rows");
 void DrawFilm(State *s,const sim::Photograph &film,float cx,int startX,int startY,int size){
     const float step=kPhotoPixel*kFilmSize/size;
     Rect(s,cx,kPhotoY,1.46f,1.46f,-2.96f,.14f,.17f,.14f);
@@ -75,6 +85,24 @@ void DrawFilm(State *s,const sim::Photograph &film,float cx,int startX,int start
             Rect(s,cx+(x-(size-1)*.5f)*step,kPhotoY+((size-1)*.5f-y)*step,
                  step*.96f,step*.96f,kPhotoZ,.84f,.85f,.63f);
     }
+}
+// A descriptive comparison aid, NOT a diagnosis or an assessment hint.
+ // Only source pixels within the actual synchronized 8x8 loupe window count.
+ // No GPU readback, allocation, saved flag or per-eye scan is required.
+int VisiblePhotoChangeCount(const State* s){
+    if(!s||!s->hasPrior||!s->hasPhoto||
+       s->simulation.phase()!=sim::Phase::PhotoReady||
+       s->cropX<0||s->cropX>kFilmSize-kWindowSize||
+       s->cropY<0||s->cropY>kFilmSize-kWindowSize)return -1;
+    int changed=0;
+    for(int row=0;row<kWindowSize;++row){
+        const uint16_t diff=static_cast<uint16_t>(
+            (s->photo.pixels[s->cropY+row]^s->prior.pixels[s->cropY+row])
+            >>s->cropX);
+        for(int col=0;col<kWindowSize;++col)
+            changed+=(diff>>col)&1u;
+    }
+    return changed;
 }
 constexpr unsigned kMaxPhotoPins=12u;
 unsigned PhotoPinCount(const State* s){
@@ -117,7 +145,7 @@ void DrawLoupe(State *s){
     DrawPhotoPins(s,kLoupeX,s->cropX,s->cropY,kWindowSize);
     if(s->hasPrior){
         DrawFilm(s,s->prior,-kLoupeX,s->cropX,s->cropY,kWindowSize);
-        s->font.Fit("2X PREVIOUS",-kLoupeX,-.64f,1.42f,.025f,.76f,.89f,.98f,-2.87f);
+        s->font.Fit("2X PREVIOUS",-kLoupeX,kPhotoLabelRow,1.42f,.025f,.76f,.89f,.98f,-2.87f);
     }
     const float width=kWindowSize*kPhotoPixel;
     const float x=(s->cropX-4)*kPhotoPixel,y=kPhotoY-(s->cropY-4)*kPhotoPixel;
@@ -125,8 +153,8 @@ void DrawLoupe(State *s){
         Rect(s,x+side*width*.5f,y,.014f,width,-2.90f,.96f,.70f,.27f);
         Rect(s,x,y+side*width*.5f,width,.014f,-2.90f,.96f,.70f,.27f);
     }
-    s->font.Fit("SOURCE FRAME",0.f,-.64f,1.42f,.025f,.77f,.89f,.84f,-2.87f);
-    s->font.Fit(s->hasPrior?"2X CURRENT":"2X LOUPE",kLoupeX,-.64f,1.42f,.025f,.96f,.82f,.45f,-2.87f);
+    s->font.Fit("SOURCE FRAME",0.f,kPhotoLabelRow,1.42f,.025f,.77f,.89f,.84f,-2.87f);
+    s->font.Fit(s->hasPrior?"2X CURRENT":"2X LOUPE",kLoupeX,kPhotoLabelRow,1.42f,.025f,.96f,.82f,.45f,-2.87f);
 }
 // Aim updates only when its source pixel changes. A stationary head ray
 // cannot return the loupe to center immediately after a pad pan.
@@ -306,11 +334,17 @@ void DrawBoard(State *s){
         if(s->simulation.phase()==sim::Phase::PhotoReady){
             const char *labels[]={"NO CONTACT","POSSIBLE CONTACT",
                                   "VEHICLE COLUMN","BRIDGE DAMAGE"};
-            std::snprintf(text,sizeof(text),"PHOTO PINS %u / %u",PhotoPinCount(s),kMaxPhotoPins);
-            Text(s,text,-.76f,.026f,.99f,.77f,.45f);
-            Text(s,"AIM/PAN: MINUS+PAD   PIN: HOLD MINUS+SELECT",-.94f,.025f,.83f,.91f,.90f);
+            const int changed=VisiblePhotoChangeCount(s);
+            if(changed>=0)
+                std::snprintf(text,sizeof(text),"WINDOW CHANGED %d / 64   PINS %u / %u",
+                    changed,PhotoPinCount(s),kMaxPhotoPins);
+            else
+                std::snprintf(text,sizeof(text),"PHOTO PINS %u / %u",
+                    PhotoPinCount(s),kMaxPhotoPins);
+            Text(s,text,kPhotoStatusRow,.029f,.99f,.77f,.45f);
+            Text(s,"MINUS+PAD INSPECT     MINUS+SELECT PIN",kPhotoControlsRow,.028f,.83f,.91f,.90f);
             std::snprintf(text,sizeof(text),"FILE: %s",labels[s->choice%4]);
-            Text(s,text,-1.19f,.040f,1.f,.81f,.36f);
+            Text(s,text,kPhotoReportRow,.040f,1.f,.81f,.36f);
         }else{
             std::snprintf(text,sizeof(text),"TRUST %+d  EFFECT %+d",
                      s->result.credibility_delta,s->result.operational_effect);
