@@ -1025,6 +1025,102 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         }finally { remove(sandbox); }
     }
 
+    // Drive the real installed Android Java -> JNI -> native recon modules.
+    // Full POINTER_NONE is shell/Quick Menu ownership, not a valid gamepad
+    // without a pointer. Neither an inherited press nor a held pad can
+    // silently advance a sortie, spend patrol fuel or modify the checked save.
+    @Test public void reconShellInputOwnershipRequiresNeutralAndRestoresBothGames()
+        throws Exception {
+        final Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        final Context tests=InstrumentationRegistry.getInstrumentation().getContext();
+        final File sandbox=new File(app.getCacheDir(),"recon-shell-"+System.nanoTime());
+        final File home=new File(sandbox,"native-modules");
+        assertTrue("Recon test storage unavailable",home.mkdirs());
+        final String[] ids={"ministry-lantern-desk","iron-sight-forward-detachment"};
+        final float[] origin={0.f,0.f,0.f},direction={0.f,0.f,-1.f};
+        try(Pbuffer egl=new Pbuffer()){
+            for(String id:ids){
+                VirtualInputBus controls=new VirtualInputBus();
+                final VirtualOutput select=VirtualOutput.joystickButton(0);
+                final VirtualOutput back=VirtualOutput.joystickButton(1);
+                final VirtualOutput pad=VirtualOutput.joystickAxisX();
+                final File save=new File(home,id+"/session-v1.bin");
+                try(NativeModuleRuntime game=new NativeModuleRuntime(
+                    home,app.getAssets(),controls,true,new ReveriePreferences(tests))) {
+                    assertTrue(id+" native launch: "+game.getLastError(),game.start(id));
+                    assertTrue(id+" real GLES2 initialization failed",game.onSurfaceCreated());
+                    class Controller {
+                        long now=System.nanoTime();
+                        void step(int pointer,boolean primary,boolean secondary,float x) {
+                            controls.applyDigital(select,primary);
+                            controls.applyDigital(back,secondary);
+                            controls.applyAnalog(pad,x);
+                            now+=50000000L;
+                            game.updateAt(pointer,origin,direction,null,null,now);
+                        }
+                    }
+                    Controller input=new Controller();
+                    for(int n=0;n<80;n++)
+                        input.step(NativeModuleRuntime.POINTER_NONE,true,true,1.f);
+                    assertFalse(id+" shell-owned buttons wrote a phantom sortie",save.exists());
+                    for(int n=0;n<12;n++)
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,true,true,1.f);
+                    assertFalse(id+" held controller on return advanced mission",save.exists());
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,false,false,.4f);
+                    assertFalse(id+" partially held pad counted as neutral",save.exists());
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,false,false,0.f);
+                    assertFalse(id+" neutral release itself advanced the mission",save.exists());
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,true,false,0.f);
+                    assertTrue(id+" first deliberate Select did not save",save.isFile());
+                    byte[] first=Files.readAllBytes(save.toPath());
+                    assertEquals(id+" checked recon checkpoint size",128,first.length);
+                    assertEquals(id+" first mission phase",1,first[12]&255);
+
+                    for(int n=0;n<30;n++)
+                        input.step(NativeModuleRuntime.POINTER_NONE,true,true,1.f);
+                    assertArrayEquals(id+" Quick Menu must preserve live mission",first,
+                        Files.readAllBytes(save.toPath()));
+                    for(int n=0;n<8;n++)
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,true,true,1.f);
+                    assertArrayEquals(id+" held return must not confirm contact",first,
+                        Files.readAllBytes(save.toPath()));
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,false,false,0.f);
+                    assertArrayEquals(id+" second neutral frame cannot act",first,
+                        Files.readAllBytes(save.toPath()));
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,true,false,0.f);
+                    byte[] second=Files.readAllBytes(save.toPath());
+                    assertEquals(id+" deliberate second mission phase",2,second[12]&255);
+                    assertFalse(id+" mission checkpoint must progress",Arrays.equals(first,second));
+                    File frame=new File(app.getFilesDir(),"recon-shell-"+id+".png");
+                    assertTrue(id+" frame upload unavailable",game.prepareFrame());
+                    long frameCrc=omegaFrame(game,frame);
+                    assertTrue(id+" restored real GLES screenshot empty",
+                        frame.isFile()&&frame.length()>300L);
+                    assertTrue(id+" safe exit refused",game.prepareForExit());
+                    game.releaseSurface();
+                    game.stop();
+
+                    assertTrue(id+" failed saved-game relaunch",game.start(id));
+                    assertTrue(id+" failed reloaded GLES2 context",game.onSurfaceCreated());
+                    input=new Controller();
+                    input.step(NativeModuleRuntime.POINTER_NONE,true,true,1.f);
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,true,true,1.f);
+                    assertArrayEquals(id+" relaunch inherited press changed checkpoint",second,
+                        Files.readAllBytes(save.toPath()));
+                    input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,false,false,0.f);
+                    assertArrayEquals(id+" relaunch neutral changed checkpoint",second,
+                        Files.readAllBytes(save.toPath()));
+                    assertTrue(id+" saved mission cannot exit after reload",game.prepareForExit());
+                    game.releaseSurface();
+                    game.stop();
+                    Log.i(TAG,"PASS installed recon shell focus id="+id+
+                        " pointerLoss=true neutralRearm=true missionPhases=1,2"+
+                        " relaunch=true GLES2CRC="+frameCrc);
+                }
+            }
+        } finally {remove(sandbox);}
+    }
+
     @Test public void captureAllNativeMainMenus() throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
         File root=new File(app.getCacheDir(),"native-menu-ci-"+System.nanoTime());
