@@ -107,6 +107,11 @@ report, infer an answer, or alter photograph pixels, enemy truth,
 credibility, or sortie progression. Releasing Minus after pinning
 cannot accidentally advance the report selector.
 
+Single-film loupes retain their established **center-on-relaunch** behavior:
+the pin itself is anchored to the original source pixel and survives the
+recenter. Revisited-sector comparison loupes continue to restore their
+saved inspection area; no previous-exposure markers are invented.
+
 Pins use 32 bytes of **already reserved** space in the checked 128-byte
 Lantern `session-v1.bin` record: Lantern-only V4 encodes a bounded
 16-row bitmask and preserves all V1-V3 reading with no annotations.

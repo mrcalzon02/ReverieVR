@@ -236,7 +236,22 @@ int main(int argc,char** argv){
     pin.primary_down=0u;Update(s,&pin);
     pin.secondary_down=0u;Update(s,&pin);
     audit::Check(s->choice==3,"Minus release after pin never cycles report");
+    // First-time photographs intentionally reopen with a centered loupe
+    // (unlike paired follow-up exposures, which save their crop window).
+    // The pin is anchored in source-pixel coordinates and MUST survive.
+    // Center the transient crop before the generic exact-frame Recreate
+    // parity helper; compare real GL before/after without weakening it.
+    const auto committedPin=Bytes(s);
+    s->cropX=s->cropY=4;
+    DrawBoard(s);
+    audit::Check(Bytes(s)==committedPin,
+                 "recentered first-film lens does not change saved photo pins");
+    const auto centeredPinFrame=audit::Capture(Render,s,"lantern-photo-pin-centered");
+    audit::Check(centeredPinFrame!=beforePinFrame,
+                 "source film continues showing the marked pixel");
     s=Recreate(s,&host,"lantern-photo-pin-reopened");
+    audit::Check(s->cropX==4&&s->cropY==4&&Bytes(s)==committedPin,
+                 "first-film reload preserves pins and centers transient crop");
     audit::Check(PhotoPinCount(s)==1 && (s->photoPins[10]&(1u<<8))!=0u,
                  "pin survives real Pause/Destroy/Load/GLES2 recreation");
     const auto photo=s->photo;const auto prior=audit::saves;
