@@ -254,6 +254,75 @@ static void CheckerQuietFortyTurnSaveBoundary(){
     std::cout<<"Checkers 79-to-80 quiet draw, claim and man/capture save resets PASS\\n";
 }
 
+// Horizontal king exposure: f5xg6 e.p. removes BOTH f5 and g5 blockers,
+// revealing the h5 rook's attack on e5.  The illegal capture must not
+// mutate either the live match or its round-tripped host checkpoint.
+static void ChessPinnedEnPassantCheckpoint(){
+    auto setup=[](bool withRook){
+        auto s=Initial(5);
+        auto &b=s.board;
+        b.cells.fill(0);
+        b.cells[0]=-6;   // Black king a8
+        b.cells[28]=6;   // White king e5
+        b.cells[29]=1;   // White pawn f5, first rook-ray blocker
+        b.cells[14]=-1;  // Black pawn g7, about to advance to g5
+        if(withRook)b.cells[31]=-4; // Black rook h5
+        b.side=-1;b.castles=0;b.enPassant=-1;
+        b.chessHistory.clear();
+        b.chessHistory.emplace(b.CurrentChessPosition(),1);
+        return s;
+    };
+    auto pinned=setup(true);
+    auto &b=pinned.board;
+    Check(!b.KingInCheck(b.cells,1)&&!b.KingInCheck(b.cells,-1),
+          "both kings safe before black g7-g5");
+    Check(b.ChessMove(14,30)&&b.enPassant==22&&b.side==1&&b.ply==1,
+          "real black double-step creates g6 en-passant target");
+    Check(b.cells[29]==1&&b.cells[30]==-1&&b.cells[31]==-4,
+          "two adjacent rank-five blockers still shield white king");
+    Check(b.CurrentChessPosition().enPassant==-1,
+          "repetition identity excludes the illegal pinned capture");
+    const auto before=Encode(5,pinned);
+    auto loaded=RoundTrip(5,pinned);
+    Check(Encode(5,loaded)==before&&loaded.board.enPassant==22,
+          "raw en-passant offer and rights survive the checkpoint");
+    Check(!b.ChessLegal(29,22)&&!loaded.board.ChessLegal(29,22),
+          "en-passant from f5 to g6 would expose rook check on e5");
+    Check(!b.ChessMove(29,22)&&!loaded.board.ChessMove(29,22),
+          "both original and restored games reject pinned en-passant");
+    Check(Encode(5,pinned)==before&&Encode(5,loaded)==before,
+          "rejected capture changes no pawn, king, turn, SAN or save byte");
+    Check(b.cells[28]==6&&b.cells[29]==1&&b.cells[30]==-1&&
+          b.chessCapturedByWhite[1]==0&&b.chessSanHistory.size()==1,
+          "illegal capture has no ghost victim or notation");
+    Check(b.ChessLegal(29,21)&&loaded.board.ChessLegal(29,21),
+          "f5-f6 remains a legal forward pawn move through the pin");
+    Check(b.ChessMove(29,21)&&loaded.board.ChessMove(29,21),
+          "both states execute the actual legal alternative");
+    Check(b.cells[21]==1&&b.cells[30]==-1&&b.side==-1&&
+          Encode(5,pinned)==Encode(5,loaded),
+          "saved and uninterrupted legal continuation remain identical");
+
+    // Control: without the h5 rook, the very same black double-step
+    // permits a real en-passant capture, proving the rejection was
+    // about king exposure rather than a blanket pawn/codec refusal.
+    auto clear=setup(false);
+    Check(clear.board.ChessMove(14,30)&&
+          clear.board.CurrentChessPosition().enPassant==22,
+          "without rook g6 is an effective repetition right");
+    auto clearLoaded=RoundTrip(5,clear);
+    Check(clear.board.ChessLegal(29,22)&&clearLoaded.board.ChessLegal(29,22),
+          "same en-passant geometry is legal when rook line is absent");
+    Check(clear.board.ChessMove(29,22)&&
+          clearLoaded.board.ChessMove(29,22),
+          "both states perform lawful en-passant after checkpoint");
+    Check(clear.board.cells[22]==1&&clear.board.cells[30]==0&&
+          clear.board.chessCapturedByWhite[1]==1&&
+          Encode(5,clear)==Encode(5,clearLoaded),
+          "real en-passant removes the victim once and saves identically");
+    std::cout<<"Chess pinned en-passant save rejection and legal control PASS\\n";
+}
+
 static void FinishedCases(){
     auto pong=Initial(0);
     // Explicit near-score fixture, resolved by the production simulation.
@@ -402,4 +471,4 @@ static void BreakoutFirstWallSaveBoundary(){
           "restored and uninterrupted second-wall ball/brick states stay identical");
     std::cout<<"Breakout wall-one boundary, write interruption, wall-two continuation PASS\n";
 }
-int main(){BreakoutFirstWallSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();CheckerQuietFortyTurnSaveBoundary();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
+int main(){BreakoutFirstWallSaveBoundary();CodecCases();ChutesRollHistory();RuleHistoryCases();ChessPinnedEnPassantCheckpoint();CheckerQuietFortyTurnSaveBoundary();FinishedCases();StoreCases();std::cout<<"classic save checks="<<checks<<" PASS\n";}
