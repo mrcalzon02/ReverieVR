@@ -154,6 +154,10 @@ public:
     Result result() const { return result_; }
     Event last_event() const { return last_; }
     int queued(int id) const { return Valid(id) ? queues_[id].size : 0; }
+    // Real map objective positions shared with the tactical cursor. They
+    // must not be retyped as unrelated magic coordinates by a UI consumer.
+    static bool IsPumpTile(int x,int y){return x==pump_x_ && y==pump_y_;}
+    static bool IsDepotTile(int x,int y){return x==crate_x_ && y==crate_y_;}
 
     bool QueueMove(int id, int x, int y) {
         // Terrain-only reachability does not make an occupied square usable.
@@ -172,11 +176,15 @@ public:
         return Enqueue(id, Order{OrderType::Attack, static_cast<int16_t>(target), 0});
     }
     bool QueueRepair(int id) {
+        // Reject a command that would do nothing on the next logical turn.
+        // The player sees immediate denial instead of a phantom order.
         return PlayerCanOrder(id) && units_[id].role == Class::Engineer &&
+            components_>0 && pump_hp_<18 &&
             Enqueue(id, Order{OrderType::RepairPump, 0, 0});
     }
     bool QueueResupply(int id) {
         return PlayerCanOrder(id) && units_[id].role!=Class::Legionary &&
+            ammo_stock_>0 && units_[id].ammo<AmmoCap(units_[id].role) &&
             Enqueue(id, Order{OrderType::Resupply, 0, 0});
     }
     bool CancelOrders(int id) {

@@ -119,10 +119,16 @@ public:
             selected=occupant;
             return true;
         }
-        // Clicking the selected soldier must activate a self-targeted
-        // repair/resupply order, not silently deselect the unit.
-        if(mode==CommandMode::Repair)return battle.QueueRepair(selected);
-        if(mode==CommandMode::Resupply)return battle.QueueResupply(selected);
+        // Repair and resupply are self-directed tasks at a physical site.
+        // Only clicking the chosen soldier or the matching pump/depot can
+        // order them. An unrelated enemy/empty tile must NOT silently
+        // spend a queue slot or send the soldier away from its target.
+        if(mode==CommandMode::Repair)
+            return (occupant==selected || battle.IsPumpTile(cursor_x,cursor_y))
+                && battle.QueueRepair(selected);
+        if(mode==CommandMode::Resupply)
+            return (occupant==selected || battle.IsDepotTile(cursor_x,cursor_y))
+                && battle.QueueResupply(selected);
         if(occupant==selected) { selected=-1;return true; }
         const Unit* actor=battle.unit(selected);
         if(!actor || !actor->alive()) {selected=-1;return false;}

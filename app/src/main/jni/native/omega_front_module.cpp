@@ -1048,7 +1048,21 @@ void Draw(State *s){
             battle.unit(s->session.tactical.CursorUnit())->side==game::Side::Raiders)
         std::snprintf(action,sizeof(action),
                       "ENEMY OCCUPIES TILE  /  SWITCH TO ATTACK");
-    else {
+    else if(s->session.tactical.mode==game::CommandMode::Repair){
+        const auto* unit=battle.unit(s->session.tactical.selected);
+        const char* cue=!unit||unit->role!=game::Class::Engineer?
+            "ENGINEER REQUIRED":battle.pump_hp()>=18?
+            "PUMP FULL - NO REPAIR NEEDED":battle.components()==0?
+            "REPAIR PARTS EXHAUSTED":"CLICK ENGINEER OR PUMP / END TURN";
+        std::snprintf(action,sizeof(action),"%s",cue);
+    }else if(s->session.tactical.mode==game::CommandMode::Resupply){
+        const auto* unit=battle.unit(s->session.tactical.selected);
+        const char* cue=!unit||unit->role==game::Class::Legionary?
+            "UNIT CANNOT RESUPPLY":unit->ammo>=game::Battle::MaxAmmo(unit->role)?
+            "MAGAZINE FULL - NO RESUPPLY NEEDED":battle.ammo_stock()==0?
+            "DEPOT EMPTY":"CLICK UNIT OR DEPOT / END TURN";
+        std::snprintf(action,sizeof(action),"%s",cue);
+    }else {
         const int id=s->session.tactical.selected;
         const auto *unit=battle.unit(id);
         std::snprintf(action,sizeof(action),"UNIT %d  /  HP %d  /  AMMO %d  /  %s  /  QUEUED %d",

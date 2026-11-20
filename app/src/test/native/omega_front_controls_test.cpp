@@ -1,4 +1,5 @@
 #include "omega_front_controls.h"
+#include <array>
 #include <cassert>
 #include <iostream>
 using namespace reverie::omega;
@@ -22,6 +23,73 @@ int main(){
     assert(occupancy.Input({0,0,0,true,false,-1,-1}));
     assert(!occupancy.rejected&&occupancy.issued==2u);
     assert(occupancy.battle.queued(0)==1&&occupancy.battle.ticks()==0);
+
+    // Repair commands require the selected engineer or the physical pump.
+    // Merely clicking a distant unit/empty tile may never queue a repair.
+    Controller engineer(104);
+    assert(engineer.battle.ConfigurePump(15));
+    engineer.Input({0,0,0,false,false,3,12});
+    Tap(engineer,true);
+    assert(engineer.selected==2&&engineer.issued==1u);
+    engineer.mode=CommandMode::Repair;
+    const auto repairState=engineer.battle.Checksum();
+    for(const auto pos:std::array<std::array<int,2>,2>{{{{19,10}},{{10,10}}}}){
+        engineer.Input({0,0,0,false,false,pos[0],pos[1]});
+        Tap(engineer,true);
+        assert(engineer.rejected&&engineer.issued==1u);
+        assert(engineer.battle.queued(2)==0&&engineer.battle.Checksum()==repairState);
+    }
+    engineer.Input({0,0,0,false,false,3,12}); // chosen engineer
+    Tap(engineer,true);
+    assert(!engineer.rejected&&engineer.battle.queued(2)==1);
+    assert(engineer.battle.CancelOrders(2));
+    engineer.Input({0,0,0,false,false,2,12}); // actual pump
+    Tap(engineer,true);
+    assert(!engineer.rejected&&engineer.battle.queued(2)==1);
+    assert(engineer.battle.ticks()==0); // no implicit turn
+    const auto parts=engineer.battle.components();
+    assert(engineer.Input({0,0,0,false,false,-1,-1,true}));
+    assert(engineer.battle.pump_hp()==18&&engineer.battle.components()==parts-1);
+    assert(engineer.battle.queued(2)==0);
+    engineer.Input({0,0,0,false,false,2,12});
+    Tap(engineer,true);
+    assert(engineer.rejected&&engineer.battle.queued(2)==0); // already healed
+
+    // A spent round can be refilled by clicking the chosen soldier OR the
+    // existing depot; off-target clicks do not create a ghost resupply.
+    Controller refill(17);
+    refill.battle.ClearUnits();
+    assert(refill.battle.AddUnit(Side::Hearthwell,Class::Rifle,5,11)==0);
+    assert(refill.battle.AddUnit(Side::Raiders,Class::Heavy,6,11)==1);
+    assert(refill.battle.AddUnit(Side::Raiders,Class::Rifle,23,23)==2);
+    assert(refill.battle.AddUnit(Side::Hearthwell,Class::Engineer,0,0)==3);
+    assert(refill.battle.QueueAttack(0,1));
+    refill.battle.Step();
+    assert(refill.battle.unit(0)->ammo==7);
+    assert(refill.battle.CancelOrders(0));
+    refill.Input({0,0,0,false,false,5,11});
+    Tap(refill,true);
+    assert(refill.selected==0&&refill.issued==1u);
+    refill.mode=CommandMode::Resupply;
+    const auto refillState=refill.battle.Checksum();
+    for(const auto pos:std::array<std::array<int,2>,2>{{{{6,11}},{{10,10}}}}){
+        refill.Input({0,0,0,false,false,pos[0],pos[1]});
+        Tap(refill,true);
+        assert(refill.rejected&&refill.issued==1u);
+        assert(refill.battle.Checksum()==refillState&&refill.battle.queued(0)==0);
+    }
+    refill.Input({0,0,0,false,false,5,11}); // chosen rifle
+    Tap(refill,true);assert(!refill.rejected&&refill.battle.queued(0)==1);
+    assert(refill.battle.CancelOrders(0));
+    refill.Input({0,0,0,false,false,5,12}); // depot
+    Tap(refill,true);assert(!refill.rejected&&refill.battle.queued(0)==1);
+    const auto depotRounds=refill.battle.ammo_stock();
+    assert(refill.Input({0,0,0,false,false,-1,-1,true}));
+    assert(refill.battle.unit(0)->ammo==8&&
+           refill.battle.ammo_stock()==depotRounds-1);
+    refill.Input({0,0,0,false,false,5,12});
+    Tap(refill,true);
+    assert(refill.rejected&&refill.battle.queued(0)==0);
 
     Controller c(104), b(104);
     assert(c.Input({0,0,0,false,false,4,11}));

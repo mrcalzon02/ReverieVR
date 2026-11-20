@@ -58,6 +58,24 @@ int main() {
     assert(!movement.SetGround(6,0,Ground::Wall)); // no terrain edit mid-battle
     assert(!movement.QueueMove(0,5,0));
 
+    // Doomed orders are rejected before they reach the player's queue:
+    // the pump is pristine at game start and every rifle has full ammo.
+    Battle dormant(104);
+    const auto dormantBefore=dormant.Checksum();
+    assert(dormant.IsPumpTile(2,12)&&!dormant.IsPumpTile(5,12));
+    assert(dormant.IsDepotTile(5,12)&&!dormant.IsDepotTile(2,12));
+    assert(!dormant.QueueRepair(2)); // full pump: not a repair action
+    assert(!dormant.QueueRepair(0)); // rifle cannot use repair parts
+    assert(!dormant.QueueResupply(0)); // already carrying full ammo
+    assert(!dormant.QueueResupply(7)); // enemy has no order authority
+    assert(dormant.Checksum()==dormantBefore);
+    assert(dormant.ConfigurePump(15));
+    assert(dormant.QueueRepair(2)); // engineer on adjacent tile
+    const int dormantParts=dormant.components();
+    dormant.Step();
+    assert(dormant.pump_hp()==18&&dormant.components()==dormantParts-1);
+    assert(dormant.queued(2)==0&&!dormant.QueueRepair(2));
+
     // Finite repair parts make a measurable difference during a pump assault.
     Battle repair(6), withoutRepair(6);
     repair.ClearUnits(); withoutRepair.ClearUnits();
@@ -137,6 +155,10 @@ int main() {
     assert(supplies.unit(0)->ammo==8);
     assert(supplies.ammo_stock()==depot_before-1);
     assert(supplies.result()==Result::Active);
+    const auto afterRefill=supplies.Checksum();
+    assert(!supplies.QueueResupply(0)); // full magazine again
+    assert(!supplies.QueueResupply(1)); // raiders are not player units
+    assert(supplies.Checksum()==afterRefill);
 
     Battle cap(123);
     cap.ClearUnits();
