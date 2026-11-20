@@ -618,10 +618,21 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 long now=System.nanoTime();
                 final float[] origin={0,0,0},direction={0,0,-1};
                 final VirtualOutput select=VirtualOutput.joystickButton(0),secondary=VirtualOutput.joystickButton(1);
-                void open() {
+                void open() throws IOException {
                     if(!game.start("sitka"))fail("Sitka launch: "+game.getLastError());
                     assertTrue("Cannot create Sitka GLES2 resources",game.onSurfaceCreated());
                     now=System.nanoTime();
+                    // NativeModuleRuntime.start calls nativeResume. A stale
+                    // pressed Back+LEFT from the shell must NOT be replayed as
+                    // a fresh trip to or from the municipal dock.
+                    assertTrue("Initial Sitka journal not created",save.isFile());
+                    byte[] beforeStaleChord=Files.readAllBytes(save.toPath());
+                    step(-1,0,false,true);
+                    assertArrayEquals("Held shell chord must not change Crescent journal",
+                        beforeStaleChord,Files.readAllBytes(save.toPath()));
+                    // Explicitly return the controller to neutral before the
+                    // player makes any deliberate travel, walk or dock input.
+                    step(0,0,false,false);
                 }
                 void step(float x,float y,boolean pressed,boolean chord) {
                     game.setSitkaWalkTouchpad(x,y,true);
@@ -632,7 +643,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 }
                 void handoff() {step(0,0,true,false);step(0,0,true,false);step(0,0,false,false);}
                 void walk(float y,int frames) {for(int i=0;i<frames;i++)step(0,y,false,false);}
-                void reopen() {
+                void reopen() throws IOException {
                     assertTrue("Sitka could not checkpoint the dock walk",game.prepareForExit());
                     game.releaseSurface();game.stop();open();
                 }
