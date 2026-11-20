@@ -165,10 +165,39 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
                 differences/2,s->cropX,s->cropY);
 }
 #endif
+#if RECON_PROJECT_KIND == 0
+static void TestPhotoPinBudget(){
+    State fixture{};
+    audit::Check(fixture.simulation.AssignRecon(sim::Sector::RiverCrossing),
+                 "fixture assigns an actual Lantern sector");
+    audit::Check(fixture.simulation.CompleteRecon(),"fixture receives film");
+    RefreshEvidence(&fixture);
+    for(int y=0;y<3;++y)for(int x=0;x<4;++x){
+        fixture.cropX=x;fixture.cropY=y;
+        audit::Check(TogglePhotoPin(&fixture),
+                     "photo-pin source code admits twelve distinct cells");
+    }
+    audit::Check(PhotoPinCount(&fixture)==kMaxPhotoPins,
+                 "exactly 12 visible pins admitted");
+    fixture.cropX=fixture.cropY=4;
+    audit::Check(!TogglePhotoPin(&fixture)&&PhotoPinCount(&fixture)==12,
+                 "thirteenth pin is refused without mutation");
+    fixture.cropX=fixture.cropY=0;
+    audit::Check(TogglePhotoPin(&fixture)&&PhotoPinCount(&fixture)==11,
+                 "marked pixel can be unpinned when full");
+    fixture.cropX=fixture.cropY=4;
+    audit::Check(TogglePhotoPin(&fixture)&&PhotoPinCount(&fixture)==12,
+                 "released pin capacity is reusable");
+    std::puts("PASS Lantern live twelve-pin budget, overflow refusal, remove and reuse");
+}
+#endif
 int main(int argc,char** argv){
     std::setvbuf(stdout,nullptr,_IONBF,0);audit::Check(argc==2,"capture directory argument");audit::output=argv[1];
     audit::GL context;auto host=audit::Host();
     ShellFocusOwnership(host); // both module kinds, real Save and Update
+#if RECON_PROJECT_KIND == 0
+    TestPhotoPinBudget();
+#endif
     auto* s=static_cast<State*>(Create(&host));
     audit::Check(s&&!s->loadBlocked&&GlStart(s)==1,"actual recon GL");
     audit::Check(api.prepare_exit==PrepareExit,"published guarded-exit callback");
@@ -186,6 +215,30 @@ int main(int argc,char** argv){
     Click(s);s=Recreate(s,&host,"lantern-in-flight");
     Click(s);Cycle(s,3);s=Recreate(s,&host,"lantern-photo");
     InspectLoupe(s,context);
+    // Use the real native Minus-then-Select chord to pin the exact current
+    // loupe pixel, write through the 128-byte host checkpoint and render
+    // the hollow annotation on the real Mesa GLES2 source + zoomed photo.
+    const auto beforePin=Bytes(s);
+    const auto beforePinFrame=audit::Capture(Render,s,"lantern-before-pin");
+    auto pin=audit::Pointer(0.f,kPhotoY,kPhotoZ);
+    pin.secondary_down=1u;Update(s,&pin);
+    pin.primary_down=1u;Update(s,&pin);
+    audit::Check(PhotoPinCount(s)==1 && (s->photoPins[10]&(1u<<8))!=0u,
+                 "real Minus+Select pins current source pixel");
+    audit::Check(s->choice==3 && s->simulation.phase()==sim::Phase::PhotoReady,
+                 "pin cannot file or change a report assessment");
+    audit::Check(Bytes(s)!=beforePin && Bytes(s)[8]==4u &&
+                 !s->saveDirty && !s->viewDirty,
+                 "photo pin committed by the actual 128-byte V4 store");
+    const auto pinnedFrame=audit::Capture(Render,s,"lantern-photo-pin");
+    audit::Check(beforePinFrame!=pinnedFrame,
+                 "real GLES2 film and loupe visibly show the pin");
+    pin.primary_down=0u;Update(s,&pin);
+    pin.secondary_down=0u;Update(s,&pin);
+    audit::Check(s->choice==3,"Minus release after pin never cycles report");
+    s=Recreate(s,&host,"lantern-photo-pin-reopened");
+    audit::Check(PhotoPinCount(s)==1 && (s->photoPins[10]&(1u<<8))!=0u,
+                 "pin survives real Pause/Destroy/Load/GLES2 recreation");
     const auto photo=s->photo;const auto prior=audit::saves;
     audit::reject_writes=true;Click(s);
     audit::Check(s->simulation.phase()==sim::Phase::Filed&&s->simulation.credibility()==3
@@ -195,9 +248,13 @@ int main(int argc,char** argv){
     auto input=LegacyInput();for(int i=0;i<40;++i)Update(s,&input);
     audit::Check(!s->saveDirty&&!s->saveFailed,"idle report retry recovered");
     s=Recreate(s,&host,"lantern-filed");
-    audit::Check(s->hasPhoto&&s->photo.pixels==photo.pixels&&s->result.credibility_delta==3,"filed evidence/result preserved");
+    audit::Check(s->hasPhoto&&s->photo.pixels==photo.pixels&&s->result.credibility_delta==3,
+                 "filed evidence/result preserved");
+    audit::Check(PhotoPinCount(s)==1,
+                 "filed result retains its exact manually pinned photograph");
     Click(s);audit::Check(s->simulation.phase()==sim::Phase::Briefing&&s->simulation.credibility()==3
-        &&s->simulation.operational_effect()==2,"new sortie retains cumulative consequence");
+        &&s->simulation.operational_effect()==2&&PhotoPinCount(s)==0,
+        "new sortie retains cumulative consequence but clears old photo pins");
     s=Recreate(s,&host,"lantern-next-sortie");
     Cycle(s);Click(s);Click(s);audit::ambiguous_writes=true;Click(s);
     const auto visible=audit::saves;const auto current=Bytes(s);

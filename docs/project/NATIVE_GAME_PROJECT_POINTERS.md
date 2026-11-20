@@ -93,6 +93,39 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ---
 
+## Lantern Desk current photograph pins — 2026-11-20
+
+The registered Lantern Desk native game now lets analysts bookmark up to
+**twelve actual cells of the current 16x16 photographed evidence**.
+On a live 8x8 loupe, hold **Minus**, then tap **Select** to toggle a gold
+hollow outline on the southeastern central magnified pixel. Panning the
+lens (Minus + pad) permits marking other cells. The original source
+image and 2x current loupe show exactly the same annotations; the
+previous filed photo remains unaltered. The in-world Lato report panel
+displays `PHOTO PINS N / 12` and the chord. Pinning does not select a
+report, infer an answer, or alter photograph pixels, enemy truth,
+credibility, or sortie progression. Releasing Minus after pinning
+cannot accidentally advance the report selector.
+
+Pins use 32 bytes of **already reserved** space in the checked 128-byte
+Lantern `session-v1.bin` record: Lantern-only V4 encodes a bounded
+16-row bitmask and preserves all V1-V3 reading with no annotations.
+Forward Detachment remains **V3 byte-for-byte**, with no new fields.
+Malformed tails, checksum errors, out-of-phase pins and counts above
+12 are refused transactionally. A pin checkpoints immediately;
+failed writes keep the in-memory pin and block ordinary exit until
+a successful retry. The same photo's filed report retains its pins,
+and starting a new sortie clears them to prevent false attribution.
+
+The real hosted native module receives the Minus/Select sequence,
+writes an exact source-backed checkpoint, survives Pause/Destroy/Reload
+and renders the annotated source and loupe in real GLES2.
+The existing installed Android recon test now verifies the V4 row-8
+pin through Java input → JNI → checked native bytes and captures the
+resulting GLES2 frame (within `recon-shell-ministry-lantern-desk.png`).
+These are host/emulator proof, not physical Galaxy S9 optical, audio
+or controller acceptance. No separate game APK or new workflow.
+
 ## RV-GAME-02 — Ministry of Intelligence: Lantern Desk VR
 
 **Current implementation boundary.** The native board supports three named sectors and two authored photographic conditions per sector. Filing a report and opening the next sortie advances the visited sector. On a sector's first assignment the analyst sees a field guide, the 16 × 16 source and a 2× loupe. On subsequent visits the desk shows the previous filed exposure and the current exposure through synchronized 8 × 8 loupes. This view remains available after working on other sectors. Aim at the central film or hold Minus and nudge the pad to move both windows. The assessment selector remains live. Reopening a saved comparison restores both films and the inspected area. The original single-film view starts centered on relaunch. Previous builds retain their active cases and scores. Their odd sector-visit counts establish a prior exposure, while an ambiguous older history starts its archive with the next filed sortie. Annotations, a physical desk and additional cases remain open.

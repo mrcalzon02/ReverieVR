@@ -8,7 +8,12 @@
 #include <cstring>
 
 namespace reverie { namespace recon {
-struct LanternState { lantern::Simulation simulation; uint8_t choice=0, crop_x=4, crop_y=4; };
+// Annotations belong to the current photograph, not the actual pixels.
+struct LanternState {
+    lantern::Simulation simulation;
+    uint8_t choice=0, crop_x=4, crop_y=4;
+    std::array<uint16_t,16> pins{};
+};
 struct ForwardState { forward::Simulation simulation; uint8_t choice=0; bool confirm_refit=false; };
 // Game-private checkpoint for the existing two decision-board prototypes.
 // Explicit fields, separate kind tags, full integrity and transactional reads.
@@ -25,10 +30,15 @@ public:
         PutI(&b[48],s.credibility_);PutI(&b[52],s.operational_effect_);
         PutI(&b[56],s.last_report_.credibility_delta);PutI(&b[60],s.last_report_.operational_effect);
         b[64]=state.choice;b[65]=s.follow_up_sectors_;b[66]=s.filed_sectors_;
-        b[67]=state.crop_x;b[68]=state.crop_y;Finish(b);*output=b;return true;
+        b[67]=state.crop_x;b[68]=state.crop_y;
+        // Lantern V4 uses existing reserved bytes; Forward remains V3.
+        for(size_t row=0;row<16;++row)Put16(&b[69+row*2],state.pins[row]);
+        Finish(b);*output=b;return true;
     }
     static bool Decode(LanternState* output,const uint8_t* b,size_t size){
-        if(!output||!Header(b,size,0)||!Padding(b,b[8]==1?65:b[8]==2?66:69))return false;
+        if(!output||!Header(b,size,0)||
+           !Padding(b,b[8]==1?65:b[8]==2?66:b[8]==3?69:101))
+            return false;
         LanternState next;auto& s=next.simulation;
         s.phase_=static_cast<lantern::Phase>(b[12]);s.selected_=static_cast<lantern::Sector>(b[13]);
         s.photo_.sector=static_cast<lantern::Sector>(b[14]);s.photo_.clarity=b[15];
@@ -40,6 +50,9 @@ public:
         // cannot distinguish an unvisited sector from an already visited one.
         s.filed_sectors_=b[8]>=3?b[66]:s.follow_up_sectors_;
         if(b[8]>=3){next.crop_x=b[67];next.crop_y=b[68];}
+        if(b[8]>=4)
+            for(size_t row=0;row<16;++row)next.pins[row]=Get16(&b[69+row*2]);
+        // V1-V3 checkpoints have no pins and remain valid unmodified.
         if(!Valid(next))return false;
         *output=next;return true;
     }
@@ -85,6 +98,12 @@ private:
         const bool comparing=s.phase_==lantern::Phase::PhotoReady &&
                              (s.filed_sectors_ & (1u<<static_cast<unsigned>(s.selected_)));
         if(!comparing && (state.crop_x!=4 || state.crop_y!=4))return false;
+        unsigned pins=0;
+        for(uint16_t row:state.pins)
+            for(;row;row=static_cast<uint16_t>(row&(row-1u)))++pins;
+        if(pins>12u)return false; // bounded CPU/GPU photo annotation budget
+        if((s.phase_==lantern::Phase::Briefing||
+            s.phase_==lantern::Phase::InFlight)&&pins)return false;
         const int choices=s.phase_==lantern::Phase::Briefing?3:s.phase_==lantern::Phase::PhotoReady?4:1;
         if(state.choice>=choices)return false;
         if(s.phase_==lantern::Phase::Briefing||s.phase_==lantern::Phase::InFlight){
@@ -148,7 +167,8 @@ private:
             &&(s.vehicle_condition_>0||s.unnecessary_force_);
     }
     static Bytes Start(uint8_t kind){
-        Bytes b{};std::memcpy(b.data(),"RECON001",8);b[8]=3;b[9]=kind;return b;
+        Bytes b{};std::memcpy(b.data(),"RECON001",8);
+        b[8]=kind==0?4:3;b[9]=kind;return b;
     }
     static uint64_t Hash(const uint8_t* b){
         uint64_t hash=14695981039346656037ull;
@@ -160,7 +180,9 @@ private:
         for(size_t i=kBytes-8;i<kBytes;++i){b[i]=static_cast<uint8_t>(hash);hash>>=8;}
     }
     static bool Header(const uint8_t* b,size_t size,uint8_t kind){
-        if(!b||size!=kBytes||std::memcmp(b,"RECON001",8)||(b[8]<1 || b[8]>3)||b[9]!=kind||b[10]||b[11])return false;
+        if(!b||size!=kBytes||std::memcmp(b,"RECON001",8)||
+           (b[8]<1 || b[8]>(kind==0?4:3))||
+           b[9]!=kind||b[10]||b[11])return false;
         uint64_t hash=Hash(b);
         for(size_t i=kBytes-8;i<kBytes;++i){if(b[i]!=static_cast<uint8_t>(hash))return false;hash>>=8;}
         return true;

@@ -1304,6 +1304,32 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                     byte[] second=Files.readAllBytes(save.toPath());
                     assertEquals(id+" deliberate second mission phase",2,second[12]&255);
                     assertFalse(id+" mission checkpoint must progress",Arrays.equals(first,second));
+                    if("ministry-lantern-desk".equals(id)){
+                        // The actual PhotoReady state, Android controller bus,
+                        // JNI save slot and GLES2 render now exercise a pin.
+                        assertEquals("Lantern checkpoint V4",4,second[8]&255);
+                        // Minus must already be down before the new Select
+                        // edge: one chord is an annotation, not a filed report.
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,
+                            false,true,0.f);
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,
+                            true,true,0.f);
+                        byte[] pinned=Files.readAllBytes(save.toPath());
+                        assertEquals("Lantern pinned PhotoReady phase",2,pinned[12]&255);
+                        assertEquals("Lantern source image pin row 8 high byte",
+                            1,pinned[69+8*2+1]&255);
+                        assertFalse("Lantern pin did not produce a real checkpoint",
+                            Arrays.equals(second,pinned));
+                        second=pinned;
+                        // Releasing Minus after a pin must not silently
+                        // cycle the pending report assessment.
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,
+                            false,true,0.f);
+                        input.step(NativeModuleRuntime.POINTER_TRACKED_CONTROLLER,
+                            false,false,0.f);
+                        Log.i(TAG,"PASS installed Lantern photo pin V4 "+
+                            "samePhoto=true save=true preservedReport=true");
+                    }
                     File frame=new File(app.getFilesDir(),"recon-shell-"+id+".png");
                     assertTrue(id+" frame upload unavailable",game.prepareFrame());
                     long frameCrc=omegaFrame(game,frame);

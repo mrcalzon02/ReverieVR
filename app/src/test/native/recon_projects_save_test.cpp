@@ -89,6 +89,55 @@ static void TestForwardFiledDebriefRefitCheckpointParity(){
 }
 
 int main(){
+    assert(Bytes(LanternState{})[8]==4u);
+    assert(Bytes(ForwardState{})[8]==3u);
+    // Forward Detachment cannot accept Lantern's new V4 marker layout.
+    auto wrongForwardVersion=Bytes(ForwardState{});
+    wrongForwardVersion[8]=4u;Rehash(wrongForwardVersion);
+    ForwardState rejectedForward;
+    assert(!Checkpoint::Decode(&rejectedForward,wrongForwardVersion.data(),
+                               wrongForwardVersion.size()));
+    LanternState pinPhoto;
+    assert(pinPhoto.simulation.AssignRecon(lantern::Sector::RiverCrossing));
+    assert(pinPhoto.simulation.CompleteRecon());
+    pinPhoto.pins[8]=uint16_t((1u<<8)|(1u<<7));
+    pinPhoto.pins[3]=uint16_t(1u<<2);
+    const auto checkedPins=Bytes(pinPhoto);
+    assert(checkedPins[8]==4u&&checkedPins[69+8*2]==0x80u&&
+           checkedPins[69+8*2+1]==1u);
+    auto reopenedPins=Restore(pinPhoto);
+    assert(reopenedPins.pins==pinPhoto.pins&&
+           reopenedPins.simulation.photo()->pixels==pinPhoto.simulation.photo()->pixels);
+    lantern::ReportResult markedReport;
+    assert(reopenedPins.simulation.SubmitReport(lantern::Assessment::BridgeDamage,
+                                                 &markedReport));
+    reopenedPins=Restore(reopenedPins);
+    assert(reopenedPins.pins==pinPhoto.pins);
+    assert(reopenedPins.simulation.NextSortie());
+    reopenedPins.pins.fill(0);
+    reopenedPins=Restore(reopenedPins);
+    assert((reopenedPins.pins==std::array<uint16_t,16>{}));
+    auto oldV3=checkedPins;oldV3[8]=3u;Rehash(oldV3);
+    LanternState oldState;
+    assert(!Checkpoint::Decode(&oldState,oldV3.data(),oldV3.size()));
+    auto v3=checkedPins;
+    std::fill(v3.begin()+69,v3.begin()+101,0);
+    v3[8]=3u;Rehash(v3);
+    assert(Checkpoint::Decode(&oldState,v3.data(),v3.size()));
+    assert((oldState.pins==std::array<uint16_t,16>{}));
+    auto over=pinPhoto;over.pins[0]=0x1fffu;
+    Checkpoint::Bytes untouched{};untouched.fill(0xa5u);
+    assert(!Checkpoint::Encode(over,&untouched));
+    assert(std::all_of(untouched.begin(),untouched.end(),
+                       [](uint8_t v){return v==0xa5u;}));
+    auto tooMany=checkedPins;
+    tooMany[69]=0xffu;tooMany[70]=0x1fu;Rehash(tooMany);
+    assert(!Checkpoint::Decode(&oldState,tooMany.data(),tooMany.size()));
+    LanternState noPhoto;noPhoto.pins[8]=0x100u;
+    assert(!Checkpoint::Encode(noPhoto,&untouched));
+    auto badPinByte=checkedPins;badPinByte[86]^=1u;
+    assert(!Checkpoint::Decode(&oldState,badPinByte.data(),badPinByte.size()));
+    std::puts("PASS Lantern V4 twelve-pin bounds, exact photo persistence, V3 import, Forward V3 untouched and corrupt marker rejection");
     LanternState ministry;
     assert(!ministry.simulation.NextSortie());
     for(unsigned sector=0;sector<3;++sector)for(unsigned assessment=0;assessment<4;++assessment){

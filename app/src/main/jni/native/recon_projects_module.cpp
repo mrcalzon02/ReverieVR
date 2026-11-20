@@ -39,6 +39,7 @@ struct State {
     sim::ReportResult result{};
     bool hasPhoto=false,hasPrior=false,panChord=false;
     int cropX=4,cropY=4,lastAimX=-1,lastAimY=-1;
+    std::array<uint16_t,16> photoPins{};
 #else
     sim::ContactEvidence evidence{};
     sim::Debrief debrief{};
@@ -75,8 +76,45 @@ void DrawFilm(State *s,const sim::Photograph &film,float cx,int startX,int start
                  step*.96f,step*.96f,kPhotoZ,.84f,.85f,.63f);
     }
 }
+constexpr unsigned kMaxPhotoPins=12u;
+unsigned PhotoPinCount(const State* s){
+    unsigned total=0;
+    for(uint16_t row:s->photoPins)
+        for(;row;row=static_cast<uint16_t>(row&(row-1u)))++total;
+    return total;
+}
+bool TogglePhotoPin(State* s){
+    if(!s||!s->hasPhoto||s->simulation.phase()!=sim::Phase::PhotoReady)
+        return false;
+    // An 8x8 lens has no unique center. Pin the SE center cell at +4,+4.
+    const int x=std::clamp(s->cropX+4,0,kFilmSize-1);
+    const int y=std::clamp(s->cropY+4,0,kFilmSize-1);
+    const uint16_t bit=static_cast<uint16_t>(1u<<x);
+    if(s->photoPins[y]&bit)
+        s->photoPins[y]=static_cast<uint16_t>(s->photoPins[y]&~bit);
+    else{
+        if(PhotoPinCount(s)>=kMaxPhotoPins)return false;
+        s->photoPins[y]=static_cast<uint16_t>(s->photoPins[y]|bit);
+    }
+    return true;
+}
+void DrawPhotoPins(State* s,float cx,int firstX,int firstY,int size){
+    const float step=kPhotoPixel*kFilmSize/size,half=step*.38f;
+    const float stroke=std::max(.005f,step*.065f);
+    for(int y=0;y<size;++y)for(int x=0;x<size;++x){
+        if(!(s->photoPins[firstY+y]&(1u<<(firstX+x))))continue;
+        const float px=cx+(x-(size-1)*.5f)*step;
+        const float py=kPhotoY+((size-1)*.5f-y)*step;
+        // Hollow outline: the original photographic pixel remains legible.
+        Rect(s,px,py+half,2.f*half,stroke,-2.89f,.99f,.67f,.20f);
+        Rect(s,px,py-half,2.f*half,stroke,-2.89f,.99f,.67f,.20f);
+        Rect(s,px-half,py,stroke,2.f*half,-2.89f,.99f,.67f,.20f);
+        Rect(s,px+half,py,stroke,2.f*half,-2.89f,.99f,.67f,.20f);
+    }
+}
 void DrawLoupe(State *s){
     DrawFilm(s,s->photo,kLoupeX,s->cropX,s->cropY,kWindowSize);
+    DrawPhotoPins(s,kLoupeX,s->cropX,s->cropY,kWindowSize);
     if(s->hasPrior){
         DrawFilm(s,s->prior,-kLoupeX,s->cropX,s->cropY,kWindowSize);
         s->font.Fit("2X PREVIOUS",-kLoupeX,-.64f,1.42f,.025f,.76f,.89f,.98f,-2.87f);
@@ -262,13 +300,15 @@ void DrawBoard(State *s){
         }
         if(s->hasPhoto){
             DrawFilm(s,s->photo,0.f,0,0,kFilmSize);
+            DrawPhotoPins(s,0.f,0,0,kFilmSize);
             if(s->simulation.phase()==sim::Phase::PhotoReady)DrawLoupe(s);
         }
         if(s->simulation.phase()==sim::Phase::PhotoReady){
             const char *labels[]={"NO CONTACT","POSSIBLE CONTACT",
                                   "VEHICLE COLUMN","BRIDGE DAMAGE"};
-            Text(s,s->hasPrior?"COMPARE SAME AREA / AIM OR HOLD MINUS + PAD":"AIM AT PHOTO OR HOLD MINUS + PAD TO PAN",-.90f,.027f,.83f,.91f,.90f);
-
+            std::snprintf(text,sizeof(text),"PHOTO PINS %u / %u",PhotoPinCount(s),kMaxPhotoPins);
+            Text(s,text,-.76f,.026f,.99f,.77f,.45f);
+            Text(s,"AIM/PAN: MINUS+PAD   PIN: HOLD MINUS+SELECT",-.94f,.025f,.83f,.91f,.90f);
             std::snprintf(text,sizeof(text),"FILE: %s",labels[s->choice%4]);
             Text(s,text,-1.19f,.040f,1.f,.81f,.36f);
         }else{
@@ -379,6 +419,7 @@ SavedSession Snapshot(const State* s){
     saved.confirm_refit=s->confirmRefit;
 #else
     if(s->hasPrior){saved.crop_x=static_cast<uint8_t>(s->cropX);saved.crop_y=static_cast<uint8_t>(s->cropY);}
+    saved.pins=s->photoPins;
 #endif
     return saved;
 }
@@ -411,6 +452,7 @@ bool Load(State* s){
     s->confirmRefit=next.confirm_refit;
 #else
     s->cropX=next.crop_x;s->cropY=next.crop_y;s->lastAimX=s->lastAimY=-1;
+    s->photoPins=next.pins;
 #endif
     s->loadBlocked=false;s->saveDirty=false;s->saveFailed=false;s->viewDirty=false;
     RefreshEvidence(s);return true;
@@ -427,13 +469,16 @@ bool Act(State *s){
         if(ok&&s->simulation.photo()){
             s->photo=*s->simulation.photo();s->hasPhoto=true;
             s->cropX=s->cropY=4;s->lastAimX=s->lastAimY=-1;s->panChord=false;
+            s->photoPins.fill(0);
         }
         break;
     case sim::Phase::PhotoReady:
         ok=s->simulation.SubmitReport(static_cast<sim::Assessment>(s->choice),
                                       &s->result);break;
     case sim::Phase::Filed:
-        ok=s->simulation.NextSortie();break;
+        ok=s->simulation.NextSortie();
+        if(ok)s->photoPins.fill(0); // Pins are local to the prior exposure.
+        break;
     }
 #else
     switch(s->simulation.phase()){
@@ -581,6 +626,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
 #if RECON_PROJECT_KIND == 0
     if(s->simulation.phase()==sim::Phase::PhotoReady){
         bool redraw=AimLoupe(s,in,second || s->panChord);
+        bool pinAction=false;
         // A short Minus tap still advances the report. Holding it with a
         // rocker direction exclusively moves the window by two film pixels.
         if(second && axis){
@@ -594,12 +640,28 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             }
             s->panChord=true;
         }
+        // Hold Minus first, then Select. A pin chord cannot submit a report
+        // or cycle assessment when Minus is released.
+        if(second && s->secondary && activate && !axis && !s->panChord){
+            pinAction=true;
+            const bool toggled=TogglePhotoPin(s);
+            if(toggled) {
+                s->viewDirty=true;
+                const bool saved=Save(s);
+                ReverieNativeRequestFeedbackV1(s->host,saved?
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                    REVERIE_NATIVE_FEEDBACK_FAILURE);
+                redraw=true;
+            }else ReverieNativeRequestFeedbackV1(s->host,
+                           REVERIE_NATIVE_FEEDBACK_FAILURE);
+            s->panChord=true;
+        }
         nextButton=!second && s->secondary && !s->panChord;
         stepAxis=stepAxis && !second && !s->panChord;
         activate=activate && !second && !s->panChord;
         if(!second)s->panChord=false;
         if(redraw){
-            if(s->hasPrior)s->viewDirty=true;
+            if(s->hasPrior && !pinAction)s->viewDirty=true;
             DrawBoard(s);
         }
     }

@@ -251,6 +251,7 @@ jobs:
             grep -F "PASS Breakwater purchased Heavy rack GLES2" validation/hub/logcat.txt
             grep -F 'PASS Sitka installed Crescent delivery: Float 2' validation/hub/logcat.txt
             grep -F 'PASS installed recon shell focus id=ministry-lantern-desk' validation/hub/logcat.txt
+            grep -F 'PASS installed Lantern photo pin V4 samePhoto=true save=true preservedReport=true' validation/hub/logcat.txt
             grep -F 'PASS installed recon shell focus id=iron-sight-forward-detachment' validation/hub/logcat.txt
             grep -F 'PASS Breakwater installed campaign: 366 waves' validation/hub/logcat.txt
             grep -E '^OK \([1-9][0-9]* tests\)' validation/hub/instrumentation-output.txt
