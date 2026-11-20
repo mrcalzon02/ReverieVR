@@ -130,6 +130,71 @@ static void Lifecycle(){
     slots=good;m=static_cast<Module *>(Create(&host));Check(Bytes(m)==unsaved,"restored storage recovers without reset");Destroy(m);
     std::cout<<kId<<" lifecycle, freeze/rearm, exact recreation, I/O retry, corrupt preservation PASS\n";
 }
+#if CLASSIC_GAME_KIND==0
+static void PongPointCheckpointServe(){
+    slots.clear();writes=0;failReads=failWrites=false;
+    const auto host=Host();
+    Module *live=static_cast<Module *>(Create(&host));
+    Check(live&&!live->saves.loadBlocked,"fresh Pong match can start");
+    auto held=Input(.08f);held.primary_down=1;
+    Update(live,&held);
+    Check(live->game.moving&&live->game.score==0&&live->game.opponent==0,
+          "real Select edge serves first Pong ball");
+
+    // Bound the rally duration by staging the *live* ball beside the goal.
+    // The public Update/Step collision, not a fabricated score, earns the point.
+    live->game.ball_x=1.02f;live->game.ball_y=.65f;
+    live->game.velocity_x=1.f;live->game.velocity_y=0.f;
+    Update(live,&held);
+    Check(live->game.score==1&&live->game.opponent==0&&
+          !live->game.moving&&!live->game.finished&&
+          live->game.ball_x==0.f&&live->game.ball_y==0.f,
+          "production goal crossing scores one point and awaits next serve");
+    for(int i=0;i<8;++i)Update(live,&held);
+    Check(live->game.score==1&&live->game.opponent==0&&!live->game.moving,
+          "holding Select over scored point cannot auto-serve or rescore");
+
+    Pause(live);
+    const auto checkpoint=Bytes(live);
+    Check(!live->saves.dirty&&writes>0&&
+          slots.find(save::kManifest)!=slots.end(),
+          "waiting-to-serve score committed through banked host save");
+    Module *restored=static_cast<Module *>(Create(&host));
+    Check(restored&&!restored->saves.loadBlocked&&restored->restorePrompt&&
+          Bytes(restored)==checkpoint,
+          "fresh module reloads exact scored waiting-to-serve checkpoint");
+
+    Resume(live);
+    auto neutral=Input(0.f);Update(live,&neutral);Update(restored,&neutral);
+    auto cont=Input(0.f);cont.primary_down=1;
+    Update(restored,&cont);
+    Check(!restored->restorePrompt&&restored->releaseToArm&&
+          Bytes(restored)==checkpoint,
+          "restored Continue consumes a Select edge without serving");
+    for(int i=0;i<8;++i)Update(restored,&cont);
+    Check(Bytes(restored)==checkpoint&&!restored->game.moving,
+          "held Continue cannot leak an extra serve into restored Pong");
+    Update(restored,&neutral);
+    Check(Bytes(live)==checkpoint&&Bytes(restored)==checkpoint,
+          "neutral rearm preserves both waiting-to-serve snapshots");
+
+    auto fresh=Input(0.f);fresh.primary_down=1;
+    Update(live,&fresh);Update(restored,&fresh);
+    Check(live->game.moving&&restored->game.moving&&
+          live->game.score==1&&restored->game.score==1&&
+          live->game.opponent==0&&restored->game.opponent==0&&
+          Bytes(live)==Bytes(restored),
+          "one new Select serves exactly once after both continuations");
+    fresh.delta_seconds=.02f;
+    for(int i=0;i<10;++i){Update(live,&fresh);Update(restored,&fresh);}
+    Check(live->game.moving&&restored->game.moving&&
+          live->game.score==1&&restored->game.score==1&&
+          Bytes(live)==Bytes(restored),
+          "held next serve advances identically without phantom scores");
+    Destroy(restored);Destroy(live);
+    std::cout<<kId<<" scored point, banked reload, held Select and one fresh serve PASS\\n";
+}
+#endif
 #if (CLASSIC_GAME_KIND>=3 && CLASSIC_GAME_KIND<=5) || CLASSIC_GAME_KIND==7
 static void DirectionalSelectWithLiveRay(){
     slots.clear();const auto host=Host();
@@ -274,6 +339,9 @@ static void PaddleWithLiveRay(){
 }
 #endif
 int main(){Lifecycle();
+#if CLASSIC_GAME_KIND==0
+    PongPointCheckpointServe();
+#endif
 #if CLASSIC_GAME_KIND==4
     // A partially present optional pointer tail must behave like a base input.
     slots.clear();const auto host=Host();auto *m=static_cast<Module *>(Create(&host));
