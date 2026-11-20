@@ -100,6 +100,98 @@ static void TestWrongChoiceThenNextRoom() {
     std::cout<<"Guess door wrong-path fall, next-room clue and save replay PASS\n";
 }
 
+
+/*
+ * Finishing the real twelve-room route is an award boundary, not a permanent
+ * input/audio state. A distinct seed must start clean even if the victory
+ * chime and the one-time room-one voice were never drained before Reset.
+ * Exercise the checked save codec on both sides of that boundary.
+ */
+static void TestVictoryToFreshSeedCheckedRestart() {
+    uint64_t oldSeed=0x1337beef10203040ULL;
+    while(Generate(oldSeed,1u).safeSide!=1u)++oldSeed;
+    uint64_t freshSeed=0xa5a5ccdd12345678ULL;
+    while(Generate(freshSeed,1u).safeSide!=1u ||
+          Generate(freshSeed,0u).clueFeature==Generate(oldSeed,0u).clueFeature)
+        ++freshSeed;
+    assert(oldSeed!=freshSeed);
+
+    Game finished;finished.Reset(oldSeed);
+    for(unsigned index=0u;index<kRooms;++index) {
+        assert(finished.phase==Phase::Ready&&finished.room==index);
+        const Room expected=Generate(oldSeed,index);
+        assert(finished.current.Matches(expected.safeSide));
+        assert(finished.Pull(static_cast<int>(expected.safeSide)));
+        for(unsigned tick=0u;tick<100u &&
+            finished.phase!=Phase::Ready&&finished.phase!=Phase::Victory;++tick)
+            finished.Update(.1f);
+        assert(finished.room==index+1u&&finished.clearCount==index+1u);
+    }
+    assert(finished.phase==Phase::Victory&&finished.room==kRooms);
+    assert(finished.falls==0u&&finished.easterSeen);
+    assert((finished.pendingSound&VictorySound)!=0u);
+    assert((finished.pendingSound&LeverVoice)!=0u);
+
+    MazeSave victoryBytes{};assert(EncodeMazeSave(finished,victoryBytes));
+    Game checkedVictory=RoundTrip(finished);
+    assert(checkedVictory.phase==Phase::Victory&&checkedVictory.room==kRooms);
+    assert(checkedVictory.clearCount==kRooms&&checkedVictory.easterSeen);
+    assert(checkedVictory.DrainSound()==NoSound);
+    Game audible=finished;
+    const unsigned oldAudio=audible.DrainSound();
+    assert((oldAudio&VictorySound)!=0u&&(oldAudio&LeverVoice)!=0u);
+    assert(audible.DrainSound()==NoSound); // Each old cue drains only once.
+
+    // Reset while the real victory/voice bits are still pending.
+    finished.Reset(freshSeed);
+    assert(finished.seed==freshSeed&&finished.phase==Phase::Ready);
+    assert(finished.room==0u&&finished.clearCount==0u&&finished.falls==0u);
+    assert(!finished.easterSeen&&!finished.easterActive&&!finished.secondStep);
+    assert(finished.timer==0.f&&finished.side==-1);
+    assert(finished.DrainSound()==NoSound);
+    const Room first=Generate(freshSeed,0u);
+    assert(finished.current.safeSide==first.safeSide);
+    assert(finished.current.clueFeature==first.clueFeature);
+    assert(finished.current.clueValue==first.clueValue);
+    assert(finished.current.Matches(first.safeSide)&&finished.ClueVisible());
+    MazeSave newBytes{};assert(EncodeMazeSave(finished,newBytes));
+    assert(newBytes!=victoryBytes);
+
+    Game resumed=RoundTrip(finished);
+    MazeSave checkedNewBytes{};assert(EncodeMazeSave(resumed,checkedNewBytes));
+    assert(checkedNewBytes==newBytes);
+    assert(resumed.seed==freshSeed&&resumed.phase==Phase::Ready);
+    assert(resumed.room==0u&&resumed.clearCount==0u&&resumed.falls==0u);
+    assert(!resumed.easterSeen&&!resumed.easterActive&&!resumed.secondStep);
+    assert(resumed.DrainSound()==NoSound);
+    checkedVictory.Reset(freshSeed);
+    MazeSave resetAfterReload{};assert(EncodeMazeSave(checkedVictory,resetAfterReload));
+    assert(resetAfterReload==newBytes&&checkedVictory.DrainSound()==NoSound);
+
+    // The new seed accepts a genuine choice and awards only its own rooms.
+    assert(resumed.Pull(static_cast<int>(first.safeSide)));
+    assert(resumed.DrainSound()==LeverSound); // No stale victory or quote.
+    for(unsigned tick=0u;tick<100u&&resumed.phase!=Phase::Ready;++tick)
+        resumed.Update(.1f);
+    assert(resumed.phase==Phase::Ready&&resumed.room==1u);
+    assert(resumed.clearCount==1u&&resumed.falls==0u);
+    assert((resumed.DrainSound()&(VictorySound|LeverVoice))==NoSound);
+    MazeSave afterOne{};assert(EncodeMazeSave(resumed,afterOne));
+    Game second=RoundTrip(resumed);
+    assert(second.room==1u&&second.clearCount==1u&&!second.easterSeen);
+    assert(second.current.Matches(second.current.safeSide));
+    assert(second.current.safeSide==1u);
+    assert(second.Pull(1));
+    assert(second.DrainSound()==(LeverSound|LeverVoice));
+    assert(second.DrainSound()==NoSound);
+    for(unsigned tick=0u;tick<100u&&second.phase!=Phase::Ready;++tick)
+        second.Update(.1f);
+    assert(second.phase==Phase::Ready&&second.room==2u);
+    assert(second.clearCount==2u&&second.falls==0u&&second.easterSeen);
+    assert((second.DrainSound()&VictorySound)==NoSound);
+    std::cout<<"Guess door genuine victory, fresh seed checked reset and new award/audio PASS\n";
+}
+
 int main() {
     Game game;game.Reset(0x123456789abcdef0ULL);
     auto restored=RoundTrip(game);
@@ -138,5 +230,6 @@ int main() {
     assert(game.Pull(1-static_cast<int>(game.current.safeSide)));
     assert(!EncodeMazeSave(game,good));
     TestWrongChoiceThenNextRoom();
+    TestVictoryToFreshSeedCheckedRestart();
     std::cout<<"Guess save codec: safe phases, committed outcomes, victory, bounds and corruption PASS\n";
 }
