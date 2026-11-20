@@ -125,6 +125,34 @@ int main(){
                                  nearCoreEdge,nearCoreEdge,.003f));
     assert(!ShipSegmentHitsVoxels(rotatedHull,hullOrigin,0.f,0.f,
                                   forwardCore,rearCore));
+    // Finite oblique sweeps must use the same yaw-aligned 3D voxel volume
+    // as the rendered ship. Both endpoints are outside the added armor:
+    // only the interior of a segment can hit it.
+    ShipAssembly obliqueHull;
+    assert(obliqueHull.edit(3,3,3,Part::Frame)==ShipEdit::Placed);
+    assert(obliqueHull.edit(4,3,3,Part::Armor)==ShipEdit::Placed);
+    assert(obliqueHull.connected());
+    const float obliqueYaw=.61f;
+    const float obliqueCos=std::cos(obliqueYaw),obliqueSin=std::sin(obliqueYaw);
+    const auto obliqueWorld=[&](float x,float y,float z)->ShipVolumePoint{
+        return {hullOrigin.x+.1f*(x*obliqueCos+z*obliqueSin),
+                hullOrigin.y+.1f*y,
+                hullOrigin.z+.1f*(z*obliqueCos-x*obliqueSin)};
+    };
+    const ShipVolumePoint obliqueStart=obliqueWorld(1.10f,.36f,1.62f);
+    const ShipVolumePoint obliqueEnd=obliqueWorld(.84f,-.35f,.50f);
+    assert(!ShipSegmentHitsVoxels(obliqueHull,hullOrigin,.1f,obliqueYaw,
+                                  obliqueStart,obliqueStart));
+    assert(!ShipSegmentHitsVoxels(obliqueHull,hullOrigin,.1f,obliqueYaw,
+                                  obliqueEnd,obliqueEnd));
+    assert(ShipSegmentHitsVoxels(obliqueHull,hullOrigin,.1f,obliqueYaw,
+                                 obliqueStart,obliqueEnd));
+    // An equally oblique, immediately adjacent X-offset lane must miss,
+    // rather than becoming a false-positive rectangular hull hit.
+    const ShipVolumePoint obliqueMissStart=obliqueWorld(1.89f,.36f,1.62f);
+    const ShipVolumePoint obliqueMissEnd=obliqueWorld(1.63f,-.35f,.50f);
+    assert(!ShipSegmentHitsVoxels(obliqueHull,hullOrigin,.1f,obliqueYaw,
+                                  obliqueMissStart,obliqueMissEnd));
     // A perspective lane moves its world-space Z positions as time passes.
     std::vector<float> scene0,scene1;
     AppendSpaceLane(scene0,0.f,42u);
