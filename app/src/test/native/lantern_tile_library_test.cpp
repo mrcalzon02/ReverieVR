@@ -43,7 +43,7 @@ int main(){
             assert(tile.height_dm==another.height_dm&&
                    tile.road==another.road&&tile.nav_cost==another.nav_cost);
             assert(!ReadTile(packs[i/100].data(),packs[i/100].size(),
-                             static_cast<uint16_t>((i+1)%1000),&another));
+                             static_cast<uint16_t>((i+100)%1000),&another));
             const float h=tile.GroundHeight(81.f,155.f);
             assert(std::isfinite(h)&&h>=0.f&&h<=6500.f);
         }
