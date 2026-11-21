@@ -14,6 +14,9 @@ static void Cycle(State* s,int count=1){for(int i=0;i<count;++i){auto in=LegacyI
 static Checkpoint::Bytes Bytes(State* s){Checkpoint::Bytes bytes{};audit::Check(Checkpoint::Encode(Snapshot(s),&bytes),"actual current-phase checkpoint encodes");return bytes;}
 static State* Recreate(State* s,const ReverieNativeHostV1* host,const std::string& name){
     Pause(s);audit::Check(PrepareExit(s)==1,"durable exit permitted");const auto before=Bytes(s);
+#if RECON_PROJECT_KIND == 0
+    audit::Check(PrepareFrame(s)==1,"pre-eye photographic upload");
+#endif
     const auto frame=audit::Capture(Render,s,name+"-before");
     GlEnd(s);Destroy(s);s=static_cast<State*>(Create(host));
     audit::Check(s&&!s->loadBlocked&&Bytes(s)==before,"exact actual module restored");
@@ -21,7 +24,11 @@ static State* Recreate(State* s,const ReverieNativeHostV1* host,const std::strin
     audit::Check(Bytes(s)==before,"held input cannot advance a restored phase");
     held.primary_down=0;Update(s,&held);
     audit::Check(GlStart(s)==1,"recreated board actual GL");
-    audit::Check(frame==audit::Capture(Render,s,name+"-after"),"both eye frames identical after phase recreation");
+#if RECON_PROJECT_KIND == 0
+    audit::Check(PrepareFrame(s)==1,"recreated photographic source uploaded before eyes");
+#endif
+    audit::Check(frame==audit::Capture(Render,s,name+"-after"),
+                 "both eye frames identical after phase recreation");
     return s;
 }
 static void ShellFocusOwnership(const ReverieNativeHostV1 &host){
@@ -105,9 +112,14 @@ static void InspectLoupe(State *s,audit::GL &gl){
     audit::Check(s->cropX==4 && s->cropY==6 && s->choice==3,
         "pad pans under a stationary ray and releasing Minus preserves report");
     constexpr float scale=1.45f;
+    audit::Check(s->photoRenderer.current.Valid()&&
+                 s->photoRenderer.rgb[0].size()==512u*512u*3u,
+                 "photo-ready Lantern has an actual 512px photographed master");
+    audit::Check(PrepareFrame(s)==1,"upload real registered photograph");
     const auto frame=audit::Capture(Render,s,"lantern-bridge-loupe",scale);
-    // Sample every cell center in the actual right-eye loupe framebuffer.
-    // A bright cell must be the identical bit in the captured source film.
+    // Sample all 64 right-eye magnifier cell centers. They must match
+    // the corresponding actual high-resolution master pixels rather than
+    // obsolete bright/dark 16x16 silhouette bits.
     const auto eye=audit::Eye(1,scale);
     for(int y=0;y<8;++y)for(int x=0;x<8;++x){
         const float wx=kLoupeX+(x-3.5f)*2*kPhotoPixel;
@@ -116,8 +128,11 @@ static void InspectLoupe(State *s,audit::GL &gl){
         const int py=static_cast<int>((1+wy*eye.projection[5]/-kPhotoZ)*audit::GL::height*.5f);
         uint8_t rgb[4]{};
         glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgb);
-        const bool observed=(s->photo.pixels[6+y] & (1u<<(4+x)))!=0;
-        audit::Check((rgb[0]>130)==observed,"2x loupe framebuffer agrees with source pixel");
+        const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
+        const auto& photo=s->photoRenderer.rgb[0];
+        const int expected=photo[(static_cast<size_t>(sy)*512+sx)*3u];
+        audit::Check(std::abs(int(rgb[0])-expected)<45,
+                     "2x stereo loupe samples the actual 512px source pixel");
     }
     audit::Check(glGetError()==GL_NO_ERROR && Bytes(s)==checkpoint && audit::writes==writes,
         "inspection changes no checkpoint, report selection, or storage");
@@ -127,7 +142,7 @@ static void InspectLoupe(State *s,audit::GL &gl){
     auto neutral=LegacyInput();Update(s,&neutral);
     auto old=aim;old.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;Update(s,&old);
     audit::Check(s->cropX==4 && s->cropY==6,"old input prefix preserves inspection");
-    std::puts("PASS Lantern loupe: all 64 framebuffer cells matched original evidence; no report or save on pan");
+    std::puts("PASS Lantern true-photo loupe: all 64 right-eye framebuffer cells sampled registered 512px master; no report or save on pan");
 }
 static void CompareExposures(State *s,const sim::Photograph &first) {
     audit::Check(s->hasPrior && s->prior.pixels==first.pixels &&
@@ -138,6 +153,11 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
     audit::Check(s->cropX==4 && s->cropY==6 && s->viewDirty && audit::writes==writes,
                  "aim moves both loupes to the same region without a per-frame write");
     constexpr float scale=1.45f;
+    audit::Check(s->photoRenderer.has_previous&&
+                 s->photoRenderer.previous.Valid(),
+                 "prior exposure loaded into independently registered photo texture");
+    audit::Check(PrepareFrame(s)==1,
+                 "both current and earlier negatives staged before both eyes");
     audit::Capture(Render,s,"lantern-river-film-comparison",scale);
     int differences=0;
     for(int side=0;side<2;++side){
@@ -155,8 +175,11 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
                 const int py=static_cast<int>((1+wy*eye.projection[5]/-kPhotoZ)*audit::GL::height*.5f);
                 uint8_t rgba[4]{};
                 glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgba);
-                audit::Check((rgba[0]>130)==(plate==0?previous:current),
-                             "rendered comparison cell matches its own filed or current exposure");
+                const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
+                const auto& image=s->photoRenderer.rgb[plate==0?1:0];
+                const int expected=image[(static_cast<size_t>(sy)*512+sx)*3u];
+                audit::Check(std::abs(int(rgba[0])-expected)<45,
+                             "rendered paired loupe cell matches its own registered 512px image");
             }
         }
     }
@@ -229,7 +252,8 @@ int main(int argc,char** argv){
 #endif
     auto* s=static_cast<State*>(Create(&host));
     audit::Check(s&&!s->loadBlocked&&GlStart(s)==1,"actual recon GL");
-    audit::Check(api.prepare_exit==PrepareExit,"published guarded-exit callback");
+    audit::Check(api.prepare_exit==PrepareExit&&api.prepare_frame==PrepareFrame,
+                 "published guarded-exit and before-both-eyes GPU preparation");
     auto pad=LegacyInput();
     Update(s,&pad);
     pad.move_x=-1.f;Update(s,&pad);Update(s,&pad);
@@ -248,6 +272,7 @@ int main(int argc,char** argv){
     // loupe pixel, write through the 128-byte host checkpoint and render
     // the hollow annotation on the real Mesa GLES2 source + zoomed photo.
     const auto beforePin=Bytes(s);
+    audit::Check(PrepareFrame(s)==1,"pin baseline GPU texture prepared");
     const auto beforePinFrame=audit::Capture(Render,s,"lantern-before-pin");
     auto pin=audit::Pointer(0.f,kPhotoY,kPhotoZ);
     pin.secondary_down=1u;Update(s,&pin);
@@ -259,6 +284,7 @@ int main(int argc,char** argv){
     audit::Check(Bytes(s)!=beforePin && Bytes(s)[8]==4u &&
                  !s->saveDirty && !s->viewDirty,
                  "photo pin committed by the actual 128-byte V4 store");
+    audit::Check(PrepareFrame(s)==1,"gold pin composited into derivative print");
     const auto pinnedFrame=audit::Capture(Render,s,"lantern-photo-pin");
     audit::Check(beforePinFrame!=pinnedFrame,
                  "real GLES2 film and loupe visibly show the pin");
@@ -275,6 +301,7 @@ int main(int argc,char** argv){
     DrawBoard(s);
     audit::Check(Bytes(s)==committedPin,
                  "recentered first-film lens does not change saved photo pins");
+    audit::Check(PrepareFrame(s)==1,"center crop draws same registered photo");
     const auto centeredPinFrame=audit::Capture(Render,s,"lantern-photo-pin-centered");
     audit::Check(centeredPinFrame!=beforePinFrame,
                  "source film continues showing the marked pixel");

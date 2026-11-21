@@ -12,6 +12,10 @@ FLAGS=(-std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror -I"$INC" -I"$TEST")
 # module and save tests; not a screenshot-style release blocker.
 "$CXX" "${FLAGS[@]}" "$TEST/lantern_photo_capture_quality_test.cpp" -o "$WORK/photo-quality"
 "$WORK/photo-quality"
+# Fixed near-vertical survey plates: only localized event changes within
+# identical registered geography and deterministic 512-pixel source images.
+"$CXX" "${FLAGS[@]}" "$TEST/lantern_nadir_scene_test.cpp" -o "$WORK/nadir"
+"$WORK/nadir"
 for title in lantern_desk forward_detachment; do
     "$CXX" "${FLAGS[@]}" "$TEST/${title}_simulation_test.cpp" "$INC/${title}_simulation.cpp" -o "$WORK/$title"
     "$WORK/$title"

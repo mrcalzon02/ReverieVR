@@ -10,6 +10,8 @@
 #endif
 #if RECON_PROJECT_KIND == 0
 #include "lantern_desk_simulation.h"
+#include "lantern_photo_gl.h"
+#include "lantern_nadir_scene.h"
 namespace sim = reverie::lantern;
 using SavedSession=reverie::recon::LanternState;
 constexpr char kId[]="ministry-lantern-desk";
@@ -40,6 +42,8 @@ struct State {
     bool hasPhoto=false,hasPrior=false,panChord=false;
     int cropX=4,cropY=4,lastAimX=-1,lastAimY=-1;
     std::array<uint16_t,16> photoPins{};
+    reverie::lantern::photo_gl::Renderer photoRenderer;
+    uint64_t photographicKey=0u;
 #else
     sim::ContactEvidence evidence{};
     sim::Debrief debrief{};
@@ -333,7 +337,10 @@ void DrawBoard(State *s){
             const char *labels[]={"NO CONTACT","POSSIBLE CONTACT",
                                   "VEHICLE COLUMN","BRIDGE DAMAGE"};
             const int changed=VisiblePhotoChangeCount(s);
-            if(changed>=0)
+            if(s->photoRenderer.current.Valid()&&s->hasPrior)
+                std::snprintf(text,sizeof(text),"EXAMINE TWO PHOTOS  /  PINS %u / %u",
+                    PhotoPinCount(s),kMaxPhotoPins);
+            else if(changed>=0)
                 std::snprintf(text,sizeof(text),"WINDOW CHANGED %d / 64   PINS %u / %u",
                     changed,PhotoPinCount(s),kMaxPhotoPins);
             else
@@ -434,12 +441,86 @@ void DrawBoard(State *s){
     s->upload=true;
 }
 constexpr char kSaveSlot[]="session-v1.bin";
+#if RECON_PROJECT_KIND == 0
+
+uint64_t PhotoFingerprint(const sim::Photograph& photo){
+    uint64_t h=14695981039346656037ull;
+    h=(h^static_cast<unsigned>(photo.sector))*1099511628211ull;
+    for(uint16_t row:photo.pixels)
+        h=(h^row)*1099511628211ull;
+    return h;
+}
+void StagePhotographicEvidence(State* s){
+    if(!s->hasPhoto){
+        s->photographicKey=0u;
+        s->photoRenderer.Set({}, {}, false,s->photoPins);
+        return;
+    }
+    const bool follow_up=s->simulation.photo_follow_up();
+    const uint64_t signature=PhotoFingerprint(s->photo)^
+        (s->hasPrior?PhotoFingerprint(s->prior)*0x100000001b3ull:0ull)^
+        (follow_up?0x517cc1b7367deaa9ull:0ull);
+    if(s->photographicKey==signature&&s->photoRenderer.current.Valid()){
+        // The image stays registered if only a report/pin changed.
+        s->photoRenderer.Decorate(s->photoPins);
+        return;
+    }
+    const auto scene=static_cast<reverie::lantern::nadir::Scene>(
+        static_cast<unsigned>(s->photo.sector));
+    const auto makePhoto=[&](bool second,
+                             reverie::lantern::capture::GrayPlate* output){
+        namespace photo=reverie::lantern;
+        const auto reference=photo::nadir::Make(scene,second);
+        photo::capture::Conditions weather{};
+        // Photographs are immutable mission records. This case's
+        // deterministic seed/air mass is reconstructed on checked reload.
+        const uint32_t sceneSeed=0x1bc5a013u+
+            static_cast<unsigned>(s->photo.sector)*0x12913u+
+            (second?0x7f8a7u:0u);
+        weather.weather_seed=sceneSeed;
+        weather.cloud=static_cast<photo::capture::Cloud>(
+            1u+(sceneSeed%6u));
+        weather.precipitation=static_cast<photo::capture::Precipitation>(
+            (sceneSeed>>3u)%6u);
+        weather.wind_east_mps=4.f+static_cast<float>(sceneSeed%9u);
+        weather.wind_north_mps=-3.f+static_cast<float>((sceneSeed>>7u)%6u);
+        weather.exposure_seconds=second?185.f:65.f;
+        weather.west_m=1200.f+static_cast<unsigned>(s->photo.sector)*440.f;
+        weather.north_m=2100.f;
+        weather.meters_per_pixel=1.7f;
+        weather.ambient_haze=.10f+static_cast<float>((sceneSeed>>12u)%7u)*.028f;
+        photo::capture::Camera camera{};
+        camera.grime_seed=0x53b1e73du; // same physical lens between sorties
+        camera.grime=.19f;
+        camera.sensor_noise=.12f;
+        photo::capture::CapturedMaster master;
+        if(!photo::capture::Record(reference,weather,camera,&master))
+            return false;
+        // The future purchased HAP resolution tier will replace this
+        // baseline quality: developing never uncovers cloud-hidden truth.
+        return photo::capture::Develop(master,2u,output);
+    };
+    reverie::lantern::capture::GrayPlate current,previous;
+    if(!makePhoto(follow_up,&current)){
+        s->photoRenderer.Set({}, {}, false,s->photoPins);
+        return;
+    }
+    if(s->hasPrior&&!makePhoto(!follow_up,&previous)){
+        s->photoRenderer.Set({}, {}, false,s->photoPins);
+        return;
+    }
+    s->photoRenderer.Set(std::move(current),std::move(previous),
+                         s->hasPrior,s->photoPins);
+    s->photographicKey=signature;
+}
+#endif
 void RefreshEvidence(State* s){
 #if RECON_PROJECT_KIND == 0
     const auto* photo=s->simulation.evidence_photo();
     s->hasPhoto=photo!=nullptr;s->photo=photo?*photo:sim::Photograph{};
     s->hasPrior=s->simulation.phase()==sim::Phase::PhotoReady && s->simulation.previous_exposure(&s->prior);
     const auto* report=s->simulation.last_report();s->result=report?*report:sim::ReportResult{};
+    StagePhotographicEvidence(s);
 #else
     s->evidence=sim::ContactEvidence{};s->debrief=sim::Debrief{};
     s->simulation.InspectContact(&s->evidence);s->simulation.LastDebrief(&s->debrief);
@@ -579,6 +660,11 @@ int32_t GlStart(void *p){
         glDeleteBuffers(1,&s->vbo);glDeleteProgram(s->shader);
         s->vbo=s->shader=0;return 0;
     }
+#if RECON_PROJECT_KIND == 0
+    if(!s->photoRenderer.Create())
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
+                           "Photographic texture pipeline unavailable; legacy film retained");
+#endif
     s->upload=true;
     return 1;
 }
@@ -586,6 +672,9 @@ void GlEnd(void *p){
     State *s=static_cast<State *>(p);if(!s)return;
     if(s->vbo)glDeleteBuffers(1,&s->vbo);
     if(s->shader)glDeleteProgram(s->shader);
+#if RECON_PROJECT_KIND == 0
+    s->photoRenderer.Release();
+#endif
     s->font.Release();
     s->vbo=0;s->shader=0;s->upload=true;
 }
@@ -678,6 +767,9 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             pinAction=true;
             const bool toggled=TogglePhotoPin(s);
             if(toggled) {
+                // Rebuild the derivative print, never the captured master
+                // or classified simulation, before the next GL prepare.
+                s->photoRenderer.Decorate(s->photoPins);
                 s->viewDirty=true;
                 const bool saved=Save(s);
                 ReverieNativeRequestFeedbackV1(s->host,saved?
@@ -721,6 +813,20 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     }
     s->primary=first;s->secondary=second;s->axis=axis;
 }
+// Called by the host exactly once before stereo drawing. GPU texture
+// staging and weather generation are forbidden within render_eye.
+int32_t PrepareFrame(void* p){
+    State* s=static_cast<State*>(p);
+    if(!s)return 0;
+#if RECON_PROJECT_KIND == 0
+    if(s->photoRenderer.initialized&&!s->photoRenderer.Upload()){
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
+                           "Photographic upload failed; keep existing status display");
+        return 0;
+    }
+#endif
+    return 1;
+}
 int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
     State *s=static_cast<State *>(p);
     if(!s||!ReverieNativeEyeRenderableV1(eye)||!s->shader||!s->vbo)return 0;
@@ -746,17 +852,24 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
     glUniformMatrix4fv(s->mvp,1,GL_FALSE,matrix);
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->mesh.size()/6));
     const bool baseOk=glGetError()==GL_NO_ERROR;
+    bool imageOk=true;
+#if RECON_PROJECT_KIND == 0
+    if(s->hasPhoto&&s->photoRenderer.active()){
+        imageOk=s->photoRenderer.Draw(matrix,s->cropX,s->cropY,
+                                      s->simulation.phase()==sim::Phase::PhotoReady);
+    }
+#endif
     const bool fontOk=s->font.Draw(matrix);
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&old);
-    return baseOk && fontOk ? 1:0;
+    return baseOk && imageOk && fontOk ? 1:0;
 }
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
      kId,kTitle,2u,0u},
-    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr,nullptr,PrepareExit
+    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr,PrepareFrame,PrepareExit
 };
 }
 extern "C" __attribute__((visibility("default")))

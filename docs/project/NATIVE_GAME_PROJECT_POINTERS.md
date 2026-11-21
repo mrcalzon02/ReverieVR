@@ -93,6 +93,63 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ---
 
+## Lantern Desk native high-resolution photographic renderer — 2026-11-20
+
+**Implemented in actual Lantern Desktop/Android module, provisional art:**
+`recon_projects_module.cpp` now creates and checks a 512×512
+near-vertical/near-nadir grayscale **registered photographic reference
+plate** for each operational sector, with two exposure conditions sharing
+the identical fixed map/road/river/field positions. The source generator
+`lantern_nadir_scene.h` deliberately changes only localized subject
+details (river bridge center span, rail convoy, orchard vehicle/decoy)
+between exposure states; there is no floating 3D battlefield and no
+independently invented camera/perspective for the paired exposure.
+
+The real `lantern_photo_capture_quality.h` weather masks and
+persistent camera grime are applied **once when the photo returns**,
+with stable per-exposure conditions derived from the already-saved
+capture/sector index. The master is developed at the current provisional
+512-pixel source tier, and the derived RGB texture embeds the same
+fixed-coordinate gold photo pins without changing the master negative.
+The `lantern_photo_gl.h` GLES2 program displays the source frame and
+magnifies the correct 8×8/16×16 portion of **the same 512px image**
+in the original 2× loupe. Revisited-sector prior/current plates share
+one geographic camera and each has an independently weather-obscured
+recording; the loupe crop and both stereo eye matrices are preserved.
+A new optional `prepare_frame` callback stages changed textures **once
+ahead of stereo** and reinstates them after GL context loss. All
+simulation grading, the V4/128-byte save, old pin coordinates and
+Forward Detachment logic remain unchanged. The legacy 16×16 geometry
+is retained underneath as an explicit GL failure fallback, not as the
+normal visible photo when the renderer is available.
+
+The old visible `WINDOW CHANGED N/64` from symbolic black/white data
+is suppressed for actual high-resolution comparisons; player-facing
+text invites visual inspection rather than falsely claiming the
+symbolic counter measures a physically weather-obscured photograph.
+The unchanged symbolic evidence and grading remain separate from
+the photographic display while the game evolves; a true gameplay
+recognition migration and revised scoring are future work.
+
+**Source quality boundary:** This is a **registered, deterministic
+procedural photographic REFERENCE**, not a professionally authored
+historical high-resolution aerial negative. The preceding separately
+generated oblique bridge/convoy/cloud pieces remain rejected.
+The user-approved end-state requires proper aligned, authored photo
+assets that can replace the reference plates without altering the
+mission/camera/GL sampler contract. The generated current reference
+is a real GPU texture and should be inspected in the existing Mesa
+and installed Android screenshot artifacts before treating its
+photographic plausibility as adequate. This is **not yet a production
+photorealistic picture library** or a purchased HAP-upgrade economy.
+
+The native test now samples real 512px source pixels in all 64
+magnifier cells (both historical/current plates and stereo views),
+checks exact save/context-recreate image parity and gold-pin render,
+and runs `lantern_nadir_scene_test.cpp` in both GCC and Clang to
+reject sector-map shifts between exposures. Physical Daydream optical
+and thermal validation remains open.
+
 ## Lantern Desk camera, weather and HAP quality architecture — 2026-11-20
 
 **Verified original design authority:** The original *Ministry of

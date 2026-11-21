@@ -35,6 +35,13 @@ public:
     bool previous_exposure(Photograph *output) const;
     const ReportResult *last_report() const;
     Phase phase() const { return phase_; }
+    // Exposure order is capture provenance; it does not reveal the
+    // observed unit type, report answer or a classified world-truth flag.
+    bool photo_follow_up() const {
+        return (phase_==Phase::PhotoReady||phase_==Phase::Filed)&&
+            (follow_up_sectors_ &
+             static_cast<uint8_t>(1u<<static_cast<unsigned>(selected_)))!=0u;
+    }
     int32_t credibility() const { return credibility_; }
     int32_t operational_effect() const { return operational_effect_; }
 private:
