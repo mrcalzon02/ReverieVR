@@ -93,6 +93,71 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ---
 
+## Lantern Desk camera, weather and HAP quality architecture — 2026-11-20
+
+**Verified original design authority:** The original *Ministry of
+Intelligence* introduction and tutorial describes High Altitude Photography
+delivering five images per day, with separately purchased resolution,
+magnification, measuring equipment, quick-reference charts and reliability.
+The Intelligence Model requires the player to interpret the captured evidence
+without receiving a hidden World Truth answer. This development pass does
+not substitute new upgrade costs, future mission tiers or fake recognition
+labels for those established rules.
+
+**Implemented, strictly source-stage:** The game-private
+`lantern_photo_capture_quality.h` is a standalone deterministic camera
+development kernel that accepts an *already authored, camera-registered,
+high-resolution grayscale photograph*. It does not synthesize terrain,
+construct new vehicles, create a different camera view or query World Truth.
+This distinguishes the photographic **master capture** from the
+upgrade-dependent **developed print**. The captured master preserves genuine
+weather obscuration, lens dirt and sensor noise as recorded at exposure
+time. After HAP resolution improvement, the *same master* can be developed
+with finer sampling and less blur. It never removes recorded cloud cover,
+cleans an already dirty lens or hallucinates information unavailable in
+the captured master. Provisional display ceilings (128,256,512,1024,
+native up to 4096 pixels on the longest edge) are engineering test tiers,
+**not** claims of established upgrade prices or player inventory.
+
+The atmospheric compositor supplies five **independent low-memory masks**:
+cloud opacity, physically displaced cloud shadows, precipitation, haze,
+and the aircraft's lens grime. Cloud families: clear, scattered/broken
+cumulus, cirrus, stratus, overcast, squall. Precipitation: none, rain,
+storm, heavy storm, snow and hail. Family/precipitation, weather seed,
+world-space photograph registration, wind vector and exposure time
+determine **repeatable** weather; changing time or wind moves patterns
+without changing terrain, roads or target coordinates. Lens grime uses
+only the specific camera identity/condition and image-space coordinates;
+it remains stable across weather changes until the camera is serviced.
+Capture masks are limited to 256x256 per channel even for 4096x4096
+source images and are generated once per photo. Tier development uses
+area prefiltering and bilinear reconstruction, not giant binary squares.
+The renderer never regenerates masks for each stereo eye.
+
+**Verification:** `lantern_photo_capture_quality_test.cpp` runs under
+the existing `scripts/verify-recon-persistence.sh` GCC/Clang native CI,
+checking deterministic exposure replay, distinct patterns, genuine
+world-wind/time advection, stable lens dirt, rain/storm/snow/hail layers,
+larger storm interference, grayscale master retention, measurable
+postprocess upgrade detail, strict bounds, and rejected invalid states.
+All tests use a synthetic photographic input *test pattern*, not a
+pretend gameplay image. No automatic recognition or visual-rule
+rebalancing is added.
+
+**Not yet implemented or accepted:** This kernel is **NOT wired into**
+the current production `recon_projects_module.cpp` draw path or the
+existing V4 save. That playable route still uses its legacy 16x16
+bitfield photographs and pin-annotation contract. Integration requires
+authoritative near-nadir *registered* detailed terrain/subject plates,
+paired source-aligned captures and credible masks, a real texture/loupe
+display, preserved camera/weather metadata in a designed save revision,
+and measured installed Android / physical Daydream acceptance.
+The independently rendered earlier oblique floating bridge/convoy
+assets are **rejected**, not production assets or aligned masks.
+No existing saved session, source photograph, automatic grading,
+Forward Detachment checkpoint, or full-hub Android package changes
+in this source-stage introduction.
+
 ## Lantern Desk readable evidence comparison — 2026-11-20
 
 The actual native GLES2 desk previously squeezed the gold PHOTO PINS

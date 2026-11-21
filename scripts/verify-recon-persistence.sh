@@ -8,6 +8,10 @@ CXX="${CXX:-g++}"
 INC="$ROOT/app/src/main/jni/native"
 TEST="$ROOT/app/src/test/native"
 FLAGS=(-std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror -I"$INC" -I"$TEST")
+# Camera/weather masks are pure C++17: GCC/Clang test these before the GL
+# module and save tests; not a screenshot-style release blocker.
+"$CXX" "${FLAGS[@]}" "$TEST/lantern_photo_capture_quality_test.cpp" -o "$WORK/photo-quality"
+"$WORK/photo-quality"
 for title in lantern_desk forward_detachment; do
     "$CXX" "${FLAGS[@]}" "$TEST/${title}_simulation_test.cpp" "$INC/${title}_simulation.cpp" -o "$WORK/$title"
     "$WORK/$title"
