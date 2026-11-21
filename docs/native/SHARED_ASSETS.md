@@ -74,3 +74,26 @@ Verification: `native_horizon_geometry_test.cpp` covers finite sphere positions,
 ### Horizon clarity validation — 2026-11-06
 
 The four packaged 1024×512 PNGs are the exact archived variants recovered from the approved Drive folder, with identical left/right edge pixels and manifest hashes; no AI upscaling or sharpened replacement art was generated. Old 512px runtime duplicates are removed, and native/Java/package allowlists use the new exact filenames. Decoded RGBA storage is 2MiB per image, 8MiB for four retained CPU images plus GPU copies (previously 2MiB per set). No extra draw call or per-frame decode is added. The original 1774×887 masters remain archived. `native_horizon_assets_test.cpp` verifies exact dimensions, seam equality, decoder opt-in, retained default bound and corrupt-CRC rejection. Actual Mesa GLES tests load all four larger images and recreate the context successfully; physical phone memory/thermal/clarity acceptance remains open.
+
+
+## Private immutable Lantern Desk terrain tiles — 2026-11-20
+
+The canonical Ministry of Intelligence native module has a **read-only,
+game-private** grant to ten exact APK paths under
+`native/lantern/terrain/tiles-00.ltpack` through `tiles-09.ltpack`, each
+exactly **288,032 bytes** (one 32-byte LTIL v1 header and 100 immutable
+2,880-byte tile records). There is NO `native/shared/v1` access added,
+no wildcard loading, no arbitrary filesystem path or second APK, and no
+access for Iron Sight or another native game. The native host rejects
+other suffixes, out-of-range groups, path traversal, unsupported
+version/checksum and wrong byte counts before returning a tile.
+
+The one-time 1,000-location terrain library contains sealed 33×33
+heightfields, 16×16 navigation-cost masks, roads, permanent structures,
+foliage and twelve anchoring waypoints per tile. A war's **separately
+persisted mapping** chooses where each tile lives; a different capture
+time never rolls new terrain. The source/war simulator must add dynamic
+units, camps, damage and weather in separate layers. The binary packs
+are committed assets and are not regenerated during scene/eye rendering.
+The pure native tests compare every tile's checksum and spatial metadata;
+Android JNI tests remain a separate actual-package gate.

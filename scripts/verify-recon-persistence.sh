@@ -16,6 +16,13 @@ FLAGS=(-std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror -I"$INC" -I"$TEST")
 # identical registered geography and deterministic 512-pixel source images.
 "$CXX" "${FLAGS[@]}" "$TEST/lantern_nadir_scene_test.cpp" -o "$WORK/nadir"
 "$WORK/nadir"
+# 1,000 sealed tile bytes are baked ASSETS, never built on reconnaissance.
+# All ten source packs, topology/nav/house/foliage layouts and timestamps
+# must be accepted under both GCC and Clang before testing the GPU host.
+"$CXX" "${FLAGS[@]}" "$TEST/lantern_tile_library_test.cpp" -o "$WORK/tile-library"
+(cd "$ROOT" && "$WORK/tile-library")
+"$CXX" "${FLAGS[@]}" "$TEST/lantern_tile_capture_test.cpp" -o "$WORK/tile-capture"
+(cd "$ROOT" && "$WORK/tile-capture")
 for title in lantern_desk forward_detachment; do
     "$CXX" "${FLAGS[@]}" "$TEST/${title}_simulation_test.cpp" "$INC/${title}_simulation.cpp" -o "$WORK/$title"
     "$WORK/$title"

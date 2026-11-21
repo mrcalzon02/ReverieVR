@@ -1,0 +1,134 @@
+{
+  "schema": "reverie.lantern.immutable-terrain.v1",
+  "status": "once-baked-fixed-library—not-automatically-regenerated",
+  "total_tile_identities": 1000,
+  "permanent_tile_ids": "0000..0999",
+  "tile_dimensions_m": [
+    256,
+    256
+  ],
+  "bake_seed": "0x5ac1953b",
+  "bake_method": "seeded plasma diamond-square, authored roads/buildings and foliage placement, fixed nav/waypoints",
+  "packs": [
+    {
+      "path": "native/lantern/terrain/tiles-00.ltpack",
+      "from_tile": 0,
+      "to_tile": 99,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0xbe37f35d",
+      "git_blob": "ccb2572df15dc411f643db2b9a8436e36ee68222"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-01.ltpack",
+      "from_tile": 100,
+      "to_tile": 199,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0x4c6c206a",
+      "git_blob": "809ebcb1cb3baabb43b300d01bd360b436214dc0"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-02.ltpack",
+      "from_tile": 200,
+      "to_tile": 299,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0x934dcd7d",
+      "git_blob": "a11a43a20ac59a79b3900d8d8c6e1bc354c897f5"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-03.ltpack",
+      "from_tile": 300,
+      "to_tile": 399,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0xaa7f91ee",
+      "git_blob": "cd319bdfe58f36c34efbfe4b9f454dfbecf7d7f6"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-04.ltpack",
+      "from_tile": 400,
+      "to_tile": 499,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0xe5644c72",
+      "git_blob": "77333ce061facab5bb0e0ea6b32cb691e10b5273"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-05.ltpack",
+      "from_tile": 500,
+      "to_tile": 599,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0xce0d4aad",
+      "git_blob": "69917cf04c8ee2a345e044edd1282f3c1244738b"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-06.ltpack",
+      "from_tile": 600,
+      "to_tile": 699,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0x1086f184",
+      "git_blob": "da24ba725636fa09884f40ebf3f8523558e65bd5"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-07.ltpack",
+      "from_tile": 700,
+      "to_tile": 799,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0xb26210ea",
+      "git_blob": "375cc9aeaa506e63ceadc1a1b4e0c6af31a0881b"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-08.ltpack",
+      "from_tile": 800,
+      "to_tile": 899,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0x01950f4d",
+      "git_blob": "ac6cf00bc5b1fc7d9aa91eaeabd6a3d13dd7ded1"
+    },
+    {
+      "path": "native/lantern/terrain/tiles-09.ltpack",
+      "from_tile": 900,
+      "to_tile": 999,
+      "records": 100,
+      "bytes": 288032,
+      "pack_checksum_fnv32": "0xecc75863",
+      "git_blob": "640d6c631d2439ed4b536394aff0a49601ee7de4"
+    }
+  ],
+  "record": {
+    "bytes": 2880,
+    "grid_heightfield": [
+      33,
+      33
+    ],
+    "height_unit": "0.1m",
+    "nav_cost_grid": [
+      16,
+      16
+    ],
+    "road_spline_points": 9,
+    "building_slots": 6,
+    "foliage_slots": 48,
+    "marker_slots": 12
+  },
+  "world": {
+    "tile_bake_static": true,
+    "warfront_allocation": "one-time seeded permutation",
+    "war_unit_state": "separate timestamped WarOrder",
+    "cloud_lens_capture": "separate exposure metadata",
+    "grading": "no truth labels in terrain pack"
+  },
+  "restrictions": [
+    "DO NOT regenerate tiles on revisit",
+    "DO NOT regenerate tiles on war-start",
+    "DO NOT mutate terrain in war snapshots",
+    "DO NOT replace checked packs without explicit atlas revision",
+    "DO NOT add more than 1000 tile IDs"
+  ]
+}

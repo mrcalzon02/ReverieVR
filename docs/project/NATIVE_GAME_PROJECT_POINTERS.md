@@ -93,6 +93,53 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ---
 
+## Lantern Desk 1,000 immutable world tiles — 2026-11-20
+
+**Library now baked as canonical source assets, not a regenerating
+screenshot trick.** There are exactly **1,000 persistent, separately
+identified 256 m x 256 m terrain tiles** at
+`app/src/main/assets/native/lantern/terrain/tiles-00.ltpack` through
+`tiles-09.ltpack`; ten pack files of 100 tiles each, no procedural
+reroll during war, reconnaissance, upgrades, cloud changes or stereo
+render. Each checked LTIL v1 record contains a baked **33x33 plasma
+elevation heightfield**, **16x16 movement/nav-cost grid**, nine
+continuous road-spline points, up to six static building footprints,
+48 elevated foliage/billboard slots (unused slots are explicit), and
+twelve typed marker/waypoint positions for road entry/exit, settlement,
+supply, camp, high/low terrain and concealment. Seed and checksum are
+retained for provenance, NOT for lazy regeneration.
+
+`lantern_tile_library.h` has an exact pack loader and case-independent
+terrain identity. The game-private `AssignWarfront(warSeed)` establishes
+a one-time, deterministic one-to-one permutation of all 1,000 terrain
+identities across the campaign's 1,000 location slots. Each assigned
+place keeps the same terrain and navigation surface for every later
+photograph in that war; only the separate unit order snapshot and
+lighting/weather conditions are mutable. The `NavPath` routine follows
+saved passability/cost and rejects diagonal wall-cutting; timestamped
+`WarOrder` resolves movement, encampments and concealment relative to
+the *same immutable houses and foliage*. The `lantern_tile_capture.h`
+reference renderer consumes the baked terrain heights and static
+house/vegetation objects, places those units as world-height geometry,
+allows elevated foliage billboards to partially occlude troops/tents,
+and derives directional sun/terrain/object shadows, moon phase,
+starlight and night house-lamp illumination. This is **bounded
+directional+ambient bounce lighting**, not a claim of physically exact
+real-time global illumination or professionally authored aerial assets.
+
+**Stage boundary:** Binary tile catalog, pure coordinate/nav/snapshot
+interfaces and capture-time rendering kernel are produced and checked
+by host-native tests. The existing three-case playable Lantern Desk
+renderer still uses its first-stage registered fixed camera reference
+until the new tile catalog is read from the APK via the host's
+strict exact-path read-only grant. The existing war game does NOT yet
+own a persisted global 1,000-location warfront seed, full unit movement
+state or scene-change records. Do not claim an on-device 1,000-tile
+campaign, photo library import, actual adaptive war-state lighting,
+or HAP purchase economy before that additional integration and Android
+acceptance. No save migration, new APK, separate mode or gameplay
+grading change is in this bounded commit.
+
 ## Lantern Desk native high-resolution photographic renderer — 2026-11-20
 
 **Implemented in actual Lantern Desktop/Android module, provisional art:**

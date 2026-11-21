@@ -396,3 +396,26 @@ the synthetic regression fixture. The boat workstream is untouched.
 ## Shared horizon density correction — 2026-11-06
 
 Shared horizon paths now contain the existing archived 1024×512 indexed panoramas rather than 512×256 variants. Both native and Java allowlists remain exact-file grants with a 128KiB encoded-file ceiling. Breakwater explicitly requests crisp nearest-neighbor sampling; the shared renderer's default linear sampling for other callers remains compatible. The PNG decoder's 1024px-width support is opt-in for horizons and retains its default 512px bound for existing material/sprite consumers. CPU/GPU RGBA storage rises from 2MiB to 8MiB per four-image set; no frame-rate or thermal improvement is claimed. See SHARED_ASSETS.md for provenance, integrity and runtime validation.
+
+
+## Once-baked Lantern Desk campaign terrain library — 2026-11-20
+
+The campaign's 1,000 distinct **immutable geographic identities** are
+an explicit exception to repeatedly expanding tiny procedural recipes
+on every inspection: heightfield generation and anchor placement happen
+once during authoring and the output is committed in ten compact LTIL v1
+packs of 100 tiles. The war-start `AssignWarfront(seed)` shuffles
+**references** to those locations but never re-runs the tile generator.
+Each tile retains its height topology, road, structure, canopy/foliage
+impostor anchors and 16×16 navigation cost map. War state and the camera's
+UTC exposure time control which unit objects are present, their movement
+along terrain nav, concealment, damage and illumination. Neither a
+player's later revisit nor changing photographic quality can rewrite
+terrain placement. Only a deliberate reviewed **asset revision** may
+alter one of those existing 1,000 records; it must keep stable tile IDs
+and avoid silently relocating the warfront.
+
+Game-private source: `lantern_tile_library.h`, `lantern_tile_capture.h`.
+Canonical APK bytes: `app/src/main/assets/native/lantern/terrain/tiles-??.ltpack`.
+This is not a public native SDK addition or a dynamic world engine
+service; tests and hardware acceptance remain scoped to Lantern Desk.

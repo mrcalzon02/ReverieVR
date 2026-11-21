@@ -11,6 +11,20 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
     if(!id||!path)return 0u;
     const uint32_t common=shared_assets::MaximumBytes(id,path);
     if(common!=0u)return common;
+    // Lantern Desk may load ONLY the ten reviewed one-time-baked
+    // 100-tile chunks. No wildcard paths, remote URLs, war-state files,
+    // arbitrary user assets, additional tile IDs or full-repo scanning.
+    if(std::strcmp(id,"ministry-lantern-desk")==0){
+        constexpr char root[]="native/lantern/terrain/tiles-";
+        constexpr size_t prefix=sizeof(root)-1u;
+        const size_t n=strnlen(path,128u);
+        if(n==prefix+2u+7u && std::strncmp(path,root,prefix)==0 &&
+           path[prefix]=='0'&&
+           path[prefix+1]>='0'&&path[prefix+1]<='9'&&
+           std::strcmp(path+prefix+2u,".ltpack")==0)
+            return 288032u; // exactly 100 x 2880 + 32-byte pack header
+        return 0u;
+    }
     // Future Sitka module: allow ONLY explicitly named authored data,
     // and strictly bounded geographic depth tile names. This does not
     // register Sitka as playable or permit reading arbitrary filesystem

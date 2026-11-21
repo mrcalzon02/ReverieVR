@@ -41,6 +41,13 @@ on:
       - 'app/src/main/jni/native/lantern_photo_capture_quality.h'
       - 'app/src/main/jni/native/lantern_nadir_scene.h'
       - 'app/src/main/jni/native/lantern_photo_gl.h'
+      # Fixed physical campaign locations are shipped in ten immutable
+      # packs. Revisions require installed JNI/GLES2 evidence, not source
+      # unit tests alone; no auto-rebake on launch/observation.
+      - 'app/src/main/jni/native/lantern_tile_*.h'
+      - 'app/src/test/native/lantern_tile_*_test.cpp'
+      - 'app/src/main/assets/native/lantern/terrain/**'
+      - 'app/src/main/jni/native/reverie_native_asset_scope.h'
       - 'app/src/main/jni/native/lantern_desk_simulation.h'
       - 'app/src/test/native/lantern_nadir_scene_test.cpp'
       - 'app/src/test/native/lantern_photo_capture_quality_test.cpp'
