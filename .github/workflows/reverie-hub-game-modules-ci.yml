@@ -35,6 +35,15 @@ on:
       # first-party reconnaissance games, not just their host simulation.
       - 'app/src/main/jni/native/recon_projects_module.cpp'
       - 'app/src/main/jni/native/recon_projects_save.h'
+      # The registered photographic route depends on these exact
+      # game-private camera/art and GLES2 sources. Any changes to them
+      # must get installed Java/JNI + Android 10 frame coverage.
+      - 'app/src/main/jni/native/lantern_photo_capture_quality.h'
+      - 'app/src/main/jni/native/lantern_nadir_scene.h'
+      - 'app/src/main/jni/native/lantern_photo_gl.h'
+      - 'app/src/main/jni/native/lantern_desk_simulation.h'
+      - 'app/src/test/native/lantern_nadir_scene_test.cpp'
+      - 'app/src/test/native/lantern_photo_capture_quality_test.cpp'
       - 'app/src/main/jni/native/lantern_desk_simulation.*'
       - 'app/src/main/jni/native/forward_detachment_simulation.*'
       - 'app/src/test/native/recon_module_save_test.cpp'
