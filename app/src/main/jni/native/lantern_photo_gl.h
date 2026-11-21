@@ -13,6 +13,7 @@
 #include <vector>
 namespace reverie { namespace lantern { namespace photo_gl {
 constexpr int kWidth=512,kHeight=512;
+constexpr float kImagePlaneZ=-2.901f; // distinct from old flat blocks at -2.92
 struct Renderer {
     capture::GrayPlate current,previous;
     bool has_previous=false,dirty=true,initialized=false;

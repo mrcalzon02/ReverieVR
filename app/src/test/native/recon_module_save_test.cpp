@@ -124,8 +124,8 @@ static void InspectLoupe(State *s,audit::GL &gl){
     for(int y=0;y<8;++y)for(int x=0;x<8;++x){
         const float wx=kLoupeX+(x-3.5f)*2*kPhotoPixel;
         const float wy=kPhotoY+(3.5f-y)*2*kPhotoPixel;
-        const int px=static_cast<int>((1+(wx+eye.view[12])*eye.projection[0]/-kPhotoZ)*audit::GL::width*.5f);
-        const int py=static_cast<int>((1+wy*eye.projection[5]/-kPhotoZ)*audit::GL::height*.5f);
+        const int px=static_cast<int>((1+(wx+eye.view[12])*eye.projection[0]/-reverie::lantern::photo_gl::kImagePlaneZ)*audit::GL::width*.5f);
+        const int py=static_cast<int>((1+wy*eye.projection[5]/-reverie::lantern::photo_gl::kImagePlaneZ)*audit::GL::height*.5f);
         uint8_t rgb[4]{};
         glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgb);
         const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
@@ -171,8 +171,8 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
             for(int plate=0;plate<2;++plate){
                 const float wx=(plate==0?-kLoupeX:kLoupeX)+(x-3.5f)*2*kPhotoPixel;
                 const float wy=kPhotoY+(3.5f-y)*2*kPhotoPixel;
-                const int px=static_cast<int>((1+(wx+eye.view[12])*eye.projection[0]/-kPhotoZ)*audit::GL::width*.5f);
-                const int py=static_cast<int>((1+wy*eye.projection[5]/-kPhotoZ)*audit::GL::height*.5f);
+                const int px=static_cast<int>((1+(wx+eye.view[12])*eye.projection[0]/-reverie::lantern::photo_gl::kImagePlaneZ)*audit::GL::width*.5f);
+                const int py=static_cast<int>((1+wy*eye.projection[5]/-reverie::lantern::photo_gl::kImagePlaneZ)*audit::GL::height*.5f);
                 uint8_t rgba[4]{};
                 glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgba);
                 const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
