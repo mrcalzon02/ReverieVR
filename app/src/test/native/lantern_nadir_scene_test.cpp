@@ -21,11 +21,23 @@ int main(){
             if(scene==nadir::Scene::River)
                 assert(std::abs(u-nadir::RiverCenter(v))<.106f &&
                        std::abs(v-nadir::RoadCenter(u))<.02f);
-            else if(scene==nadir::Scene::Rail)
-                assert(u>.35f&&u<.72f && v>.47f&&v<.64f);
-            else
-                assert((u>.35f&&u<.72f&&v>.47f&&v<.64f) ||
-                       (u>.49f&&u<.54f&&v>.47f&&v<.51f));
+            else {
+                // The 1953 vehicles have a modest yaw in the plane of
+                // the same photographed road. A world-aligned box is NOT
+                // their footprint (corner pixels can project below v=.47).
+                bool vehicle=false;
+                for(int i=0;i<4;++i){
+                    const float cx=.39f+i*.095f,cy=nadir::RoadCenter(cx);
+                    const float angle=.25f*std::cos(cx*4.f);
+                    const float dx=u-cx,dy=v-cy;
+                    const float rx=dx*std::cos(angle)+dy*std::sin(angle);
+                    const float ry=-dx*std::sin(angle)+dy*std::cos(angle);
+                    vehicle|=std::abs(rx)<.0271f&&std::abs(ry)<.0111f;
+                }
+                const bool civilian=scene==nadir::Scene::Orchard&&
+                    u>.49f&&u<.54f&&v>.47f&&v<.51f;
+                assert(vehicle||civilian);
+            }
         }
     }
     assert(modified>10 && modified<15000);
