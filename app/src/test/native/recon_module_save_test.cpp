@@ -178,6 +178,11 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
                 const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
                 const auto& image=s->photoRenderer.rgb[plate==0?1:0];
                 const int expected=image[(static_cast<size_t>(sy)*512+sx)*3u];
+                if(std::abs(int(rgba[0])-expected)>=45)
+                    std::fprintf(stderr,
+                        "PAIRED_PIXEL_DIFF side=%d plate=%d cell=%d,%d crop=%d,%d screen=%d,%d observed=%d expected=%d diff=%d\n",
+                        side,plate,x,y,s->cropX,s->cropY,px,py,
+                        int(rgba[0]),expected,std::abs(int(rgba[0])-expected));
                 audit::Check(std::abs(int(rgba[0])-expected)<45,
                              "rendered paired loupe cell matches its own registered 512px image");
             }
