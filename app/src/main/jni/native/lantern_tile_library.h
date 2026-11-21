@@ -255,7 +255,6 @@ inline bool ResolveAt(const Tile& tile,uint16_t front_location,
            static_cast<unsigned>(unit.doctrine)>static_cast<unsigned>(Doctrine::Dispersed))
            return false;
         const auto& start=tile.anchors[unit.from_anchor];
-        const auto& end=tile.anchors[unit.to_anchor];
         float x=start.x,y=start.y;
         if(unit.activity==Activity::Transit){
             std::vector<Waypoint> path;

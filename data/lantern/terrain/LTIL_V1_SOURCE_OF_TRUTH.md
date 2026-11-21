@@ -57,8 +57,12 @@ grading or arbitrary regenerated geometry.
 diagonal corner cuts; `ResolveAt` derives movement and unit
 concealment from the same saved tile and time.
 
-The current 3-sector playable Lantern Desk module is *not yet* a
-war simulation of 1,000 simultaneous sites. Pure-source atlas
-loading/rendering are separate from actually wiring war-state
-capture into the live JNI photo/score path. Do not misrepresent
-host fixtures as full campaign or physical headset acceptance.
+The current three-sector Lantern Desk module now **reads tile records
+0237/0379/0240 from these exact sealed assets**, and places authored
+tutorial moving units with live world-height foliage/structure
+occlusion and capture-time solar/moon/cloud lighting. The entire
+1,000-location warfront simulation, persisted world mapping,
+arbitrary movement orders and historical campaign state are not yet
+wired. Nothing may replace terrain ID 0240 with another procedural
+river on a revisit. Do not misrepresent hosted tests as proof of
+all 1,000 populated campaign sites or physical headset acceptance.

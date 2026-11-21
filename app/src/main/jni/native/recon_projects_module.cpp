@@ -12,6 +12,8 @@
 #include "lantern_desk_simulation.h"
 #include "lantern_photo_gl.h"
 #include "lantern_nadir_scene.h"
+#include "lantern_tile_library.h"
+#include "lantern_tile_capture.h"
 namespace sim = reverie::lantern;
 using SavedSession=reverie::recon::LanternState;
 constexpr char kId[]="ministry-lantern-desk";
@@ -44,6 +46,11 @@ struct State {
     std::array<uint16_t,16> photoPins{};
     reverie::lantern::photo_gl::Renderer photoRenderer;
     uint64_t photographicKey=0u;
+    // One exact, permanent tile identity per active case location.
+    // No new terrain can be generated on a photo revisit or photo tier.
+    reverie::lantern::tiles::Tile activeTile{};
+    uint16_t activeTileId=reverie::lantern::tiles::kUnassigned;
+    bool tilePackRejected=false;
 #else
     sim::ContactEvidence evidence{};
     sim::Debrief debrief{};
@@ -443,6 +450,87 @@ void DrawBoard(State *s){
 constexpr char kSaveSlot[]="session-v1.bin";
 #if RECON_PROJECT_KIND == 0
 
+
+using Terrain=reverie::lantern::tiles::Tile;
+namespace tile=reverie::lantern::tiles;
+constexpr std::array<uint16_t,3> kInitialThreeLocations={
+    237u,  // original rail village and uplands, all war visits
+    379u,  // permanent orchard/hedgerow countryside
+    240u   // the same physical river crossing, damage repaired later
+};
+bool EnsureGround(State* s,sim::Sector sector){
+    const unsigned location=static_cast<unsigned>(sector);
+    if(location>=kInitialThreeLocations.size())return false;
+    const uint16_t id=kInitialThreeLocations[location];
+    if(s->activeTileId==id)return true;
+    if(!s->host||
+       s->host->struct_size<REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE||
+       !s->host->read_asset)return false;
+    char path[64]{};
+    if(!tile::FileNameFor(id,path,sizeof(path)))return false;
+    uint32_t bytes=0;
+    const int info=s->host->read_asset(path,nullptr,0,&bytes);
+    if(info!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL||
+       bytes!=tile::kPackBytes)return false;
+    std::vector<uint8_t> pack(tile::kPackBytes);
+    uint32_t size=0;
+    if(s->host->read_asset(path,pack.data(),bytes,&size)!=
+       REVERIE_NATIVE_SAVE_OK||size!=bytes)return false;
+    Terrain loaded;
+    if(!tile::ReadTile(pack.data(),pack.size(),id,&loaded))return false;
+    s->activeTile=std::move(loaded);
+    s->activeTileId=id;
+    char notice[112]{};
+    std::snprintf(notice,sizeof(notice),
+                  "Permanent LTIL terrain tile %04u loaded from sealed APK pack",
+                  static_cast<unsigned>(id));
+    ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_INFO,kId,notice);
+    return true;
+}
+std::vector<tile::WarOrder> AuthoredStarterOrders(sim::Sector sector){
+    // A narrow adapter for THREE already-authored Lantern tutorial cases.
+    // Future persistent world war orders must replace this fixture, not
+    // replace terrain. 1953 operational state is kept off the player HUD.
+    std::vector<tile::WarOrder> orders;
+    const uint16_t location=static_cast<uint16_t>(sector);
+    if(sector==sim::Sector::RailApproach){
+        for(uint32_t i=0;i<4;++i)
+            orders.push_back({1001u+i,location,
+                i==0?tile::UnitType::Tank:tile::UnitType::Truck,
+                tile::Activity::Transit,tile::Doctrine::Exposed,
+                550+int64_t(i)*110,1350+int64_t(i)*110,
+                0,1,1,1});
+    }else if(sector==sim::Sector::Orchard){
+        for(uint32_t i=0;i<4;++i)
+            orders.push_back({2001u+i,location,tile::UnitType::Truck,
+                tile::Activity::Transit,
+                i==0?tile::Doctrine::UnderFoliage:tile::Doctrine::Exposed,
+                1575+int64_t(i)*75,2500+int64_t(i)*75,
+                0,1,1,1});
+    }
+    return orders;
+}
+bool CapturedWorldPlate(State* s,sim::Sector sector,bool second,
+                        reverie::lantern::capture::GrayPlate* plate){
+    if(!plate||!EnsureGround(s,sector))return false;
+    const uint16_t location=static_cast<uint16_t>(sector);
+    const int64_t photographedAt=second?2000:1000;
+    std::vector<tile::PlacedUnit> present;
+    const auto orders=AuthoredStarterOrders(sector);
+    if(!tile::ResolveAt(s->activeTile,location,photographedAt,orders,&present))
+        return false;
+    tile::Celestial time{};
+    time.day_of_year=112+int(location)*29;
+    time.local_hour=second?14.2f:9.5f;
+    time.moon_phase=.15f+.16f*location;
+    time.cloud_attenuation=second?.42f:.18f;
+    time.buildings_lit=false;
+    tile::CaptureLayers scene;
+    if(!tile::MakePhoto(s->activeTile,present,time,&scene,
+        sector==sim::Sector::RiverCrossing&&!second))return false;
+    *plate=std::move(scene.photo);
+    return true;
+}
 uint64_t PhotoFingerprint(const sim::Photograph& photo){
     uint64_t h=14695981039346656037ull;
     h=(h^static_cast<unsigned>(photo.sector))*1099511628211ull;
@@ -470,7 +558,17 @@ void StagePhotographicEvidence(State* s){
     const auto makePhoto=[&](bool second,
                              reverie::lantern::capture::GrayPlate* output){
         namespace photo=reverie::lantern;
-        const auto reference=photo::nadir::Make(scene,second);
+        photo::capture::GrayPlate reference;
+        if(!CapturedWorldPlate(s,s->photo.sector,second,&reference)){
+            // Still functional on an older APK lacking this exact baked
+            // pack. Only the named prototype stage may use legacy terrain.
+            reference=photo::nadir::Make(scene,second);
+            if(!s->tilePackRejected){
+                ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
+                    "Permanent terrain pack unavailable or corrupt; legacy registered plate fallback");
+                s->tilePackRejected=true;
+            }
+        }
         photo::capture::Conditions weather{};
         // Photographs are immutable mission records. This case's
         // deterministic seed/air mass is reconstructed on checked reload.

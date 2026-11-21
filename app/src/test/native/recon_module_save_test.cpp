@@ -281,6 +281,14 @@ int main(int argc,char** argv){
     audit::Check(s->choice==2,"selected river preserved");
     Click(s);s=Recreate(s,&host,"lantern-in-flight");
     Click(s);Cycle(s,3);s=Recreate(s,&host,"lantern-photo");
+    audit::Check(!s->tilePackRejected&&
+                 s->activeTileId==kInitialThreeLocations[2],
+                 "Lantern photograph uses checked immutable river LTIL tile, not procedural fallback");
+    const auto permanentRiverTerrain=s->activeTile.height_dm;
+    const auto permanentRiverRoad=s->activeTile.road;
+    const auto permanentRiverBuildings=s->activeTile.buildings;
+    audit::Check(s->photoRenderer.current.Valid(),
+                 "baked physical scene enters the real 512px native GPU negative");
     InspectLoupe(s,context);
     // Use the real native Minus-then-Select chord to pin the exact current
     // loupe pixel, write through the 128-byte host checkpoint and render
@@ -352,7 +360,22 @@ int main(int argc,char** argv){
     const unsigned before_writes=audit::writes;
     Cycle(s);audit::Check(audit::writes==before_writes,"rocker leaves single-action screen and storage alone");
     Click(s);s=Recreate(s,&host,"lantern-river-revisit");
-    audit::Check(s->photo.pixels!=photo.pixels,"the revisited river has a different deck");
+    audit::Check(s->activeTileId==kInitialThreeLocations[2]&&
+                 s->activeTile.height_dm==permanentRiverTerrain&&
+                 s->activeTile.road==permanentRiverRoad,
+                 "second photograph uses exactly the same physical river/roads/elevation");
+    bool buildingsFixed=true;
+    for(size_t i=0;i<permanentRiverBuildings.size();++i){
+        const auto& before=permanentRiverBuildings[i];
+        const auto& after=s->activeTile.buildings[i];
+        if(before.x!=after.x||before.y!=after.y||
+           before.width!=after.width||before.depth!=after.depth||
+           before.kind!=after.kind)buildingsFixed=false;
+    }
+    audit::Check(buildingsFixed,
+                 "all village buildings remain at original geographic coordinates");
+    audit::Check(s->photo.pixels!=photo.pixels,
+                 "revisited river has different event but unchanged terrain");
     CompareExposures(s,photo);
     const auto priorCompare=audit::saves;
     audit::reject_writes=true;

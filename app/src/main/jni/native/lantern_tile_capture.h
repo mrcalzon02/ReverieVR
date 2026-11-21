@@ -102,7 +102,8 @@ inline uint32_t NoiseSeed(uint32_t seed,uint32_t x,uint32_t y){
     return Hash(seed^uint32_t(x*0x27d4eb2du)^uint32_t(y*0x9e3779b9u));
 }
 inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
-                      const Celestial& time,CaptureLayers* out){
+                      const Celestial& time,CaptureLayers* out,
+                      bool bridge_broken=false){
     if(!out||!Valid(time)||tile.id>=kLibrarySize)return false;
     CaptureLayers image{};
     image.photo.width=image.photo.height=kPhotoDimension;
@@ -160,6 +161,17 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
         const float roadDistance=std::abs(y-tile.RoadY(x));
         if(roadDistance<5.5f)
             albedo=156.f+18.f*grain; // same physical road at every visit
+        if(bridge_broken&&(tile.flags&1u)&&roadDistance<6.f){
+            const float riverX=128.f+27.f*std::sin(y/52.f+
+                float(Hash(tile.seed^0x80851u)%3000u)/450.f*.4f);
+            const float gap=std::abs(x-riverX);
+            if(gap<13.f){
+                // A changed bridge deck is a WORLD EVENT. Terrain and the
+                // road approach are immutable; only center-span debris,
+                // missing decking and dark exposed river are different.
+                albedo=gap<8.f?(48.f+18.f*grain):(84.f+77.f*grain);
+            }
+        }
         if((tile.flags&4u)&&std::abs(y-(89.f+6.f*std::sin(x*.07f)))<2.f)
             albedo=65.f+12.f*grain; // rail geometry is immutable
         float lamps=0.f;

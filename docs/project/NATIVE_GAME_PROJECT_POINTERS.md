@@ -127,18 +127,37 @@ starlight and night house-lamp illumination. This is **bounded
 directional+ambient bounce lighting**, not a claim of physically exact
 real-time global illumination or professionally authored aerial assets.
 
-**Stage boundary:** Binary tile catalog, pure coordinate/nav/snapshot
-interfaces and capture-time rendering kernel are produced and checked
-by host-native tests. The existing three-case playable Lantern Desk
-renderer still uses its first-stage registered fixed camera reference
-until the new tile catalog is read from the APK via the host's
-strict exact-path read-only grant. The existing war game does NOT yet
-own a persisted global 1,000-location warfront seed, full unit movement
-state or scene-change records. Do not claim an on-device 1,000-tile
-campaign, photo library import, actual adaptive war-state lighting,
-or HAP purchase economy before that additional integration and Android
-acceptance. No save migration, new APK, separate mode or gameplay
-grading change is in this bounded commit.
+**Playable three-sector integration:** The current development mission
+now reads the same checked immutable tiles **0237 (rail), 0379 (orchard),
+0240 (river)** out of the 1,000-tile library through the existing
+game-scoped `read_asset` callback. A full 288,032-byte pack is read
+once as its region becomes active, validated, and only the requested
+2,880-byte terrain record retained. Subsequent photographs and
+loupes sample its fixed heights/roads/houses/foliage. The three original
+tutorial event scenarios are expressed as *temporary, typed war orders*
+with explicit first/revisit timestamps: a moving rail convoy leaves;
+a road column later enters the orchard; the same river bridge receives
+damage then repairs. Unit timing/placement uses the same library
+anchors and nav path rather than rerolling geometry. Terrain height,
+waypoints, canopy and buildings remain unchanged across screenshots;
+the existing camera-weather mask pipeline runs *after* the physical
+terrain snapshot. The fallback `lantern_nadir_scene.h` is only for
+missing or corrupt older APK terrain assets, and native/installed tests
+must prove the checked pack path really works.
+
+**Remaining campaign work:** The larger game does **not** yet own a
+persisted 1,000-location warfront assignment seed, arbitrary ongoing
+war orders, an expanded world calendar and dynamic unit/camp operations
+beyond those three authored tutorial scenarios. These require a
+dedicated world-state save and simulation authority, not changes to
+any of the one-time baked terrain files. The terrain-snapshot lighting
+uses solar geometry, lunar phase, starlight, directional contact
+shadows and local building illumination, but no physically complete
+real-time multi-bounce GI or final authored photographic asset pass.
+This is not yet 1,000 simultaneously playable battles, guaranteed
+historically authentic terrain, dynamic photo grading, or a purchased
+HAP equipment economy. There is **no** old-save migration, new APK,
+new game launcher, or change to Forward Detachment's patrol rules.
 
 ## Lantern Desk native high-resolution photographic renderer — 2026-11-20
 
