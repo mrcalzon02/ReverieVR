@@ -171,7 +171,17 @@ inline bool BuildMasks(int image_width,int image_height,
             Bound(.12f+.75f*Bound((dust-.40f)*2.4f)+
                             .50f*Bound((streak-.61f)*3.f));
         next.cloud[idx]=Quantize(cloud);
-        next.cloud_shadow[idx]=Quantize(cloud*.32f);
+        // Sunward parallax: the ground shadow is offset in physical
+        // world coordinates from the visible cloud at flight altitude.
+        // Unlike merely multiplying opacity, this can cover terrain
+        // beyond the bright cloud silhouette while retaining the same
+        // weather seed and wind trajectory.
+        const float shadowX=wx+115.f,shadowY=wy-70.f;
+        const float shadowAcross=(-shadowX*diry+shadowY*dirx)/360.f;
+        const float shadowOpacity=CloudOpacity(weather.cloud,
+            shadowX/360.f,shadowY/360.f,shadowAcross,
+            weather.weather_seed);
+        next.cloud_shadow[idx]=Quantize(shadowOpacity*.32f);
         next.precipitation[idx]=Quantize(precip);
         next.haze[idx]=Quantize(weather_haze*hazeVariation);
         next.lens_grime[idx]=Quantize(grime);

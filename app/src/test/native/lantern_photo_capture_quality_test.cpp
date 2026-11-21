@@ -67,6 +67,17 @@ int main(){
     assert(first.masks.precipitation==second.masks.precipitation);
     assert(first.masks.lens_grime==second.masks.lens_grime);
     assert(Sum(first.masks.cloud)>0u&&Sum(first.masks.haze)>0u);
+    assert(Sum(first.masks.cloud_shadow)>0u);
+    // A physical cloud shadow must shift relative to the actual bright
+    // cloud mask; rescaled/duplicated opacity alone is not occlusion.
+    size_t offsetPixels=0u;
+    for(size_t i=0;i<first.masks.cloud.size();++i){
+        const int directlyScaled=static_cast<int>(
+            std::lround(first.masks.cloud[i]*.32));
+        if(std::abs(static_cast<int>(first.masks.cloud_shadow[i])-
+                    directlyScaled)>2)++offsetPixels;
+    }
+    assert(offsetPixels>1500u);
     assert(Sum(first.masks.lens_grime)>0u);
     assert(first.masks.width<=256&&first.masks.height<=256);
     assert(first.recorded.pixels!=plate.pixels);
