@@ -66,3 +66,15 @@ arbitrary movement orders and historical campaign state are not yet
 wired. Nothing may replace terrain ID 0240 with another procedural
 river on a revisit. Do not misrepresent hosted tests as proof of
 all 1,000 populated campaign sites or physical headset acceptance.
+
+
+## Persistent warfront file (game-private source stage)
+
+`lantern_warfront_state.h` implements an independent `LWAR` v1 checked
+world-state codec. Its explicitly saved source seed, 1,000-entry
+location-to-tile mapping, current war clock and bounded historical unit
+orders provide exact world identity/time-travel replay. Checksum and
+the original seeded permutation are independently verified; the file
+cannot secretly remap the ground even after a forged checksum.
+The current three-sector tutorial has not yet adopted the new file
+as an authoritative save; older V4 photo sessions remain untouched.

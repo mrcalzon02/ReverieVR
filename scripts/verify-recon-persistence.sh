@@ -21,6 +21,11 @@ FLAGS=(-std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror -I"$INC" -I"$TEST")
 # must be accepted under both GCC and Clang before testing the GPU host.
 "$CXX" "${FLAGS[@]}" "$TEST/lantern_tile_library_test.cpp" -o "$WORK/tile-library"
 (cd "$ROOT" && "$WORK/tile-library")
+# Persistent warfront seed, the complete 1000-place permutation and
+# time-ordered unit history are checked independently of old Lantern
+# V4 game saves; never rewrite the fixed landscape packs.
+"$CXX" "${FLAGS[@]}" "$TEST/lantern_warfront_state_test.cpp" -o "$WORK/warfront"
+(cd "$ROOT" && "$WORK/warfront")
 "$CXX" "${FLAGS[@]}" "$TEST/lantern_tile_capture_test.cpp" -o "$WORK/tile-capture"
 (cd "$ROOT" && "$WORK/tile-capture")
 for title in lantern_desk forward_detachment; do

@@ -145,8 +145,14 @@ terrain snapshot. The fallback `lantern_nadir_scene.h` is only for
 missing or corrupt older APK terrain assets, and native/installed tests
 must prove the checked pack path really works.
 
-**Remaining campaign work:** The larger game does **not** yet own a
-persisted 1,000-location warfront assignment seed, arbitrary ongoing
+**Remaining campaign work:** The game-private `lantern_warfront_state.h` now also defines an
+**exact, checksum-protected saved world assignment and unit-order
+history** format, retaining the original 1000-place seeded permutation
+and historical orders over reloads. It rejects tampered or reordered
+tile identities even when the file checksum is recomputed. This
+separate source-tested world state is not yet adopted as the three-
+sector module's authoritative live save, so the game still does
+**not** own a fully persistent campaign warfront or arbitrary ongoing
 war orders, an expanded world calendar and dynamic unit/camp operations
 beyond those three authored tutorial scenarios. These require a
 dedicated world-state save and simulation authority, not changes to

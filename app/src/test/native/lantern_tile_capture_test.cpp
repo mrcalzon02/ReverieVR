@@ -19,7 +19,8 @@ static Tile Load(uint16_t id){
 static uint64_t Difference(const std::vector<uint8_t>& a,
                            const std::vector<uint8_t>& b){
     assert(a.size()==b.size());uint64_t n=0;
-    for(size_t i=0;i<a.size();++i)if(a[i]!=b[i])++n;return n;
+    for(size_t i=0;i<a.size();++i)if(a[i]!=b[i])++n;
+    return n;
 }
 static uint64_t Sum(const std::vector<uint8_t>& p){
     return std::accumulate(p.begin(),p.end(),uint64_t(0));
@@ -51,7 +52,7 @@ int main(){
     assert(Sum(original.unit_mask)==0u);
     assert(Sum(original.shadow_mask)>0u);
     assert(MakePhoto(tile,{},clouded,&shadow));
-    assert(shadow.photo.pixels!=original.photo.pixels);
+    assert(Difference(shadow.photo.pixels,original.photo.pixels)>0u);
     assert(original.foliage_mask==shadow.foliage_mask&&
            original.building_mask==shadow.building_mask);
     assert(MakePhoto(tile,{},night,&starlight));

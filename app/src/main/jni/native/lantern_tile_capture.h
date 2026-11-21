@@ -218,7 +218,7 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
           for(int x=std::max(0,int((house.x-house.width*.5f)*2));x<=
                   std::min(511,int((house.x+house.width*.5f)*2));++x){
             const float wx=(x+.5f)*.5f,wy=(y+.5f)*.5f;
-            const float slope=(wx-house.x)/std::max(2.f,house.width);
+            const float slope=(wx-house.x)/std::max(2.f,static_cast<float>(house.width));
             const float height=tile.GroundHeight(wx,wy)+house.height-
                                1.2f*std::abs(slope);
             const float roofLight=sun.direct_solar*

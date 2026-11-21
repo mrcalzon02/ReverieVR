@@ -46,6 +46,8 @@ on:
       # unit tests alone; no auto-rebake on launch/observation.
       - 'app/src/main/jni/native/lantern_tile_*.h'
       - 'app/src/test/native/lantern_tile_*_test.cpp'
+      - 'app/src/main/jni/native/lantern_warfront_state.h'
+      - 'app/src/test/native/lantern_warfront_state_test.cpp'
       - 'app/src/main/assets/native/lantern/terrain/**'
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
       - 'app/src/main/jni/native/lantern_desk_simulation.h'
