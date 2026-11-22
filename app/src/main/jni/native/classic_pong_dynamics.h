@@ -25,6 +25,12 @@ inline float PaddleVelocity(float displacement, float seconds) {
 
 inline Rebound Bounce(float vx, float vy, float impact_offset,
                       float paddle_velocity, bool left_paddle) {
+    // Non-finite samples can arrive from corrupted or uninitialized input.
+    // Treat only those samples as neutral, preserving normal swing physics.
+    if (!std::isfinite(vx)) vx = 0.f;
+    if (!std::isfinite(vy)) vy = 0.f;
+    if (!std::isfinite(impact_offset)) impact_offset = 0.f;
+    if (!std::isfinite(paddle_velocity)) paddle_velocity = 0.f;
     // Magnitudes come from the incoming ball, not a constant-x-speed hack.
     const float incoming = std::clamp(std::hypot(vx, vy),
                                       kMinBallSpeed, kMaxBallSpeed);
