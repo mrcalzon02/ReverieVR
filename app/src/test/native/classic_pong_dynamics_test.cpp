@@ -2,6 +2,8 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <cfloat>
+#include <limits>
 using namespace reverie::classics::pong;
 float Speed(Rebound b){return std::hypot(b.vx,b.vy);}
 int main(){
@@ -30,5 +32,39 @@ int main(){
     assert(CpuTarget(.7f,.8f,.7f,true,1,0)<=.78f);
     assert(CpuTarget(.7f,.8f,-.7f,true,1,0)==0.f);
     assert(CpuTarget(.7f,.8f,.7f,false,1,0)==0.f);
-    std::cout<<"Pong swing transfer, inverse braking, rebound bounds, and CPU target passed\n";
+    const float nan=std::numeric_limits<float>::quiet_NaN();
+    const float inf=std::numeric_limits<float>::infinity();
+    // Rebounds must stay finite and move away from the struck paddle even
+    // with invalid upstream samples. Preserve the full bounded speed band.
+    const float boundary[][4] = {
+        {nan,.1f,.1f,0.f}, {inf,.2f,.1f,0.f}, {-inf,nan,0.f,0.f},
+        {.9f,nan,.2f,0.f}, {.9f,inf,.2f,0.f}, {.9f,.1f,nan,0.f},
+        {.9f,.1f,inf,0.f}, {.9f,.1f,0.f,nan}, {.9f,.1f,0.f,inf},
+        {FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX}
+    };
+    for(const auto &c : boundary) {
+        for(bool left : {true,false}) {
+            const auto b=Bounce(c[0],c[1],c[2],c[3],left);
+            assert(std::isfinite(b.vx) && std::isfinite(b.vy));
+            assert(left ? b.vx>0.f : b.vx<0.f);
+            assert(Speed(b)>=kMinBallSpeed-0.0001f);
+            assert(Speed(b)<=kMaxBallSpeed+0.0001f);
+        }
+    }
+    for(float seconds : {0.f,-0.1f,nan,inf,-inf})
+        assert(PaddleVelocity(1.f,seconds)==0.f);
+    for(float displacement : {nan,inf,-inf})
+        assert(PaddleVelocity(displacement,1.f)==0.f);
+    assert(PaddleVelocity(FLT_MAX,std::numeric_limits<float>::min())==kMaxCapturedPaddleSpeed);
+    assert(PaddleVelocity(-FLT_MAX,std::numeric_limits<float>::min())==-kMaxCapturedPaddleSpeed);
+    Rebound long_r={-kServeHorizontalSpeed,kServeVerticalSpeed};
+    for(int i=0;i<512;++i) {
+        const bool left=(i%2)==0;
+        long_r=Bounce(long_r.vx,long_r.vy,(i%7-3)*0.09f,(i%5-2)*0.61f,left);
+        assert(std::isfinite(long_r.vx) && std::isfinite(long_r.vy));
+        assert(left ? long_r.vx>0.f : long_r.vx<0.f);
+        assert(Speed(long_r)>=kMinBallSpeed-0.0001f);
+        assert(Speed(long_r)<=kMaxBallSpeed+0.0001f);
+    }
+    std::cout<<"Pong swing transfer, inverse braking, rebound bounds, CPU target, and numeric safety passed\n";
 }
