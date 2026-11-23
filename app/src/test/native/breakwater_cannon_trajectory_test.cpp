@@ -66,6 +66,47 @@ int main(){
     assert(!trajectory::CannonShot(WeaponKind::DirectCannon,above,&ray));
     assert(ray.origin[2]==untouched.origin[2]); // no ghost firing path
     assert(!trajectory::CannonShot(WeaponKind::MachineGun,bad,&ray));
+    // A corrupted/unknown persisted weapon ID must not fire the default
+    // machine gun. Reject it before using either the physical mount or ray.
+    const auto invalidKind=static_cast<WeaponKind>(kWeaponCount);
+    const auto invalidHigh=static_cast<WeaponKind>(255);
+    const trajectory::ShotRay beforeInvalid=ray;
+    float invalidBarrel[]={7.f,8.f,9.f};
+    assert(!trajectory::BarrelAim(invalidKind,straight,invalidBarrel));
+    assert(invalidBarrel[0]==7.f && invalidBarrel[1]==8.f &&
+           invalidBarrel[2]==9.f);
+    assert(!trajectory::CannonShot(invalidKind,straight,&ray));
+    assert(!trajectory::CannonShot(invalidHigh,straight,&ray));
+    assert(ray.origin[0]==beforeInvalid.origin[0] &&
+           ray.origin[1]==beforeInvalid.origin[1] &&
+           ray.origin[2]==beforeInvalid.origin[2]);
+    const float infiniteSight[]={INFINITY,0.f,-1.f};
+    const float noSight[]={0.f,0.f,0.f};
+    assert(!trajectory::CannonShot(WeaponKind::MachineGun,infiniteSight,&ray));
+    assert(!trajectory::CannonShot(WeaponKind::MachineGun,noSight,&ray));
+    assert(!trajectory::CannonShot(WeaponKind::MachineGun,nullptr,&ray));
+    assert(!trajectory::CannonShot(WeaponKind::MachineGun,straight,&ray,INFINITY));
+    assert(ray.origin[2]==beforeInvalid.origin[2]);
+    // Nearshore convergence has one physical trajectory: the muzzle is on
+    // the barrel axis, and the same axis intersects the gazed beach point.
+    for(const float stationHeight : {0.f,.20f,.60f}) {
+        const float shoreSight[]={.25f,-.30f,-1.f};
+        assert(trajectory::CannonShot(WeaponKind::MachineGun,shoreSight,
+                                      &ray,stationHeight));
+        const float beachY=-.66f-stationHeight;
+        const float scale=beachY/shoreSight[1];
+        const float beachX=scale*shoreSight[0];
+        const float beachZ=scale*shoreSight[2];
+        const float t=(beachZ-ray.origin[2])/ray.direction[2];
+        assert(t>0.f);
+        assert(std::abs(ray.origin[0]+ray.direction[0]*t-beachX)<.0003f);
+        assert(std::abs(ray.origin[1]+ray.direction[1]*t-beachY)<.0003f);
+        gunmesh::Vec muzzle{};
+        assert(gunmesh::Muzzle(WeaponKind::MachineGun,ray.direction,0.f,&muzzle));
+        assert(std::abs(ray.origin[0]-muzzle.x)<.0001f &&
+               std::abs(ray.origin[1]-muzzle.y)<.0001f &&
+               std::abs(ray.origin[2]-muzzle.z)<.0001f);
+    }
     assert(!trajectory::CannonShot(WeaponKind::MachineGun,straight,nullptr));
     assert(!gunmesh::Muzzle(WeaponKind::MachineGun,bad,0.f,&exact));
     assert(trajectory::CannonShot(WeaponKind::DirectCannon,nav,&ray));

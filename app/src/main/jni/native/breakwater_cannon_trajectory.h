@@ -18,7 +18,10 @@ struct ShotRay {
 // their old trajectory, preserving established anti-ship lead and ballistics.
 inline bool BarrelAim(WeaponKind kind,const float *sight,float *barrel,
                       float stationHeight=0.f) {
-    if(!barrel || !std::isfinite(stationHeight) ||
+    // An invalid saved/equipment weapon ID must not silently become the
+    // default machine gun when resolved by WeaponFor or BarrelLength.
+    if(!barrel || !WeaponValid(static_cast<uint8_t>(kind)) ||
+       !std::isfinite(stationHeight) ||
        !WeaponWithinTraverse(sight,kind))return false;
     const float len=std::sqrt(sight[0]*sight[0]+
                               sight[1]*sight[1]+sight[2]*sight[2]);
