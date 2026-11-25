@@ -226,15 +226,15 @@ public:
         if(chosen_snack_>=0&&snack_stock_[chosen_snack_]>0)
             --snack_stock_[chosen_snack_];
     }
-    bool CanAcceptStock() const {
-        if(offer_<=0||offer_>=kOffers)return false; // house lager uses crate
+    bool CanAcceptStock(int capacity=100000) const {
+        if(offer_<=0||offer_>=kOffers||capacity<0||capacity>100000)return false;
         if(offer_<kDrinks)
-            return drink_stock_[offer_]<=100000-kDrinkCatalog[offer_].units;
+            return drink_stock_[offer_]<=capacity-kDrinkCatalog[offer_].units;
         const int id=offer_-kDrinks;
-        return snack_stock_[id]<=100000-kSnackCatalog[id].units;
+        return snack_stock_[id]<=capacity-kSnackCatalog[id].units;
     }
-    bool AcceptStock() {
-        if(!CanAcceptStock())return false;
+    bool AcceptStock(int capacity=100000) {
+        if(!CanAcceptStock(capacity))return false;
         if(offer_<kDrinks)
             drink_stock_[offer_]+=kDrinkCatalog[offer_].units;
         else

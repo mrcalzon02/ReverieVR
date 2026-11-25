@@ -108,5 +108,42 @@ int main() {
             inventory.stock_drink(offer):
             inventory.stock_snack(offer-trade::kDrinks))==stock_before);
     }
-    std::cout<<"Red Ledger wholesale: 24 atomic wallet/inventory capacity rejections OK\n";
+    // The live checkout derives the lot limit from the purchased category,
+    // not the serialization safety ceiling. All 24 branded products must
+    // gain exactly one usable lot when their own storage is improved.
+    for(int offer=1;offer<trade::kOffers;++offer){
+        property::Renovations storage;
+        Simulation investor;
+        trade::Trade inventory;
+        assert(inventory.SelectOffer(offer));
+        const int category=offer>=trade::kDrinks?property::Snacks:
+            ((offer-1)%3)==0?property::Draft:((offer-1)%3)==1?property::Bottles:property::Spirits;
+        const int lot=offer>=trade::kDrinks?trade::kSnackCatalog[offer-trade::kDrinks].units:
+            trade::kDrinkCatalog[offer].units;
+        const int cap=storage.stock_capacity(offer);
+        assert(cap==2*lot);
+        while(inventory.CanAcceptStock(cap))assert(inventory.AcceptStock(cap));
+        const int before=investor.cash_cents();
+        assert(!trade::BuyWholesale(&investor,&inventory,cap));
+        assert(investor.cash_cents()==before);
+        for(int i=0;i<category;++i)assert(storage.next());
+        assert(storage.buy(&investor,inventory));
+        assert(investor.cash_cents()==before-1600);
+        assert(storage.stock_capacity(offer)==cap+lot);
+        assert(inventory.CanAcceptStock(storage.stock_capacity(offer)));
+        assert(inventory.AcceptStock(storage.stock_capacity(offer)));
+        assert(!inventory.CanAcceptStock(storage.stock_capacity(offer)));
+        assert(storage.stock_capacity(0)==(category==property::Draft?24:16));
+        save::State checkpoint{};
+        checkpoint.simulation=investor;
+        checkpoint.market=inventory;
+        checkpoint.renovations=storage;
+        save::Checkpoint::Bytes bytes{};
+        assert(save::Checkpoint::Encode(checkpoint,&bytes));
+        save::State loaded{};
+        assert(save::Checkpoint::Decode(&loaded,bytes.data(),bytes.size())==save::Checkpoint::Format::Checked);
+        assert(loaded.renovations.stock_capacity(offer)==cap+lot);
+        assert(!loaded.market.CanAcceptStock(loaded.renovations.stock_capacity(offer)));
+    }
+    std::cout<<"Red Ledger wholesale: 24 atomic wallet/inventory capacity rejections and paid storage expansions OK\n";
 }

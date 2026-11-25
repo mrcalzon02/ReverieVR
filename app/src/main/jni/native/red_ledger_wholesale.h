@@ -7,13 +7,13 @@
 // Game-private two-party transaction. Failure must leave BOTH the live wallet
 // and the live inventory unchanged. No pre-1.0 save compatibility is assumed.
 namespace reverie { namespace redledger { namespace trade {
-inline bool BuyWholesale(Simulation *simulation, Trade *market) {
-    if(simulation==nullptr || market==nullptr || !market->CanAcceptStock())
+inline bool BuyWholesale(Simulation *simulation, Trade *market, int capacity=100000) {
+    if(simulation==nullptr || market==nullptr || !market->CanAcceptStock(capacity))
         return false;
     Simulation cash=*simulation;
     Trade inventory=*market;
     const int cost=market->offer_cost();
-    if(!cash.SpendSpecialStock(cost) || !inventory.AcceptStock())
+    if(!cash.SpendSpecialStock(cost) || !inventory.AcceptStock(capacity))
         return false;
     *simulation=cash;
     *market=inventory;

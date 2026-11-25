@@ -44,6 +44,17 @@ public:
         ++tiers_[selected_];
         return true;
     }
+    // Each stocked product has two lots of space plus one lot per paid
+    // category tier. The house crate is also a draft-storage customer.
+    // Existing over-capacity saves retain stock; only new orders are refused.
+    int stock_capacity(int sku)const {
+        if(sku<0||sku>=trade::kOffers)return 0;
+        if(sku==0)return 8*(2+tier(Draft));
+        if(sku>=trade::kDrinks)
+            return trade::kSnackCatalog[sku-trade::kDrinks].units*(2+tier(Snacks));
+        const int category=((sku-1)%3)==0?Draft:((sku-1)%3)==1?Bottles:Spirits;
+        return trade::kDrinkCatalog[sku].units*(2+tier(category));
+    }
     int service_premium(int drink,int snack)const {
         if(drink<0||drink>=trade::kDrinks||snack<-1||snack>=trade::kSnacks)
             return 0;

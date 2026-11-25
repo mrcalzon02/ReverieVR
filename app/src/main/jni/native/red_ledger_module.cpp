@@ -284,6 +284,10 @@ const char *WorkTargetName(
     }
 }
 
+bool CanOrderHouseCrate(const ModuleState &state) {
+    return state.simulation.beer_units()<=state.renovations.stock_capacity(0)-8;
+}
+
 bool IsTargetAvailable(
     const ModuleState *state,
     WorkTarget target
@@ -319,8 +323,8 @@ bool IsTargetAvailable(
         case WorkTarget::StockBuy:
             return room==trade::Room::Stockroom && hands_free &&
                 simulation.current_event()!=EventType::SupplyInterruption &&
-                (state->market.offer()==0 ||
-                    state->market.CanAcceptStock());
+                (state->market.offer()==0?CanOrderHouseCrate(*state):
+                    state->market.CanAcceptStock(state->renovations.stock_capacity(state->market.offer())));
         case WorkTarget::DrinkChoice:
             return room==trade::Room::Bar && no_payment && patron_waiting &&
                 drink_state!=DrinkState::FilledCup;
@@ -375,6 +379,9 @@ bool IsTargetAvailable(
                    (state->ledger_page!=LedgerPage::District || simulation.day()>=state->grocery.next_day());
 
         case WorkTarget::BeerOrder:
+            return room==trade::Room::Stockroom && hands_free &&
+                simulation.current_event()!=EventType::SupplyInterruption &&
+                CanOrderHouseCrate(*state);
         case WorkTarget::CupOrder:
             return room==trade::Room::Stockroom && no_payment
                 && drink_state
@@ -749,7 +756,8 @@ bool ActivateWorkTarget(
         case WorkTarget::StockBuy:
             changed=state->market.offer()==0
                 ? simulation.BuySupply(SupplierItem::BeerCrate)
-                : trade::BuyWholesale(&simulation,&state->market);
+                : trade::BuyWholesale(&simulation,&state->market,
+                    state->renovations.stock_capacity(state->market.offer()));
             break;
         case WorkTarget::DrinkChoice:
             changed=state->market.SelectDrink(simulation.beer_units());
@@ -1823,12 +1831,13 @@ void RefreshStatusBoard(ModuleState *state) {
             sku==0?8:(sku<trade::kDrinks?
                 trade::kDrinkCatalog[sku].units:
                 trade::kSnackCatalog[sku-trade::kDrinks].units));
-        std::snprintf(rows[2],sizeof(rows[2]),"ON HAND: %d",stock);
+        std::snprintf(rows[2],sizeof(rows[2]),"ON HAND: %d / %d",stock,
+            state->renovations.stock_capacity(sku));
         std::snprintf(rows[3],sizeof(rows[3]),"CASH: %d",sim.cash_cents());
         const int price=sku==0?900:market.offer_cost();
         const bool stock_room=sku==0?
-            sim.beer_units()<=Simulation::kMaxStockUnits-8:
-            market.CanAcceptStock();
+            CanOrderHouseCrate(*state):
+            market.CanAcceptStock(state->renovations.stock_capacity(sku));
         if(!stock_room)
             std::snprintf(rows[4],sizeof(rows[4]),"STOCK LIMIT  /  SELL BEFORE BUYING");
         else if(sim.cash_cents()<price)
