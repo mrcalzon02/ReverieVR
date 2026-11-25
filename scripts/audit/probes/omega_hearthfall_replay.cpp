@@ -88,8 +88,11 @@ void Fight(State *&s,std::istream &orders,ReverieNativeHostV1 &host,int turns){
     }
     audit::Check(s->session.tactical.battle.result()==game::Result::Defended,"actual regional victory");
     if(op==1)audit::Capture(Render,s,"omega-white-orchard",1.50f);
-    Cell(s,11,12);
-    audit::Check(s->session.frontier.operation()==op+1,"apply mission outcome exactly once");
+    // The visible top-center action becomes REPORT when combat ends.
+    // It must settle through the same production Select path as the board.
+    if(op==0)audit::Capture(Render,s,"omega-terminal-report",1.50f);
+    Tap(s,0.f,1.065f);
+    audit::Check(s->session.frontier.operation()==op+1,"top report action applies mission outcome exactly once");
     std::printf("HEARTHFALL mission=%d turns=%d guards=%d day=%d\n",
                 op+1,turns,s->session.frontier.guards(),s->session.frontier.day());
 }

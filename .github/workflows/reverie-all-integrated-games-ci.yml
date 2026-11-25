@@ -313,6 +313,29 @@ jobs:
       - uses: actions/checkout@v4
       - name: Execute full existing real Omega Front campaign suite
         run: bash scripts/verify-omega-front-playability.sh
+      - name: Replay existing cold-start Hearthfall campaign through hosted controls
+        shell: bash
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dri
+          mkdir -p validation/omega
+          c++ -O1 -std=c++17 -Iscripts/audit/probes -Iapp/src/main/jni/native \
+            scripts/audit/probes/omega_hearthfall_replay.cpp -lEGL -lGLESv2 -lz \
+            -o "${RUNNER_TEMP}/omega-hearthfall-replay"
+          "${RUNNER_TEMP}/omega-hearthfall-replay" validation/omega 2>&1 | tee validation/omega/hearthfall.log
+      - name: Preserve Hearthfall replay output and stereo frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-hearthfall-replay-${{ github.run_id }}
+          path: validation/omega/
+          if-no-files-found: warn
+          retention-days: 7
 
   native-runtime:
     name: Shared native ABI, asset-scoping and companion contracts

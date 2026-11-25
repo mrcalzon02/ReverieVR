@@ -981,11 +981,13 @@ void Draw(State *s){
     }
     Rect(s,0,1.13f,2.05f,.46f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.25f,.013f,.91f,.93f,.78f);
-    Text(s,"TURN BASED  QUEUE ORDERS  THEN END TURN  /  MODES TAB",
+    const bool battle_complete=battle.result()!=game::Result::Active;
+    Text(s,battle_complete?"BATTLE COMPLETE  /  SELECT TO FILE REPORT":
+         "TURN BASED  QUEUE ORDERS  THEN END TURN  /  MODES TAB",
          .983f,.008f,.71f,.84f,.85f);
     DrawMenuTab(s);
     Rect(s,0.f,1.065f,.35f,.145f,kBoardZ-.035f,.26f,.40f,.33f);
-    TextAt(s,"END TURN",0.f,1.065f,.009f,.98f,.93f,.69f);
+    TextAt(s,battle_complete?"REPORT":"END TURN",0.f,1.065f,.009f,.98f,.93f,.69f);
     char status[96];
     if(defendingConvoy)
         std::snprintf(status,sizeof(status),"ESCORT WAGON HP %d  AMMO %d  TICK %u",
@@ -1338,6 +1340,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     // A deliberate command, not a timer. The main update path handles
     // turn sounds, checkpoint persistence and stereo-consistent redraw.
     if(s->session.view==game::FrontMode::Tactical &&
+       s->session.tactical.battle.result()==game::Result::Active &&
        pointing && click && std::fabs(pointer_x)<.19f &&
        pointer_y>.98f && pointer_y<1.14f){
         action.commit_turn=true;
