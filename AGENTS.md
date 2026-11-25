@@ -16,3 +16,4 @@ Before reading, changing, validating, committing, or pushing ReverieVR:
 
 Conversation history, memory, prompts, and handoffs are context. They are not proof of repository state.
 10. For active release-recovery work, consult [`docs/project/RECOVERY_DEVELOPMENT_OBJECT.md`](docs/project/RECOVERY_DEVELOPMENT_OBJECT.md) and GitHub issue #6; preserve its evidence-gated statuses and next-resumption action.
+11. For sustained development, read [`docs/project/SUSTAINED_CONTINUOUS_DEVELOPMENT.md`](docs/project/SUSTAINED_CONTINUOUS_DEVELOPMENT.md) and the selected per-project guide under `docs/project/scd/`. Select the first unresolved gate from real evidence; do not treat a proposal, workflow success or old audit as full intended-function acceptance.

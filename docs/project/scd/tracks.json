@@ -1,0 +1,1501 @@
+{
+  "schema": "reverievr.scd.v1",
+  "repository": "mrcalzon02/ReverieVR",
+  "branch": "main",
+  "baseline": "2a62f02b9a46b08375972dea1be6fa741c88f8f6",
+  "projects": [
+    {
+      "id": "ministry-lantern-desk",
+      "name": "Ministry of Intelligence: Lantern Desk",
+      "kind": "game",
+      "baseline": "November 16: real module loupe 2× over 8×8 cells; evidence persists, loupe recenters. Existing 16×16 source is not acceptable final reconnaissance imagery.",
+      "docs": [
+        "docs/project/WAR_WITHOUT_END.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/recon_projects_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-recon-persistence.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Replace coarse reconnaissance imagery with identifiable aerial photographs",
+          "implementation": "Trace actual image generation, display/upload and save paths. Build high-resolution top-down/oblique reconnaissance views consistent with the approved camera perspective, preserving identifiable terrain, buildings, roads, vehicles, vegetation and civilian lookalikes. Use actual scene-derived render or licensed authored layers, not a few colored blocks. Keep hidden classification separate.",
+          "acceptance": "At best camera setting, blinded reviewers can identify intended visible features in multiple varied cases without labels revealing truth; imagery is recognizable at desk distance and through zoom. Verify native source dimensions, decoded pixels, both-eye frame and source/license manifest; do not call an enlarged low-resolution grid high resolution.",
+          "evidence": "Original source frames, full desk screenshots, zoomed crops and blind classification results; exact asset provenance and decoded size."
+        },
+        {
+          "id": "g02",
+          "objective": "Compose independent weather, grime and camera-quality layers",
+          "implementation": "Add seeded distinct cloud forms and wind-driven drift; rain, heavy storm, snow, hail, haze/smoke and variable occlusion; independent lens grime and quality. Apply resolution degradation as a postprocess on the same source scene, with camera upgrades improving actual recoverable detail. Keep native texture and memory budgets.",
+          "acceptance": "Same scene/seed produces distinguishable clear, overcast, rain, heavy storm, snow and hail cases and visibly different wind/grime settings; low/medium/high camera settings improve measurable feature resolution without changing scene truth. A clear reference remains available to verification only.",
+          "evidence": "Same-scene contact sheets at each quality/weather condition; report feature recognition, pixel dimensions, allocations and frame timing."
+        },
+        {
+          "id": "g03",
+          "objective": "Complete the physical analyst desk",
+          "implementation": "Implement persistent annotation, pan/zoom, side-by-side comparison, dossier reference and report submission. Route through real normalized controller actions.",
+          "acceptance": "Select a case, inspect two photos, mark and remove locations, cite observed evidence, compose a report, save/reopen with marks intact. No impossible control or hidden truth in player UI.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Make operations evolve from analyst decisions",
+          "implementation": "Implement world/evidence state, multiple ambiguous positive/negative civilian and military cases, weather/aircraft changes, persistent credibility and downstream report consequences.",
+          "acceptance": "Run at least three consecutive cases with different correct, false-positive and uncertain decisions; show distinct saved downstream state and no reward duplication or truth leaks. Finish the bounded intended operation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g05",
+          "objective": "Complete hosted and reference-device experience",
+          "implementation": "Use shared acceptance checklist and approved art/audio; demonstrate useful reading/recognition in headset.",
+          "acceptance": "Complete a fresh case sequence and recover after interruption on installed APK; prove controls, legibility, actual speaker feedback, sustained frame pacing and offline use.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/ministry-lantern-desk.md"
+    },
+    {
+      "id": "sitka",
+      "name": "Sitka",
+      "kind": "game",
+      "baseline": "Registered 17th native module; survey over NOAA/USGS data and separate fictional practice bay support shore discoveries and gear. Actual walkable harbor/boating route not yet proven.",
+      "docs": [
+        "docs/project/SITKA.md",
+        "docs/project/SITKA_CITY_WORLD_DESIGN_SPEC.md",
+        "docs/project/SITKA_GIS_TILING.md",
+        "docs/project/SITKA_BATHYMETRY_AND_BOAT_SPEC.md",
+        "docs/project/SITKA_WATERFRONT_EXPORT.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/sitka_terrain_module.cpp"
+      ],
+      "checks": [
+        "scripts/sitka/verify_gameplay.py",
+        "scripts/sitka/stage_native_land_assets.py"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Establish a real geographic playable berth and walking route",
+          "implementation": "Reconcile source-derived NOAA chart land, USGS terrain, actual shoreline, bathymetry and vertical datum. Stream bounded tiles; construct authentic harbor/office access, walk collision and safe spawn. Never label fictional practice geometry as actual Sitka.",
+          "acceptance": "Walk from surveyed harbor berth to office and shore fishing location on actual source-derived mesh, with consistent coordinates and no shore seam, falling through ground or land/water alias. Missing datum/bathymetry must be explicitly blocked rather than fabricated.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Connect Tier 0 harbor economy to actual terrain",
+          "implementation": "Place NPC harbor master, gear inventory, catch/sell/credit and upgrade actions into accessible real locations. Keep actual fishing and inventory state isolated from survey diagnostics.",
+          "acceptance": "From fresh save, acquire starter gear, fish, sell, purchase upgrade, identify and register a find, save/reopen; all credits and items reconcile once.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Integrate the three boat classes and all intended upgrade tiers",
+          "implementation": "Use the accepted 18 model variants and actual hull/geometry contracts. Implement boarding, steering, throttle, buoyancy/collision, docking, storage, equipment and crab-pot operations. Correct contiguous hull, decking penetration and waterline; use approved assets.",
+          "acceptance": "Each boat can leave berth, steer, stop, return, dock and exit; cargo and fuel if specified persist; upgrade has measurable intended effect. Gear interaction and crab-pot cycle work. Show genuine 360-degree production-asset captures and runtime waterline.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Expand connected city and harbor activities",
+          "implementation": "Implement multiple harbor offices, route navigation, irregular buildings, walkways, regional shore specimens and economy progression using approved actual geography and assets.",
+          "acceptance": "Traverse at least two distinct real harbors and their offices; complete fishing/shore/crabbing and upgrade routes from valid spawns; no fictional map presented as verified geography.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g05",
+          "objective": "Verify whole-game playability and scale",
+          "implementation": "Measure tile resident-set, uploads per frame, frame times and memory in a sustained trip; integrate one APK and preserve saves.",
+          "acceptance": "Finish a legitimate starter-to-upgraded boat route through installed game and reference hardware; stable control, navigation, save/recovery and bounded streaming.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/sitka.md"
+    },
+    {
+      "id": "breakwater-battery",
+      "name": "Breakwater Battery",
+      "kind": "game",
+      "baseline": "November 16 host evidence: three stations and both eyes; Nov 23 main rejects invalid cannon weapon IDs. Complete four-theater campaign still open.",
+      "docs": [
+        "docs/project/BREAKWATER_BATTERY_VR.md",
+        "docs/project/BREAKWATER_SOUND_SOURCES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/breakwater_module.cpp",
+        "app/src/main/jni/native/breakwater_campaign.cpp"
+      ],
+      "checks": [
+        "scripts/verify-breakwater-world-gl.sh",
+        "scripts/verify-breakwater-audio.sh",
+        "scripts/audit/probes/breakwater_full_campaign.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Validate full combat loop and station transitions",
+          "implementation": "Follow existing campaign, mount transforms and weapon registry. Exercise valid/invalid IDs, aim, load, recoil, traverse limits, ammunition, firing/reload and hit resolution; preserve approved mount geometry.",
+          "acceptance": "For every weapon and station, visible and physical aiming agree; invalid IDs cause no launch, paid valid weapons actually fire, ammo and reload behave correctly, no double action on held input.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish four coastal theaters and enemy behavior",
+          "implementation": "Complete distinct terrain, sea/shore landing routes, infantry/armor/air threats, unloading, targeting and approved campaign schedules, with functional defenses and support.",
+          "acceptance": "Play through each theater and observe landings, attacks, defensive damage, support delivery and genuine win/loss transitions; no inaccessible targets or broken spawns.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Complete shops, progression and campaign persistence",
+          "implementation": "Exercise all difficulties, three slots, paid upgrades and support, explicit reset and wave result checkpoints; use existing save protections.",
+          "acceptance": "Interrupt at purchase, mid-wave per documented contract, reward, defeat and victory; no lost acknowledged payment or duplicate reward. Four-theater campaign is reachable from fresh play without debug unlock.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Finish sound, readability and actual device combat",
+          "implementation": "Use normalized asset library, contextual success/rejection feedback and bounded voices. Capture approved world and controls in each eye.",
+          "acceptance": "Complete campaign on installed APK; test three stations, controller feel, audible mix, sustained combat and thermal behavior on reference S9.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/breakwater-battery.md"
+    },
+    {
+      "id": "omega-front",
+      "name": "Omega Front",
+      "kind": "game",
+      "baseline": "November 16: 16 Hearthfall sectors plus clinic/camp/gate delivery route; midtrip save identical stereo. Regional and 70-arc campaign incomplete.",
+      "docs": [
+        "docs/project/OMEGA_FRONT_HEARTHWELL_PROLOGUE.md",
+        "docs/project/OMEGA_FRONT_GRAND_CAMPAIGN.md",
+        "docs/project/OMEGA_FRONT_FACTION_CHRONICLES.md",
+        "docs/project/OMEGA_FRONT_CONTINENT.md",
+        "docs/project/OMEGA_FRONT_FACTIONS.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/omega_front_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-omega-repairs.sh",
+        "scripts/verify-omega-front-playability.sh",
+        "scripts/audit/probes/omega_hearthfall_replay.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Finish Hearthfall operations and aftermath",
+          "implementation": "Wire legal action/cost explanations, mission goals, faction accords, settlement, logistics and tactical input on all existing operations.",
+          "acceptance": "Cold start, complete each existing operation, win and lose representative battles, settle outcomes, then save/reopen strategic/tactical state and demonstrate persisted faction/logistics consequences.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete strategic management and supply",
+          "implementation": "Implement roster, equipment, research, production, convoy, planning, intelligence and history pages using actual simulation state.",
+          "acceptance": "A player can recruit, equip, research, deliver resources, issue and cancel orders, and see costs and resulting state; no inert actions. Scarcity and access constraints affect deployment.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Expand continental operations and authored arcs",
+          "implementation": "Implement remaining authored arcs in chronology from grand campaign and faction documents, region by region. Keep coverage manifest mapping each required arc to actual maps/objectives/transitions.",
+          "acceptance": "For each claimed arc, enter legitimately from preceding state, finish or fail/recover, record settlement and next unlock; overview geography alone is not playable content. All required campaign arcs must have witnesses.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Complete campaign and platform acceptance",
+          "implementation": "Run full progression routes through intended ending(s), preserve tactical queues and RNG on interruption, validate licensed content and controller readability.",
+          "acceptance": "Installed campaign can reach all required ending paths without debug state, softlock or lost progress; sustained device and shared acceptance pass.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/omega-front.md"
+    },
+    {
+      "id": "between-deliveries-red-ledger",
+      "name": "Between Deliveries: The Red Ledger",
+      "kind": "game",
+      "baseline": "November 16: four patrons served, accounts reconcile, 135-day debt payoff replay; full property/district/monthly story remains open.",
+      "docs": [
+        "docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md",
+        "docs/project/BETWEEN_DELIVERIES_CORE_SERVICE_DESIGN.md",
+        "docs/project/BETWEEN_DELIVERIES_ASSET_RECOVERY.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/red_ledger_module.cpp",
+        "app/src/main/jni/native/red_ledger_simulation.cpp"
+      ],
+      "checks": [
+        "scripts/verify-red-ledger.sh",
+        "scripts/verify-featured-persistence.sh",
+        "scripts/audit/probes/red_ledger_module_probe.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete real bar economy and upgrade functions",
+          "implementation": "Implement documented stock/storage/perishability, customer affinity, supplier alternatives, day calendar, equipment/renovations and usable room controls.",
+          "acceptance": "Run fresh operating days with scarcity, alternative suppliers and changing demand; every paid upgrade changes real behavior. Balance accounts exactly; interruption and write retry preserve transactions once.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete property, private rooms and district commerce",
+          "implementation": "Implement authored upper floor/private activities, district routes, commerce and required original patron/room/product assets. Maintain source/license inventory.",
+          "acceptance": "Every included room/location can be entered and used; required patrons/products are installed and rendered rather than primitive fallbacks; purchases and access obey state.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Implement monthly faction story and all intended endings",
+          "implementation": "Follow full-scope named cast, monthly prerequisites, neutrality pressure, property decisions and six faction-dependent Month Five endings. Resolve ambiguity with source canon, not invention.",
+          "acceptance": "Legitimate fresh campaign replays reach each specified ending, with logged prerequisite/consequence chain and preserved calendar/relationships. No debug jumps or invented neutral ending.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Validate finished hosted campaign",
+          "implementation": "Exercise full workday and month transition through Android, real audio, seated readability, save corruption and controller recovery.",
+          "acceptance": "APK and S9 prove service/payment/wash/upgrade and story progression to ending; no lost payment, unreachable action or persistent deadlock.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/between-deliveries-red-ledger.md"
+    },
+    {
+      "id": "gumball-armada",
+      "name": "Gumball Armada",
+      "kind": "game",
+      "baseline": "November 16: all four general flags and rescue/homecoming ending reachable; fresh simulated campaign 67 sorties, 61 wins. Distinct boss and authored region work remains.",
+      "docs": [
+        "docs/project/GUMBALL_ARMADA.md",
+        "docs/project/GUMBALL_ARMADA_STAGED_PLAN.md",
+        "docs/project/GUMBALL_ARMADA_ROUTES_AND_SUPPORT.md",
+        "docs/project/GUMBALL_ARMADA_CONTENT_MATRIX.md",
+        "docs/project/GUMBALL_ARMADA_CAST_BIBLE.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/gumball_armada_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-gumball-armada.sh",
+        "scripts/verify-featured-persistence.sh",
+        "scripts/verify-gumball-native-module.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete parts economy and distinct fitted combat",
+          "implementation": "Implement intended buy/sell/earn/steal and readiness, meaningful weapons, defense, actives and support; preserve actual route/ship APIs.",
+          "acceptance": "Two materially different legal builds demonstrate different behavior; failed and successful purchase, hired escort, defeat and salvage preserve finite resources and do not duplicate.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete revisitable authored regional graph",
+          "implementation": "Map real persistent nodes and return edges, vendors, unlocks, optional secrets and saved territory; distinguish actual graph from numeric sequential addresses.",
+          "acceptance": "Travel forward and back through each declared region; vendor/territory/progression persists on reopen; required route never depends on rare drop.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish Sally, Cringe, Pucker and Sauer campaigns",
+          "implementation": "Implement authored regional mechanics and distinct multi-phase bosses with actual fitted-ship responses; connect story events and consequences.",
+          "acceptance": "Reach and defeat each general via legitimate progress, demonstrate unique attack/objective phases, and persist unlocks; cover failure/retry.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Polish existing King rescue and credits",
+          "implementation": "Retain signal relay, tow, convoy and homecoming; finish approved art, audio and announcer, comfort options and postgame.",
+          "acceptance": "Cold-start-to-credits replay with all required story gates, recovery during finale, saved free flight; no optional requirement blocks ending.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g05",
+          "objective": "Verify finished hosted game",
+          "implementation": "Exercise shipbuilding, steering/fire and boss load on installed device.",
+          "acceptance": "Reference S9 proves comfortable input/readability, audio, sustained combat and all common gates.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/gumball-armada.md"
+    },
+    {
+      "id": "iron-sight-forward-detachment",
+      "name": "Iron Sight: Forward Detachment",
+      "kind": "game",
+      "baseline": "November 16: Ridge Bypass walking and backtracking, notes and persistent debrief; Main Road board-only, vehicles/outdoor sectors open.",
+      "docs": [
+        "docs/project/WAR_WITHOUT_END.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/recon_projects_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-recon-persistence.sh",
+        "scripts/audit/probes/recon_module_probe.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Build compact continuous patrol sector",
+          "implementation": "Implement physical holding/JON, approach, checkpoint/bridge, industrial pocket and bypass, with scout/APC and small dismount team. Reuse current Ridge Bypass movement.",
+          "acceptance": "Start at holding area, prepare, drive/walk both routes, observe, return to base; fuel/condition and vehicle/dismount state affect traversal and persist.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Implement evidence-driven encounters",
+          "implementation": "Add negative recon, civilian ambiguity, hazard indicators, scouts, damaged infrastructure and liaison; distinct avoid/report/engage choices.",
+          "acceptance": "Use only observable information to identify contacts; exercise peaceful, avoidance and engagement paths with distinct persistent consequences and no hidden-truth leakage.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish consecutive patrol cycle",
+          "implementation": "Implement legitimate finite resupply/repair, assignments, report quality and operation outcomes.",
+          "acceptance": "Complete three patrols from one save; previous damage/resources carry forward until replenished, debrief applies exactly once; notes/position recover on interruption.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Verify hosted bounded operation",
+          "implementation": "Test physical controls and legible cues, no debug-only progress; preserve intended patrol scope rather than tactical RTS.",
+          "acceptance": "Complete operation in installed APK and reference headset, including vehicle controls, pause/recover and sustained performance.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/iron-sight-forward-detachment.md"
+    },
+    {
+      "id": "guess-the-door",
+      "name": "Guess the Door",
+      "kind": "game",
+      "baseline": "November 16: full 12-room seeded route, pit, room-six restore, victory/restart host replay; headset timing, art and speech remain.",
+      "docs": [
+        "docs/project/GUESS_THE_DOOR.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/guess_the_door_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-guess-the-door.sh",
+        "scripts/audit/probes/guess_full_maze.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete clue and lever presentation",
+          "implementation": "Use real door features, readable timed clue, selectable physical levers, approved Mechanist-derived or owned art and speech with captions.",
+          "acceptance": "All generated clue combinations uniquely describe an available door; correct and wrong pulls produce intended outcome; clue visible and understandable through each eye, speech/caption equivalent.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Validate full maze and state recovery",
+          "implementation": "Preserve seed, progress, timing, pit, win and restart; ensure release edge after new seed.",
+          "acceptance": "Play a complete 12-room maze from cold launch, fail deliberately, replay same seed, reopen mid-maze and victory, and start fresh seed without automatically pulling first lever.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference headset UX",
+          "implementation": "Tune targeting, timing, feedback and comfort against physical device.",
+          "acceptance": "Installed headset play through victory and failure with usable clue timing, audio and recovery.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/guess-the-door.md"
+    },
+    {
+      "id": "classic-chess",
+      "name": "Chess",
+      "kind": "game",
+      "baseline": "Both sides and terminal outcomes replayed; promotion/castling physical path open.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Exercise standard legal move generation, check/mate/stalemate, castling through legal squares, promotion, en passant and supported draw/repetition rules; both board orientations, reference study and threat overlays.",
+          "acceptance": "Play legal and reject illegal moves including blocked queens; complete human win, CPU win and draw; physical promotion/castling in both orientations, captured pieces and saved position/history match.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-chess.md"
+    },
+    {
+      "id": "classic-go",
+      "name": "Go",
+      "kind": "game",
+      "baseline": "Area score with 7.5 komi, marking/unmarking and resume/review replayed.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Verify captures, liberties, suicide/ko per declared rules, pass/resume, dead-group marking, area scoring and komi; dense board targets.",
+          "acceptance": "Complete a contested match with capture, prohibited repetition, both passes, mark/unmark, resume and accepted score; reopen during review and verify exact marks/score.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-go.md"
+    },
+    {
+      "id": "classic-checkers",
+      "name": "Checkers",
+      "kind": "game",
+      "baseline": "42-ply CPU win with captures and restart; multi-jump, promotion and draw open.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Finish mandatory captures, multi-jump continuation, kings, terminal/draw rules according to chosen variant; orientation and controller input.",
+          "acceptance": "Interrupt during multi-jump and resume exact legal continuation; verify promotion, both wins and supported draw, then restart.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-checkers.md"
+    },
+    {
+      "id": "classic-pong",
+      "name": "Pong",
+      "kind": "game",
+      "baseline": "CPU 11–0 result saved; physical paddle and close rallies open.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Verify paddle mapping, bounded speed, edge/corner rebounds, serving, score, CPU behavior and difficulty; prevent input or time catch-up after pause.",
+          "acceptance": "Play sustained rallies and both wins at supported difficulty, pause mid-rally, recreate and restart after score limit; no tunneling or unreachable returns.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-pong.md"
+    },
+    {
+      "id": "classic-snake",
+      "name": "Snake",
+      "kind": "game",
+      "baseline": "Visible Up target and wall death replayed; long run/self collision open.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Verify all visible directional controls, reversal prevention, legal food placement, growth, wall/self collision and board-clear condition.",
+          "acceptance": "Play a long food collection route, exercise each target, self-collide and hit wall, reach board clear via legitimate state or controlled production fixture, reopen and restart.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-snake.md"
+    },
+    {
+      "id": "classic-reversi",
+      "name": "Reversi",
+      "kind": "game",
+      "baseline": "Four 60-move matches, forced pass and both winners replayed.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Verify all directional captures, legal markers, forced pass, double pass and terminal count; optical contrast.",
+          "acceptance": "Complete both wins and forced-pass sequence with correct flips and score; reopen saved pass/end state; no legal move hidden in headset.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-reversi.md"
+    },
+    {
+      "id": "classic-breakout",
+      "name": "Breakout",
+      "kind": "game",
+      "baseline": "Two 112-brick walls and 896-point victory replayed; physical paddle open.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Verify serve, rebound physics including narrowed paddle edges, brick collisions, lives, progression and terminal states.",
+          "acceptance": "Clear both walls, lose life, reopen between serves, finish victory and defeat; sustained paddle control and no tunneling.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-breakout.md"
+    },
+    {
+      "id": "classic-chutes-ladders",
+      "name": "Chutes & Ladders",
+      "kind": "game",
+      "baseline": "Two matches, both winners, exact overshoot and roll history persisted.",
+      "docs": [
+        "docs/project/CLASSIC_NATIVE_GAMES.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/classic_games_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-classic-saves.sh",
+        "scripts/verify-classic-input-prefix.sh",
+        "scripts/audit/probes/classic_match_endings.cpp"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete title-specific rules and actual playable controls",
+          "implementation": "Verify legal rolls, ladder/chute endpoints, shared tiles, exact-finish rule and independent retained histories; accessible board labels.",
+          "acceptance": "Complete both wins, overshoot, shared tile and chute/ladder cases; reopen midmatch with next RNG/roll history intact.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Verify title-specific lifecycle and accessibility",
+          "implementation": "Exercise actual module input and save callbacks: New, Continue, Restart, pause, Home and process recreation; confirm labels match hit targets and both eyes. Retain board/run state, score and RNG where applicable.",
+          "acceptance": "Start from fresh install, progress, interrupt/resume exactly, finish, reopen terminal state and explicitly restart. Denied actions have truthful feedback; no double activation.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish reference-device acceptance",
+          "implementation": "Exercise full match/run on installed S9 with controller, recovery and scaled legible text; preserve approved art and audio.",
+          "acceptance": "A human can complete and restart this actual title through intended controls. Record headset, input, audio and performance witness.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/classic-chutes-ladders.md"
+    },
+    {
+      "id": "procedural-test-chamber",
+      "name": "Test Chamber / VR Workshop",
+      "kind": "game",
+      "baseline": "November 16: blank project, primitive placement, light/motion/spatial sound, saved slot replay in host. Physical authoring open.",
+      "docs": [
+        "docs/project/TEST_CHAMBER_SHOWCASE.md",
+        "docs/project/NATIVE_CREATIVE_SUITE_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/test_chamber_module.cpp"
+      ],
+      "checks": [
+        "scripts/verify-test-chamber-authoring.sh",
+        "scripts/modules/smoke-test-chamber-emulator.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Finish genuine portable authoring",
+          "implementation": "Build on actual Test Chamber scene format and editor; add selection, transform, snapping, hierarchy, properties, undo/redo, lighting, motion and spatial sound per workshop contract.",
+          "acceptance": "Create from blank, edit at least two objects, undo/redo, configure light/motion/sound, preview actual runtime and reopen same project with identical editable state.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete safe save and play handoff",
+          "implementation": "Implement dirty state, transactional save/import/export, corruption recovery, bounded asset references and explicit editor/play transitions.",
+          "acceptance": "Simulate failed write, preserve dirty work; reopen prior valid slot, save another without corrupting it, export/import supported scene and play actual authored behavior.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Verify headset authoring and sound",
+          "implementation": "Use installed unified APK, preserve shell recovery and controller actions.",
+          "acceptance": "Author, save, reopen and play using physical Daydream controller; record audible positional sound and two-eye optical readability.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/procedural-test-chamber.md"
+    },
+    {
+      "id": "stage-a-setup",
+      "name": "Stage A setup / pairing / recovery",
+      "kind": "application",
+      "baseline": "Existing Android shell; prior emulator recovery evidence, physical control and optical acceptance open.",
+      "docs": [
+        "docs/project/INSTRUCTIONS.md",
+        "docs/project/APK_BUILD_ORDER.md",
+        "docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/MainActivity.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/ControllerManager.java"
+      ],
+      "checks": [
+        "scripts/ci/run-recovery-simulation-emulator.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete offline clean installation and controller setup",
+          "implementation": "Exercise fresh install, known bonds, new pairing, reconnect, controller test and runtime readiness; preserve no-location-permission policy and optional controller.",
+          "acceptance": "In airplane/offline mode enter VR with and without controller; reconnect known controller and report genuine permissions/failures without blocking recovery.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete versioned onboarding and recovery",
+          "implementation": "Implement/reconcile wizard: seated recenter, bindings, viewer profile, IPD alignment, readable UI, HUD, comfort, audio and performance; reset/skipping.",
+          "acceptance": "Complete, skip, re-enter and reset wizard; deliberately break input/binding and recover using 5-second gaze/Stage A without touchscreen in headset.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Validate physical reference devices",
+          "implementation": "Use S9 and supported alternative controller/phone configurations as available.",
+          "acceptance": "Record actual pairing, recovery, entry and app restart; no discontinued servers or PC dependencies.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/stage-a-setup.md"
+    },
+    {
+      "id": "vr-home-shell",
+      "name": "Stage B Home, global menus, settings and comfort",
+      "kind": "application",
+      "baseline": "Home, gaze recovery and shell exist; full physical optics and controls unverified.",
+      "docs": [
+        "docs/project/HOME_ENVIRONMENT_ATMOSPHERE.md",
+        "docs/project/HOME_AVATAR_WARDROBE.md",
+        "docs/project/ACCESSIBILITY_AND_COMFORT.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/HomeEnvironmentRenderer.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/ControllerSnapshot.java"
+      ],
+      "checks": [
+        "scripts/verify-home-atmosphere-assembly.py",
+        "scripts/verify-home-exit-placement.py",
+        "scripts/perf/s9-session-sampler.py"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Finish Home rooms and avatar wardrobe",
+          "implementation": "Preserve birch living room/forest/beach atmospheric assets, avatar identity, outfits, pose and offline ambience; actual selectable objects.",
+          "acceptance": "All authored rooms launch; avatar/outfit selections persist and render correctly; environment audio stops/changes on transition; actual stereo captures.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish shell navigation and options",
+          "implementation": "Group settings into useful tabs (display, input, performance, audio, media, accessibility, developer). Wire every option to real behavior; persistent global HUD, Quick Menu, recenter and recovery across native apps.",
+          "acceptance": "Every setting changes observed behavior or explains availability; gaze-only recovery, hold/release, rebind, controller disconnect and Home/resume work from every active experience.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Qualify optical fit and sustained performance",
+          "implementation": "Verify stereo eye transforms, IPD vs physical lens geometry, safe scale, text legibility, frame pacing, battery and thermal behavior.",
+          "acceptance": "Actual S9 short and sustained sessions prove comfortable optical fit and usable shell; record p50/p95/p99, stalls and thermal/memory with same workloads.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/vr-home-shell.md"
+    },
+    {
+      "id": "native-host-library",
+      "name": "Native module host and bundled game library",
+      "kind": "application",
+      "baseline": "One APK, Java registry and C ABI; 17 registered games. Current signed-build and functional run success.",
+      "docs": [
+        "docs/project/INSTRUCTIONS.md",
+        "docs/project/INDEPENDENT_NATIVE_GAME_MODULES.md",
+        "docs/project/NATIVE_GAME_PROJECT_POINTERS.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/GameModulesActivity.java"
+      ],
+      "checks": [
+        "scripts/modules/verify-game-identity-matrix.py",
+        "scripts/verify-native-abi-contract.py",
+        "scripts/ci/verify-unified-game-apk.py"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Validate dynamic registry and actual module launch",
+          "implementation": "Preserve one APK, ABI, namespace and shared asset rules; inventory grows without arbitrary fixed maximum.",
+          "acceptance": "Every current registry ID maps to real packaged ARM libraries/assets and actually launches; duplicates/missing required entries fail, extra legitimate games are admitted.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish shared focus, input, save and runtime services",
+          "implementation": "Exercise Quick Menu pause, neutral/rearm input, audio leases, context loss, scoped storage, failed-save protection and Home/resume in each module.",
+          "acceptance": "Hold/release while menu open, disconnect, change app, resume and recreate; no stale input, lost acknowledged state or cross-module asset/save leakage.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Validate packaged library and update continuity",
+          "implementation": "Use real installed unified APK on Android 10 and actual S9; no companion install required.",
+          "acceptance": "Launch each game, progress, return/reopen, update same signer and preserve saves; collect actual two-eye frames and APK verification.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/native-host-library.md"
+    },
+    {
+      "id": "dos-runtime",
+      "name": "DOS and bundled DOS games",
+      "kind": "application",
+      "baseline": "Bundled Doom and DOS runtime source; November 6 simulated head yaw/guest input verified, device still open.",
+      "docs": [
+        "docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md",
+        "docs/project/DOS_FREEWARE_SHAREWARE_CANDIDATES.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/DosNativeRuntime.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/DosSession.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/DosGameModule.java"
+      ],
+      "checks": [
+        "scripts/verify-build-bootstrap.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete local DOS game launch and import",
+          "implementation": "Use existing bundled licensed shareware and local import/catalog. Validate launch, guest storage, configuration, video/audio and title-specific binding profiles.",
+          "acceptance": "On offline installed APK, launch every admitted bundled DOS title; import a valid local game and reject malformed media safely. No desktop dependency.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish comfortable guest controls",
+          "implementation": "Preserve head-yaw relative guest mouse for Doom, touchpad, weapon/use mapping, mouse lock/unlock, keyboard and accurate visible binding legend.",
+          "acceptance": "Play a real level, exercise aim, movement, use, fire and weapon cycling; menu pauses and releases guest input, then resumes without latched actions.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish DOS save and device acceptance",
+          "implementation": "Exercise in-game saves, guest config, resume/restart, view placement and audio.",
+          "acceptance": "Cold launch and load saved game, interrupt/reopen, finish representative level on reference headset with sustained frame pacing.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/dos-runtime.md"
+    },
+    {
+      "id": "media-player",
+      "name": "Local VR media and music",
+      "kind": "application",
+      "baseline": "Local video player and native music library exist; full comfort/media acceptance remains.",
+      "docs": [
+        "docs/project/INSTRUCTIONS.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md",
+        "docs/project/APK_BUILD_ORDER.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/LocalVideoPlayer.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete local media library and import",
+          "implementation": "Use SAF and local permission-safe import; supported formats and invalid/missing media feedback.",
+          "acceptance": "Open supported local media without network; cancel/revoke permission, switch files and handle unsupported/corrupt formats safely.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish stereo media modes and controls",
+          "implementation": "Implement/verify declared flat/180/360 and mono/stereo layouts, playback, seek, audio, subtitles where supported, screen size and placement.",
+          "acceptance": "Play real fixtures with correct eye ordering, aspect ratio and audio; seek, pause, resume, change projection and return Home with controls intact.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Validate local music and lifecycle",
+          "implementation": "Use approved local tracks, volume and lifecycle; no leaks or unwanted background playback.",
+          "acceptance": "Playback state survives intended transitions, music stops on exit and actual headset comfort/audio/thermal evidence passes.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/media-player.md"
+    },
+    {
+      "id": "model-viewer",
+      "name": "Immersive OBJ 3D Model Viewer",
+      "kind": "application",
+      "baseline": "Source-integrated shell renderer, basic geometry import and orbit; no claim of finished material support.",
+      "docs": [
+        "docs/project/INTERNAL_3D_VIEWER.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/ObjMeshViewerRenderer.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/MainActivity.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete robust bounded local import",
+          "implementation": "Use existing OBJ parser and private atomic import, validate indices and size, preserve last valid model on bad import. Implement supported material/texture subset only per plan.",
+          "acceptance": "Import positive/negative indices and valid polygons; reject malformed/nonfinite/oversized models without replacing previous; render actual geometry, not billboard.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish viewer navigation and appearance",
+          "implementation": "Add documented material/texture support where in scope, orbit/pan/zoom/recenter, controls and missing asset feedback.",
+          "acceptance": "Inspect model from multiple angles with correct geometry, visible materials, both eyes and predictable reset; safe offline exit.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Verify real headset use",
+          "implementation": "Test model limits and frame timing, context loss and re-entry on APK/S9.",
+          "acceptance": "Open, inspect, leave/reopen, replace model and recover; capture actual geometry in both eyes.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/model-viewer.md"
+    },
+    {
+      "id": "photo-studio",
+      "name": "Reverie Photo Studio",
+      "kind": "application",
+      "baseline": "Creative suite design scope; do not claim implementation until runtime is found.",
+      "docs": [
+        "docs/project/NATIVE_CREATIVE_SUITE_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Establish shared creative workspace",
+          "implementation": "Reuse shell, asset library, transform/UI, undo/save kernel and host actions. Inspect design before adding app entry.",
+          "acceptance": "A real hosted workspace opens blank project, imports image, manipulates view and saves/reopens editable project.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete photo editing operations",
+          "implementation": "Implement documented nondestructive crop, transform, color/adjustments, layers/masks and export with supported formats; preserve source.",
+          "acceptance": "Import actual image, edit distinct layers/adjustments, undo/redo, export valid output, reopen editable state; decoded output matches operations.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish usable offline authoring",
+          "implementation": "Exercise recovery, permissions, invalid input, large image memory and headset controls.",
+          "acceptance": "A user can finish image edit/export on installed app; sustained memory and actual captures prove usability.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/photo-studio.md"
+    },
+    {
+      "id": "video-studio",
+      "name": "Reverie Video Studio",
+      "kind": "application",
+      "baseline": "Creative suite design scope; actual native video editor unverified.",
+      "docs": [
+        "docs/project/NATIVE_CREATIVE_SUITE_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/LocalVideoPlayer.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Establish project and media timeline",
+          "implementation": "Reuse shared editor kernel; local clip import, metadata, timeline selection and bounded preview.",
+          "acceptance": "Create/edit/save/reopen real timeline from two supported media files with stable project-relative references.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete intended edit/export loop",
+          "implementation": "Implement trim/split/reorder, timing, audio/level and transitions or overlays per design, bounded offline export.",
+          "acceptance": "Export a short edited sequence; decode output and compare ordering, duration and audio; undo/redo and relaunch preserve edits.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Qualify performance and controls",
+          "implementation": "Avoid unbounded decode buffers; handle cancellation, failure and storage limits.",
+          "acceptance": "On supported device, edit and export representative project; no data loss on interruption, usable controller and Stage A alternatives.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/video-studio.md"
+    },
+    {
+      "id": "model-workshop",
+      "name": "Reverie Model Workshop",
+      "kind": "application",
+      "baseline": "Creative suite planned; immersive OBJ viewer is not a model editor.",
+      "docs": [
+        "docs/project/NATIVE_CREATIVE_SUITE_PLAN.md",
+        "docs/project/INTERNAL_3D_VIEWER.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/ObjMeshViewerRenderer.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Establish real mesh workspace",
+          "implementation": "Reuse editor selection/gizmo/history and viewer geometry; import/create actual editable primitive/mesh.",
+          "acceptance": "Create and select mesh, move/rotate/scale and save/reopen; exported geometry matches edit.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete declared modeling workflow",
+          "implementation": "Implement intended mesh/primitive operations, material assignment, hierarchy, snapping, undo/redo and supported import/export.",
+          "acceptance": "Author a usable multi-object model, edit its geometry and materials, export valid supported file, reimport without silent loss.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Validate headset and desktop authoring handoff",
+          "implementation": "Exercise bounded geometry and actual preview/runtime.",
+          "acceptance": "Real user can author and export from supported environment; validate frame timing, interrupted saves and project compatibility.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/model-workshop.md"
+    },
+    {
+      "id": "game-workshop",
+      "name": "Reverie Game Workshop",
+      "kind": "application",
+      "baseline": "Test Chamber author/save/play foundation and desktop editor exist; complete app scope open.",
+      "docs": [
+        "docs/project/NATIVE_CREATIVE_SUITE_PLAN.md",
+        "docs/project/TEST_CHAMBER_SHOWCASE.md",
+        "docs/project/INTERNAL_GAME_EDITOR_BECKENBURG.md"
+      ],
+      "source": [
+        "app/src/main/jni/native/test_chamber_module.cpp",
+        "tools/desktop/ReverieSceneProject.java"
+      ],
+      "checks": [
+        "scripts/verify-test-chamber-authoring.sh",
+        "scripts/verify-desktop-scene-bridge.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Unify shared scene authoring contract",
+          "implementation": "Use existing REVSCENE and actual native scene bridge; do not duplicate save format or Beckenburg engine.",
+          "acceptance": "Author and reopen a scene with geometry, hierarchy, light, sound and motion; import/export supported scene data.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete playable scene creation",
+          "implementation": "Implement documented triggers, interactions, objectives, spawn and gameplay preview using actual host APIs.",
+          "acceptance": "Author a small playable scene, configure objective and trigger, enter Play, finish objective, return to editor, save and reopen.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Complete safe project distribution",
+          "implementation": "Validate assets, versioning, authoring-to-runtime parity and scoped packaging; no arbitrary executable content or extra required APK.",
+          "acceptance": "Export/import allowed project with identical supported behavior and assets; invalid project rejected, edit/play and recovery work on reference device.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/game-workshop.md"
+    },
+    {
+      "id": "desktop-workbench",
+      "name": "Desktop games workbench / internal editor",
+      "kind": "application",
+      "baseline": "Java 17 workbench with portable pinned Beckenburg editor and REVSCENE. Not complete native desktop hub.",
+      "docs": [
+        "docs/project/INTERNAL_GAME_EDITOR_BECKENBURG.md",
+        "docs/project/DESKTOP_PLATFORM_EXPANSION.md",
+        "docs/project/SITKA_EDITOR_PIPELINE.md"
+      ],
+      "source": [
+        "tools/desktop/ReverieSceneProject.java",
+        "tools/desktop/SceneDocument.java"
+      ],
+      "checks": [
+        "scripts/verify-desktop-scene-bridge.sh",
+        "tools/desktop/player/test.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete editor capabilities against actual project state",
+          "implementation": "Retain pinned upstream editor, real document, palette, hierarchy and transactional history; add only scoped missing operations.",
+          "acceptance": "Select each current project, create/import, manipulate, undo/redo, save/reopen separate scene/region with actual properties and correct IDs.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete authoring/runtime bridge",
+          "implementation": "Integrate scene, lighting, water/weather, terrain, assets and collision where supported by native host; report unsupported fields explicitly.",
+          "acceptance": "Change actual scene, export through existing bridge, launch runtime and demonstrate corresponding geometry/behavior without parallel demo data.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Verify desktop build/packaging",
+          "implementation": "Exercise editor on supported Windows/Linux/macOS, source pin, licenses and local storage.",
+          "acceptance": "Actual install/launch, edit/save/reopen and runtime handoff on each claimed OS; no Android or cloud prerequisite.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/desktop-workbench.md"
+    },
+    {
+      "id": "desktop-hub",
+      "name": "Complete native desktop hub / OpenXR",
+      "kind": "application",
+      "baseline": "Desktop authoring and initial player slices exist; full hub and OpenXR unverified.",
+      "docs": [
+        "docs/project/DESKTOP_PLATFORM_EXPANSION.md"
+      ],
+      "source": [
+        "tools/desktop/ReverieSceneProject.java"
+      ],
+      "checks": [
+        "tools/desktop/player/test.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Build offline complete desktop shell",
+          "implementation": "Implement shared home, settings, input, storage, recovery and launch APIs in native desktop mode; no Android emulation.",
+          "acceptance": "Cold launch on Windows/Linux/macOS without headset/phone/Steam/network; navigate settings, home and library with keyboard/mouse/gamepad.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Integrate all hosted capabilities",
+          "implementation": "Port actual gameplay cores, classic/native modules, DOS/media/apps, scene/audio and update adapters rather than substitute demos.",
+          "acceptance": "For each registry/app track, launch and complete representative intended action, save/reopen and return Home; maintain parity manifest per OS.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Complete platform releases and optional OpenXR",
+          "implementation": "Package and validate same app per required OS; optional OpenXR/SteamVR on supported Windows/Linux, no dependency in desktop mode.",
+          "acceptance": "Real OS installs, updates/recovery and offline use; optional XR runtime tested separately with correct stereo and input.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/desktop-hub.md"
+    },
+    {
+      "id": "emulator-catalog",
+      "name": "Optional emulation and OpenRA",
+      "kind": "application",
+      "baseline": "Curated catalog/source retrieval exists in plan; executable cores and OpenRA runtime not established.",
+      "docs": [
+        "docs/project/EMULATOR_MODULES_PLAN.md",
+        "docs/project/OPENRA_ANDROID_INTEGRATION.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/EmulatorModuleCatalog.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/EmulatorSourceRepository.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Complete verified source/catalog consent",
+          "implementation": "Use curated allowlist, real license/source provenance and informed opt-in; offline metadata, honest unavailable state.",
+          "acceptance": "Open catalog offline, verify approved source when online, reject bad identity/license, cancel without download.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Implement admitted phone-local core runtime",
+          "implementation": "Use existing single-APK host/adapter, valid local media, input/audio/video, saves and bounded resources; no pirated firmware/media.",
+          "acceptance": "A legally admitted core runs a real compatible local test program offline, with controls and save state; no PC or separate APK requirement.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Complete OpenRA approved integration path",
+          "implementation": "Follow project-specific integration and licensing constraints; do not count repository download as playable.",
+          "acceptance": "Launch a legitimate supported game scenario, command units, save/reopen and finish a match; device performance and recovery proven.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g04",
+          "objective": "Qualify each advertised core independently",
+          "implementation": "Document supported formats, ABI, license, availability, update/rollback and actual device benchmarks.",
+          "acceptance": "Every enabled entry runs its advertised workload; unsupported entries honestly unavailable, no inert controls.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/emulator-catalog.md"
+    },
+    {
+      "id": "controller-companion",
+      "name": "Optional phone controller and Steam controller",
+      "kind": "application",
+      "baseline": "Controller app/provider, Steam input and identity source exist; physical devices remain distinct.",
+      "docs": [
+        "docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md",
+        "docs/project/STEAM_CONTROLLER_INPUT.md",
+        "docs/project/STEAM_CONTROLLER_DIGITAL_TWIN.md",
+        "docs/project/PHONE_SCREEN_PANEL.md"
+      ],
+      "source": [
+        "controller-app/src/main/java/io/github/mrcalzon02/reverievr/controller/ControllerActivity.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/PhoneControllerEmulatorProvider.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/SteamControllerIdentity.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Finish optional controller pairing and normalized events",
+          "implementation": "Verify actual phone controller protocol and Steam HID inputs, disconnect, reconnect, calibration and accurate device labels.",
+          "acceptance": "Real two-device session or actual Steam device sends select/back/pad/axes; disconnect releases and safe fallback works. No mandatory companion.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete controller representation and battery status",
+          "implementation": "Use verified meshes/provenance, pose/calibration and honest unavailable battery readings.",
+          "acceptance": "Actual controller visualization follows intended inputs, no fabricated pose or battery; remap and reset function.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Validate privacy and reference use",
+          "implementation": "No location prerequisite or accidental network dependency for baseline; optional connections explicit and recoverable.",
+          "acceptance": "Physical input and recovery tested on reference S9; companion loss does not break main app.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/controller-companion.md"
+    },
+    {
+      "id": "laptop-link",
+      "name": "Laptop Link, local SMB and optional screen panel",
+      "kind": "application",
+      "baseline": "Portable exported optional utility, SMB and screen link source; phone independence required.",
+      "docs": [
+        "docs/project/LAPTOP_LINK_BOOTSTRAP.md",
+        "docs/project/LAPTOP_SMB_IMPORT.md",
+        "docs/project/PHONE_SCREEN_PANEL.md",
+        "docs/project/STEAMVR-LINK-IMPLEMENTATION.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/LaptopLinkBundle.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/LaptopSmbClient.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/SteamVrLinkProbe.java"
+      ],
+      "checks": [],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Finish approved local file/peripheral connection",
+          "implementation": "Use explicit export/run, read-only approved SMB paths, safe authentication, no silent install.",
+          "acceptance": "Export portable utility, connect authorized local source, import file, cancel/revoke; disconnect leaves local APK working.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete optional screen/input/SteamVR link behavior",
+          "implementation": "Follow existing explicit device permission and optional interoperability contract; no mandatory remote execution.",
+          "acceptance": "Exercise documented screen panel/input or supported SteamVR link on real host, report missing capabilities accurately, disconnect cleanly.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Verify privacy and offline resilience",
+          "implementation": "Check bounded buffers, timeout, cleanup and no persistent unauthorized service.",
+          "acceptance": "Actual local session and interrupted network prove recovery; no private files or credentials in logs.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/laptop-link.md"
+    },
+    {
+      "id": "updater-diagnostics",
+      "name": "Updater, APK packaging and diagnostic intake",
+      "kind": "application",
+      "baseline": "Current signed phone-test run success; package and device upgrade require artifact and signer readback.",
+      "docs": [
+        "docs/project/PERSISTENT_UPDATE_BOOTSTRAP.md",
+        "docs/project/APK_BUILD_ORDER.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md",
+        "docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/UpdateChecker.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/UpdateInstaller.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/UpdatePackageVerifier.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/DiagnosticBundleExporter.java"
+      ],
+      "checks": [
+        "scripts/ci/verify-unified-game-apk.py",
+        "scripts/verify-build-bootstrap.sh"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Qualify exact unified APK and same-signer updates",
+          "implementation": "Use canonical main source and published signed APK. Include non-draft prereleases in latest selection, require valid version/signer/checksum and explicit install.",
+          "acceptance": "Install previous verified APK, check update, choose/update latest eligible release, verify signer/version/save continuity and offline launch; reject mismatch and recover failed transfer.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Complete diagnostic UX and privacy",
+          "implementation": "Use real log export and existing issue intake; user consent, bounded redactable metadata, failure feedback.",
+          "acceptance": "Generate local diagnostic incident, review/redact, export or explicitly submit through existing intake, verify destination issue and no credentials/private data.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Finish package and release provenance",
+          "implementation": "Preserve real ABI/assets, legal manifests, checksums and no extra required game APK; existing release-blocking policy unchanged.",
+          "acceptance": "Actual release contains exact source, correct signer/version, both required ABIs, complete native assets and valid checksums; read back public artifact.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/updater-diagnostics.md"
+    },
+    {
+      "id": "shared-asset-audio-performance",
+      "name": "Shared native SDK, assets, audio and performance",
+      "kind": "application",
+      "baseline": "Existing native ABI, shared resources and S9 parser; physical thermal evidence remains open.",
+      "docs": [
+        "docs/project/INSTRUCTIONS.md",
+        "docs/project/ACCESSIBILITY_AND_COMFORT.md",
+        "docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md"
+      ],
+      "source": [
+        "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java",
+        "app/src/main/java/io/github/mrcalzon02/reverievr/HomeAmbientAudio.java"
+      ],
+      "checks": [
+        "scripts/verify-shared-native-assets.py",
+        "scripts/verify-native-doc-sync.py",
+        "scripts/verify-native-vector-font.py",
+        "scripts/perf/s9-session-sampler.py"
+      ],
+      "gates": [
+        {
+          "id": "g01",
+          "objective": "Preserve real shared SDK contracts",
+          "implementation": "Read native API/contract index; audit module isolation, text, GL thread ownership, audio and runtime services; update mapped docs with code.",
+          "acceptance": "All registered modules use actual shared ABI and approved assets; missing asset/rejection is visible, no arbitrary cross-namespace access.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g02",
+          "objective": "Finish reusable assets and feedback",
+          "implementation": "Integrate provenance-approved textures/models/sounds, normalized controls, success/rejection cues and actual audio focus.",
+          "acceptance": "All enabled controls have matching visual/audio feedback; required assets load and render in actual game, not generated proof; no audio leak.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        },
+        {
+          "id": "g03",
+          "objective": "Measure actual sustained performance",
+          "implementation": "Benchmark before/after using same source/device/scenario, frame pacing, memory, CPU/GPU, thermal and eye render scale; optimize without changing sim cadence or readability.",
+          "acceptance": "Physical S9 sustained workload per experience reports p50/p95/p99 and stalls, thermal/memory; compare baseline and retain playable quality. No cosmetic regression is a publication blocker.",
+          "evidence": "Production-path replay with initial/final state, actual inputs, assertions, logs and revision; capture both eyes for visual changes."
+        }
+      ],
+      "guide": "docs/project/scd/shared-asset-audio-performance.md"
+    }
+  ]
+}
