@@ -1,3 +1,11 @@
+## 2026-11-25 UTC — Breakwater g01 live aiming repair (partial)
+
+Source `cac1e268fed3e8cdadd2ae2b1aad6126b42c9b43` corrects the live `WorldCannonShot` → `battlefield::BarrelAim` → `WeaponWithinTraverse` boundary. The older local trajectory helper already rejected invalid IDs, but the live traverse helper accepted them via the default equipment specification. This is a boundary defect, not evidence of a player-selectable invalid weapon.
+
+Independent local GCC and Clang execution of the actual production header (preimage Git blob `2ec83c766e2dc13635a5159638731aec6bd49814`) using `-std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic` reproduced `valid=5 invalid5=1 invalid255=1` (exit 1) on both compilers. The corrected header (Git blob `a1e449dacc020548ff3ee3518483420ee10b502b`, independently read back from remote) produced `valid=5 invalid5=0 invalid255=0` (exit 0) on both. The existing GLES2 diagnostic now calls the actual world-shot function at all three stations, requiring all five valid IDs to produce a ray and both invalid IDs to reject without overwriting it. No normal render, campaign or save data was changed.
+
+Existing [functional diagnostics run 45558805198](https://github.com/mrcalzon02/ReverieVR/actions/runs/45558805198) (Breakwater job 139017239658), [independent Android validation 45558805213](https://github.com/mrcalzon02/ReverieVR/actions/runs/45558805213), and [signed phone-test gate 45558805253](https://github.com/mrcalzon02/ReverieVR/actions/runs/45558805253) were in progress at review. Neither world-shot regression nor new APK is accepted until actual results are reconciled. Earlier unrelated Lantern and Sitka evidence below is retained; their source dependencies were not modified. Breakwater g01 remains open for full weapon/station combat, reload and held-input evidence. No LCI staged edit or private owner-state execution is claimed.
+
 ## 2026-11-25 UTC — SCD current-source functional evidence
 
 **Source:** `d315e5e277a3cb875449dca8cb26933cca84b40a`. This is independent runtime evidence for the existing implementation, not a new LCI proposal or a completed intended-function gate.
