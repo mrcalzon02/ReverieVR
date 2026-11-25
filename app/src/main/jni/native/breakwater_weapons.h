@@ -37,7 +37,8 @@ inline float WeaponTraverseLimit(WeaponKind kind) {
     return WeaponFor(kind).elevation_ratio;
 }
 inline bool WeaponWithinTraverse(const float *d, WeaponKind kind) {
-    if(!d || !std::isfinite(d[0]) || !std::isfinite(d[1]) ||
+    if(!WeaponValid(static_cast<uint8_t>(kind)) ||
+       !d || !std::isfinite(d[0]) || !std::isfinite(d[1]) ||
        !std::isfinite(d[2]) || d[2]>=-.18f) return false;
     const float horizontal=-d[2];
     // Headset sight has a larger downward arc than the low-mounted barrel:

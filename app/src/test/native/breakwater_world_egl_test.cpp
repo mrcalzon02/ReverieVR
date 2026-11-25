@@ -89,6 +89,22 @@ int main(int argc,char **argv) {
     for(int station=0;station<3;++station) {
         state->defense_points.current=station;Update(state,&live);
         Check(state->aim_ray_valid,"station aim preview");
+        // Exercise the live world-shot path, not the legacy local trajectory helper.
+        const float forward[]={0.f,0.f,-1.f};
+        for(uint8_t id=0;id<kWeaponCount;++id) {
+            trajectory::ShotRay shot{};bool valid=false;
+            WorldCannonShot(state,static_cast<WeaponKind>(id),forward,&shot,&valid);
+            Check(valid,"registered weapon must produce a world shot ray");
+        }
+        for(int id:{static_cast<int>(kWeaponCount),255}) {
+            trajectory::ShotRay shot{};shot.origin[0]=123.f;shot.direction[2]=45.f;
+            bool valid=true;
+            WorldCannonShot(state,static_cast<WeaponKind>(id),forward,&shot,&valid);
+            Check(!valid && shot.origin[0]==123.f && shot.direction[2]==45.f,
+                  "invalid weapon must not produce or overwrite a world shot ray");
+        }
+        std::cout<<"PASS_BREAKWATER_LIVE_WEAPON_ID_BOUNDARY station="<<station
+                 <<" valid="<<static_cast<int>(kWeaponCount)<<" rejected=2\n";
         state->scene_dirty=true;PrepareFrame(state);
         for(int side=0;side<2;++side) {
             eye.eye_index=side;eye.view[12]=side==0?.032f:-.032f;
