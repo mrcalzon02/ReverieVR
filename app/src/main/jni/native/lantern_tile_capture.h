@@ -12,7 +12,10 @@
 #include <cstdint>
 #include <vector>
 namespace reverie { namespace lantern { namespace tiles {
-constexpr int kPhotoDimension=512;
+constexpr int kPhotoDimension=1024;
+constexpr float kPhotoWorldSpan=256.f;
+constexpr float kPixelsPerWorldUnit=kPhotoDimension/kPhotoWorldSpan;
+constexpr float kWorldUnitsPerPixel=kPhotoWorldSpan/kPhotoDimension;
 constexpr float kPi=3.14159265358979323846f;
 struct Celestial {
     int day_of_year=180;            // 1..366, from war calendar
@@ -121,8 +124,8 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
         sun.ambient+sun.direct_solar+sun.moonlight);
     for(int py=0;py<kPhotoDimension;++py)for(int px=0;px<kPhotoDimension;++px){
         const size_t i=static_cast<size_t>(py)*kPhotoDimension+px;
-        const float x=(px+.5f)*256.f/kPhotoDimension;
-        const float y=(py+.5f)*256.f/kPhotoDimension;
+        const float x=(px+.5f)*kWorldUnitsPerPixel;
+        const float y=(py+.5f)*kWorldUnitsPerPixel;
         const float h=tile.GroundHeight(x,y);
         zbuf[i]=h;
         const float hx=tile.GroundHeight(std::min(x+2.f,255.f),y)-
@@ -194,16 +197,16 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
         const float length=std::min(55.f,objectHeight/
             std::max(.12f,std::tan(sun.sun_altitude)));
         const float ox=-sx*length,oy=-sy*length;
-        const int minX=std::max(0,int((x+ox-radiusX)*2.f));
-        const int maxX=std::min(511,int((x+ox+radiusX)*2.f));
-        const int minY=std::max(0,int((y+oy-radiusY)*2.f));
-        const int maxY=std::min(511,int((y+oy+radiusY)*2.f));
+        const int minX=std::max(0,int((x+ox-radiusX)*kPixelsPerWorldUnit));
+        const int maxX=std::min(kPhotoDimension-1,int((x+ox+radiusX)*kPixelsPerWorldUnit));
+        const int minY=std::max(0,int((y+oy-radiusY)*kPixelsPerWorldUnit));
+        const int maxY=std::min(kPhotoDimension-1,int((y+oy+radiusY)*kPixelsPerWorldUnit));
         for(int py=minY;py<=maxY;++py)for(int px=minX;px<=maxX;++px){
-            const float wx=px*.5f,wy=py*.5f;
+            const float wx=(px+.5f)*kWorldUnitsPerPixel,wy=(py+.5f)*kWorldUnitsPerPixel;
             const float dx=(wx-x-ox)/std::max(.5f,radiusX);
             const float dy=(wy-y-oy)/std::max(.5f,radiusY);
             if(dx*dx+dy*dy>=1.f)continue;
-            const size_t i=static_cast<size_t>(py)*512+px;
+            const size_t i=static_cast<size_t>(py)*kPhotoDimension+px;
             image.shadow_mask[i]=2u;
             image.photo.pixels[i]=Byte(image.photo.pixels[i]*.64f);
         }
@@ -213,11 +216,11 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
     for(const auto& house:tile.buildings){
         if(!house.exists)continue;
         shadow(house.x,house.y,house.width,house.depth,house.height);
-        for(int y=std::max(0,int((house.y-house.depth*.5f)*2));y<=
-                std::min(511,int((house.y+house.depth*.5f)*2));++y)
-          for(int x=std::max(0,int((house.x-house.width*.5f)*2));x<=
-                  std::min(511,int((house.x+house.width*.5f)*2));++x){
-            const float wx=(x+.5f)*.5f,wy=(y+.5f)*.5f;
+        for(int y=std::max(0,int((house.y-house.depth*.5f)*kPixelsPerWorldUnit));y<=
+                std::min(kPhotoDimension-1,int((house.y+house.depth*.5f)*kPixelsPerWorldUnit));++y)
+          for(int x=std::max(0,int((house.x-house.width*.5f)*kPixelsPerWorldUnit));x<=
+                  std::min(kPhotoDimension-1,int((house.x+house.width*.5f)*kPixelsPerWorldUnit));++x){
+            const float wx=(x+.5f)*kWorldUnitsPerPixel,wy=(y+.5f)*kWorldUnitsPerPixel;
             const float slope=(wx-house.x)/std::max(2.f,static_cast<float>(house.width));
             const float height=tile.GroundHeight(wx,wy)+house.height-
                                1.2f*std::abs(slope);
@@ -243,15 +246,46 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
             const float ry=(unit.type==UnitType::Tank?2.9f:
                 unit.type==UnitType::Truck?2.5f:unit.type==UnitType::CampTent?2.5f:1.5f);
             shadow(x,y,rx,ry,unit.type==UnitType::CampTent?2.6f:3.5f);
-            for(int py=std::max(0,int((y-ry)*2));py<=std::min(511,int((y+ry)*2));++py)
-            for(int px=std::max(0,int((x-rx)*2));px<=std::min(511,int((x+rx)*2));++px){
-                const float wx=(px+.5f)*.5f,wy=(py+.5f)*.5f;
+            for(int py=std::max(0,int((y-ry)*kPixelsPerWorldUnit));py<=std::min(kPhotoDimension-1,int((y+ry)*kPixelsPerWorldUnit));++py)
+            for(int px=std::max(0,int((x-rx)*kPixelsPerWorldUnit));px<=std::min(kPhotoDimension-1,int((x+rx)*kPixelsPerWorldUnit));++px){
+                const float wx=(px+.5f)*kWorldUnitsPerPixel,wy=(py+.5f)*kWorldUnitsPerPixel;
                 const float dx=(wx-x)/rx,dy=(wy-y)/ry;
-                if(dx*dx+dy*dy>1.f)continue;
-                const float height=tile.GroundHeight(wx,wy)+
-                    (unit.type==UnitType::Tank?2.8f:unit.type==UnitType::CampTent?2.4f:2.f);
-                const float material=(unit.type==UnitType::CampTent?139.f:
-                                      unit.type==UnitType::Tank?68.f:93.f);
+                const float ax=std::abs(dx),ay=std::abs(dy);
+                float material=93.f,heightAboveGround=2.f;
+                // Readable near-nadir forms from real world objects, not
+                // colored truth symbols. Every feature shares world scale.
+                if(unit.type==UnitType::Tank){
+                    const bool tracks=ax<.88f&&ay>.55f&&ay<.95f;
+                    const bool hull=ax<.72f&&ay<.62f;
+                    const bool turret=(dx+.12f)*(dx+.12f)*2.8f+dy*dy*4.f<1.f;
+                    const bool barrel=dx>.15f&&dx<.98f&&ay<.12f;
+                    if(!(tracks||hull||turret||barrel))continue;
+                    material=tracks?47.f:hull?82.f:65.f;
+                    if(tracks&&std::fmod((dx+1.f)*13.f,1.f)<.22f)material+=18.f;
+                    if(turret){material=117.f;heightAboveGround=2.8f;}
+                    if(barrel){material=76.f;heightAboveGround=2.6f;}
+                }else if(unit.type==UnitType::Truck){
+                    const bool cab=dx>.36f&&dx<.92f&&ay<.71f;
+                    const bool bed=dx<.30f&&dx>-.90f&&ay<.80f;
+                    const bool wheels=ay>.66f&&ay<.96f&&
+                        (std::abs(dx+.58f)<.21f||std::abs(dx-.61f)<.18f);
+                    if(!(cab||bed||wheels))continue;
+                    material=wheels?42.f:bed?103.f:143.f;
+                    if(bed&&ay>.66f)material=76.f;
+                    if(cab&&dx>.70f)material=83.f;
+                }else if(unit.type==UnitType::CampTent){
+                    if(ax>.95f||ay>.90f||ax+ay>1.71f)continue;
+                    heightAboveGround=2.4f*(1.f-.62f*ay);
+                    material=dy*sx+dy*sy>0.f?154.f:116.f;
+                    if(ay<.085f)material=185.f;
+                }else if(unit.type==UnitType::Supply){
+                    if(ax>.87f||ay>.86f)continue;
+                    material=(ax>.68f||ay>.67f)?72.f:132.f;
+                }else{
+                    if(dx*dx+dy*dy>1.f)continue;
+                    material=93.f;
+                }
+                const float height=tile.GroundHeight(wx,wy)+heightAboveGround;
                 ShadePixel(image,zbuf,px,py,height,
                            material*(.42f+sky*.75f),0,0,1);
             }
@@ -264,11 +298,11 @@ inline bool MakePhoto(const Tile& tile,const std::vector<PlacedUnit>& units,
         if(!tree.kind)continue;
         shadow(tree.x,tree.y,tree.radius*1.1f,tree.radius*.8f,
                float(tree.height));
-        for(int py=std::max(0,int((tree.y-tree.radius)*2));py<=
-                std::min(511,int((tree.y+tree.radius)*2));++py)
-        for(int px=std::max(0,int((tree.x-tree.radius)*2));px<=
-                std::min(511,int((tree.x+tree.radius)*2));++px){
-            const float wx=(px+.5f)*.5f,wy=(py+.5f)*.5f;
+        for(int py=std::max(0,int((tree.y-tree.radius)*kPixelsPerWorldUnit));py<=
+                std::min(kPhotoDimension-1,int((tree.y+tree.radius)*kPixelsPerWorldUnit));++py)
+        for(int px=std::max(0,int((tree.x-tree.radius)*kPixelsPerWorldUnit));px<=
+                std::min(kPhotoDimension-1,int((tree.x+tree.radius)*kPixelsPerWorldUnit));++px){
+            const float wx=(px+.5f)*kWorldUnitsPerPixel,wy=(py+.5f)*kWorldUnitsPerPixel;
             const float nx=(wx-tree.x)/tree.radius,
                         ny=(wy-tree.y)/tree.radius;
             const float d=nx*nx+ny*ny;

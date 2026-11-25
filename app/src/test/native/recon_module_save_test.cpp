@@ -113,8 +113,9 @@ static void InspectLoupe(State *s,audit::GL &gl){
         "pad pans under a stationary ray and releasing Minus preserves report");
     constexpr float scale=1.45f;
     audit::Check(s->photoRenderer.current.Valid()&&
-                 s->photoRenderer.rgb[0].size()==512u*512u*3u,
-                 "photo-ready Lantern has an actual 512px photographed master");
+                 s->photoRenderer.current.width==1024&&s->photoRenderer.current.height==1024&&
+                 s->photoRenderer.rgb[0].size()==1024u*1024u*3u,
+                 "photo-ready Lantern has an actual 1024px photographed master");
     audit::Check(PrepareFrame(s)==1,"upload real registered photograph");
     const auto frame=audit::Capture(Render,s,"lantern-bridge-loupe",scale);
     // Sample all 64 right-eye magnifier cell centers. They must match
@@ -128,11 +129,12 @@ static void InspectLoupe(State *s,audit::GL &gl){
         const int py=static_cast<int>((1+wy*eye.projection[5]/-reverie::lantern::photo_gl::kImagePlaneZ)*audit::GL::height*.5f);
         uint8_t rgb[4]{};
         glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgb);
-        const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
+        const int width=s->photoRenderer.current.width,cell=width/16;
+        const int sx=(s->cropX+x)*cell+cell/2,sy=(s->cropY+y)*cell+cell/2;
         const auto& photo=s->photoRenderer.rgb[0];
-        const int expected=photo[(static_cast<size_t>(sy)*512+sx)*3u];
+        const int expected=photo[(static_cast<size_t>(sy)*width+sx)*3u];
         audit::Check(std::abs(int(rgb[0])-expected)<45,
-                     "2x stereo loupe samples the actual 512px source pixel");
+                     "2x stereo loupe samples the actual 1024px source pixel");
     }
     audit::Check(glGetError()==GL_NO_ERROR && Bytes(s)==checkpoint && audit::writes==writes,
         "inspection changes no checkpoint, report selection, or storage");
@@ -142,7 +144,7 @@ static void InspectLoupe(State *s,audit::GL &gl){
     auto neutral=LegacyInput();Update(s,&neutral);
     auto old=aim;old.struct_size=REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;Update(s,&old);
     audit::Check(s->cropX==4 && s->cropY==6,"old input prefix preserves inspection");
-    std::puts("PASS Lantern true-photo loupe: all 64 right-eye framebuffer cells sampled registered 512px master; no report or save on pan");
+    std::puts("PASS Lantern true-photo loupe: all 64 right-eye framebuffer cells sampled registered 1024px master; no report or save on pan");
 }
 static void CompareExposures(State *s,const sim::Photograph &first) {
     audit::Check(s->hasPrior && s->prior.pixels==first.pixels &&
@@ -176,9 +178,11 @@ static void CompareExposures(State *s,const sim::Photograph &first) {
                 const int py=static_cast<int>((1+wy*eye.projection[5]/-reverie::lantern::photo_gl::kImagePlaneZ)*audit::GL::height*.5f);
                 uint8_t rgba[4]{};
                 glReadPixels(px,py,1,1,GL_RGBA,GL_UNSIGNED_BYTE,rgba);
-                const int sx=(s->cropX+x)*32+16,sy=(s->cropY+y)*32+16;
+                const int width=plate==0?s->photoRenderer.previous.width:s->photoRenderer.current.width;
+                const int cell=width/16;
+                const int sx=(s->cropX+x)*cell+cell/2,sy=(s->cropY+y)*cell+cell/2;
                 const auto& image=s->photoRenderer.rgb[plate==0?1:0];
-                const int expected=image[(static_cast<size_t>(sy)*512+sx)*3u];
+                const int expected=image[(static_cast<size_t>(sy)*width+sx)*3u];
                 // GLES2 linear sampling at different optical scales can
                 // mix high-contrast river/bridge edges; demanding identical
                 // single texels in all 256 samples falsely rejects a
@@ -288,7 +292,7 @@ int main(int argc,char** argv){
     const auto permanentRiverRoad=s->activeTile.road;
     const auto permanentRiverBuildings=s->activeTile.buildings;
     audit::Check(s->photoRenderer.current.Valid(),
-                 "baked physical scene enters the real 512px native GPU negative");
+                 "baked physical scene enters the real 1024px native GPU negative");
     InspectLoupe(s,context);
     // Use the real native Minus-then-Select chord to pin the exact current
     // loupe pixel, write through the 128-byte host checkpoint and render

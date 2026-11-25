@@ -1,0 +1,7 @@
+# Lantern Desk — actual 1024-pixel registered photograph development
+
+This source increment advances SCD Lantern G01; it is not G01 acceptance. It replaces the production fixed 512-pixel LTIL capture with a genuinely sampled 1024×1024 near-nadir image of the same 256-unit tile. Buildings, vegetation, terrain shadows and units share world-to-pixel scaling; the existing weather seed and world extent remain fixed across resolution. Tank tracks/hull/turret, truck cab/bed/wheels, tent ridges and supply silhouettes use their physical footprint rather than one ellipse per object. They are still stylized source geometry, not a claim of photorealism. The legacy 512-pixel fallback remains valid and is logged as fallback; real native GL uploads accept both supported sizes and use normalized loupe/annotation coordinates. No new per-eye capture or upload.
+
+The existing dual-compiler recon verification exercises real LTIL capture and both modules through Mesa EGL/GLES; assertions now require the 1024 source and inspect corresponding real texture pixels without loosening thresholds. The capture test logs elapsed time as a diagnostic; physical phone performance and independent image recognition remain open. Existing save formats, war state, asset files, host ABI and publication policy are unchanged.
+
+Source implementation committed; CI and device evidence must be recorded from the actual resulting revision.

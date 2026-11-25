@@ -12,7 +12,9 @@
 #include <cstdint>
 #include <vector>
 namespace reverie { namespace lantern { namespace photo_gl {
-constexpr int kWidth=512,kHeight=512;
+inline bool AcceptedPlate(const capture::GrayPlate& p){
+    return p.Valid()&&p.width==p.height&&(p.width==512||p.width==1024);
+}
 constexpr float kImagePlaneZ=-2.901f; // distinct from old flat blocks at -2.92
 struct Renderer {
     capture::GrayPlate current,previous;
@@ -23,14 +25,13 @@ struct Renderer {
     bool active()const{return initialized&&textures[0]&&current.Valid();}
     void Set(capture::GrayPlate next,capture::GrayPlate before,bool paired,
              const std::array<uint16_t,16>& pins){
-        if(!next.Valid()||next.width!=kWidth||next.height!=kHeight){
+        if(!AcceptedPlate(next)){
             current={};previous={};has_previous=false;
             rgb[0].clear();rgb[1].clear();dirty=true;return;
         }
         current=std::move(next);
         previous=std::move(before);
-        has_previous=paired&&previous.Valid()&&
-            previous.width==kWidth&&previous.height==kHeight;
+        has_previous=paired&&AcceptedPlate(previous);
         Decorate(pins);
     }
     void Decorate(const std::array<uint16_t,16>& pins){
@@ -49,13 +50,14 @@ struct Renderer {
         // into a derivative RGB print, shared by source and loupe.
         for(int sy=0;sy<16;++sy)for(int sx=0;sx<16;++sx){
             if((pins[sy]&(1u<<sx))==0u)continue;
-            const int cx=sx*32+16,cy=sy*32+16;
-            const int extent=11,stroke=2;
+            const int cell=current.width/16;
+            const int cx=sx*cell+cell/2,cy=sy*cell+cell/2;
+            const int extent=11*cell/32,stroke=std::max(1,2*cell/32);
             for(int dy=-extent;dy<=extent;++dy)for(int dx=-extent;dx<=extent;++dx){
                 if(std::max(std::abs(dx),std::abs(dy))<extent-stroke)continue;
                 const int x=cx+dx,y=cy+dy;
-                if(x<0||y<0||x>=kWidth||y>=kHeight)continue;
-                const size_t i=(static_cast<size_t>(y)*kWidth+x)*3u;
+                if(x<0||y<0||x>=current.width||y>=current.height)continue;
+                const size_t i=(static_cast<size_t>(y)*current.width+x)*3u;
                 rgb[0][i]=248u;rgb[0][i+1u]=183u;rgb[0][i+2u]=43u;
             }
         }
@@ -127,8 +129,13 @@ struct Renderer {
     bool Upload(){
         if(!dirty||!initialized)return initialized;
         if(!current.Valid()){dirty=false;return true;}
-        if(rgb[0].size()!=static_cast<size_t>(kWidth)*kHeight*3u)
-            return false;
+        GLint maxTexture=0;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE,&maxTexture);
+        for(int i=0;i<(has_previous?2:1);++i){
+            const auto& plate=i==0?current:previous;
+            if(!AcceptedPlate(plate)||plate.width>maxTexture||
+               rgb[i].size()!=plate.pixels.size()*3u)return false;
+        }
         ReverieNativeGlStateV1 previousState{};
         ReverieNativeGlStateCaptureV1(&previousState);
         GLint alignment=4;
@@ -137,7 +144,8 @@ struct Renderer {
         glActiveTexture(GL_TEXTURE0);
         for(int i=0;i<(has_previous?2:1);++i){
             glBindTexture(GL_TEXTURE_2D,textures[i]);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,kWidth,kHeight,0,
+            const auto& plate=i==0?current:previous;
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,plate.width,plate.height,0,
                          GL_RGB,GL_UNSIGNED_BYTE,rgb[i].data());
         }
         glPixelStorei(GL_UNPACK_ALIGNMENT,alignment);

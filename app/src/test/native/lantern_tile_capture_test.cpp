@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -42,7 +43,13 @@ int main(){
     assert(Illuminate(fullMoon).moonlight>Illuminate(night).moonlight);
     assert(Illuminate(clouded).direct_solar<noon.direct_solar);
     CaptureLayers original,replay,shadow,starlight,moonlight,houselight;
+    const auto begin=std::chrono::steady_clock::now();
     assert(MakePhoto(tile,{},day,&original));
+    const auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now()-begin).count();
+    assert(original.photo.width==1024&&original.photo.height==1024);
+    std::cout<<"LANTERN_NATIVE_CAPTURE width="<<original.photo.width
+             <<" height="<<original.photo.height<<" capture_ms="<<ms<<"\n";
     assert(MakePhoto(tile,{},day,&replay));
     assert(original.Valid()&&replay.Valid()&&
            original.photo.pixels==replay.photo.pixels);

@@ -3,7 +3,7 @@
 **Project ID:** `ministry-lantern-desk` • game • **Initial gate status: unverified pending current-source reconciliation**
 
 ## Evidence baseline
-November 16: real module loupe 2× over 8×8 cells; evidence persists, loupe recenters. Existing 16×16 source is not acceptable final reconnaissance imagery.
+November 16: saved loupe/evidence. November 23 source already implements fixed 512px permanent-terrain photography, weather layers and persistent pins/comparison; the 16×16 film is a legacy fallback. November 25 source increases genuine terrain capture to 1024px, normalizes world-to-pixel and GPU coordinates and distinguishes vehicle/tent footprints. Runtime and blind-recognition acceptance are pending.
 
 ## Authority and entry points
 - `docs/project/WAR_WITHOUT_END.md`

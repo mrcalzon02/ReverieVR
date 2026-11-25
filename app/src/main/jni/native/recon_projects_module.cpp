@@ -585,7 +585,8 @@ void StagePhotographicEvidence(State* s){
         weather.exposure_seconds=second?185.f:65.f;
         weather.west_m=1200.f+static_cast<unsigned>(s->photo.sector)*440.f;
         weather.north_m=2100.f;
-        weather.meters_per_pixel=1.7f;
+        // Keep the same registered world extent at either capture resolution.
+        weather.meters_per_pixel=1.7f*512.f/reference.width;
         weather.ambient_haze=.10f+static_cast<float>((sceneSeed>>12u)%7u)*.028f;
         photo::capture::Camera camera{};
         camera.grime_seed=0x53b1e73du; // same physical lens between sorties
@@ -596,7 +597,7 @@ void StagePhotographicEvidence(State* s){
             return false;
         // The future purchased HAP resolution tier will replace this
         // baseline quality: developing never uncovers cloud-hidden truth.
-        return photo::capture::Develop(master,2u,output);
+        return photo::capture::Develop(master,3u,output);
     };
     reverie::lantern::capture::GrayPlate current,previous;
     if(!makePhoto(follow_up,&current)){
