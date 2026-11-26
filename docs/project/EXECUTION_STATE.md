@@ -1,20 +1,33 @@
-## November 26, 2026 · Demo beta preparation
+## November 26, 2026 · Demo beta published and updater verified
 
-Owner requested a current-main playable demonstration beta with updater delivery.
-Starting source is `532f128a291906c5a40a1d1bb3d48ce5fe7b6f44`; the latest published
-headset APK at preflight was `phone-test-2031-1` from November 17 UTC. Recent
-release-workflow successes were gate-only, with build-and-release skipped.
+**[Phone Test #2152](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2152-1)
+published at 12:11:50 p.m. Alaska time (21:11:50 UTC).** Release source and tag:
+`6afb9a9ae1115e5c84154fa539a44f167c28b51e`; Android versionCode `217890411`;
+permanent signer unchanged. Independent verification of the actual public APK
+confirmed signature, package identity, version and published SHA-256. The exact
+production updater from #2031 selects #2152 from the public feed and chooses the
+headset APK. The #2152 fixture reports up to date.
 
-The [demo release record](../records/2026-11-26-demo-beta.md) covers the bounded
-repairs, 146 intervening source/history commits, host evidence and remaining
-verification. All 17 native games are still registered in the unified APK.
-The explicit release request also runs existing installed Android hub, recovery
-and game functional checks. Publication and physical handset acceptance remain
-separate states until their own evidence exists.
+The unified APK contains all **17 native games in both ARM ABIs**. The installed
+Android hub passed **20/20 tests** and all-17 actual GLES2 framebuffer checks.
+The Android recovery run passed in-place test-APK upgrade, saved-state retention,
+5,000-frame gaze simulation and rollback. All ten integrated-game CI jobs passed,
+including 29/29 Omega checks. The installed hub also verified Breakwater's
+366-wave campaign replay with four reopens.
 
-Next: observe signed build, exact-source Android runtime results, permanent
-signer/newer versionCode, public APK assets and actual updater feed selection;
-record their exact identities here. Do not claim physical headset acceptance.
+The [complete demo release record](../records/2026-11-26-demo-beta.md) identifies
+the 146 intervening history commits, bounded repairs, exact runs, APK hashes,
+updater evidence and failed attempts that were resolved. The test-only follow-up
+`bfcd241104682799f23240d3342c1e045119a3de` corrects an obsolete UI assertion;
+the app production sources are identical to #2152. Its release gate correctly
+skips a duplicate APK. [Actual Android and host screenshots](../gallery/native-games/2026-11-26/demo-beta/README.md)
+are preserved with capture provenance and integrity hashes.
+
+This pass corrects the false Development-logging launch requirement and Android
+13+ download-completion delivery, while preserving all APK-verification gates.
+No engine or performance refactor was introduced. Physical S9/Daydream and A14
+controls, optics, audio and actual handset installation remain separate evidence
+boundaries; larger world/campaign completion milestones below are unchanged.
 
 ## November 16, 2026 · Campaigns, fieldwork and match endings
 

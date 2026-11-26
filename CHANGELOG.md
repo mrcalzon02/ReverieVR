@@ -1,6 +1,11 @@
 # Changelog
 
-## November 26, 2026 demo beta candidate
+## November 26, 2026 demo beta — Phone Test #2152
+
+Published [phone-test-2152-1](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2152-1),
+source `6afb9a9ae1115e5c84154fa539a44f167c28b51e`, versionCode `217890411`.
+The previous beta's updater selects this public prerelease. Permanent signing,
+all 17 bundled games, Android recovery and 20/20 installed-hub tests verified.
 
 - Bring current main's game input, campaign, fishing, stockroom and photographic
   reconnaissance improvements into a new unified signed phone beta. The
