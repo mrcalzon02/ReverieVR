@@ -1,3 +1,21 @@
+## November 26, 2026 · Demo beta preparation
+
+Owner requested a current-main playable demonstration beta with updater delivery.
+Starting source is `532f128a291906c5a40a1d1bb3d48ce5fe7b6f44`; the latest published
+headset APK at preflight was `phone-test-2031-1` from November 17 UTC. Recent
+release-workflow successes were gate-only, with build-and-release skipped.
+
+The [demo release record](../records/2026-11-26-demo-beta.md) covers the bounded
+repairs, 146 intervening source/history commits, host evidence and remaining
+verification. All 17 native games are still registered in the unified APK.
+The explicit release request also runs existing installed Android hub, recovery
+and game functional checks. Publication and physical handset acceptance remain
+separate states until their own evidence exists.
+
+Next: observe signed build, exact-source Android runtime results, permanent
+signer/newer versionCode, public APK assets and actual updater feed selection;
+record their exact identities here. Do not claim physical headset acceptance.
+
 ## November 16, 2026 · Campaigns, fieldwork and match endings
 
 Signed [Phone Test #2028](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-2028-1) ships source `2ad191b58e2060fa365aaf6bf40b3ad04efdadc0`. All 17 registered games produced installed Android 10 frames. See the [per-title gameplay evidence and remaining milestones](../gallery/native-games/2026-11-16/campaigns-and-endings/README.md).

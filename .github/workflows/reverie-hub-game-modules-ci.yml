@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.github/phone-test-trigger'
       - '.github/workflows/reverie-hub-game-modules-ci.yml'
       - 'app/src/androidTest/assets/breakwater-cadet.bwc'
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/HubGameModulesInstrumentedTest.java'

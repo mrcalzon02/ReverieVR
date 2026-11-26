@@ -41,8 +41,6 @@ public final class GameModulesActivity extends Activity {
         });
         content.addView(update);
 
-        boolean development = new ReveriePreferences(this)
-            .getLoggingMode() == LoggingMode.DEVELOPMENT;
         List<NativeModuleRuntime.Descriptor> games =
             NativeModuleRuntime.listBuiltIns(true);
         TextView summary = new TextView(this);
@@ -55,8 +53,8 @@ public final class GameModulesActivity extends Activity {
             GameModuleRegistry.Entry info = GameModuleRegistry.find(game.id);
             TextView item = new TextView(this);
             String label = game.displayName + " — Included";
-            if (info != null && info.developmentOnly && !development)
-                label += " (enable Development logging mode to launch)";
+            if (info != null && info.developmentOnly)
+                label += " (early access)";
             item.setText(label);
             item.setPadding(0, 14, 0, 14);
             content.addView(item);

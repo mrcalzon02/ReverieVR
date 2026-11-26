@@ -104,10 +104,15 @@ final class UpdateInstaller implements AutoCloseable {
 
         if (Build.VERSION.SDK_INT
             >= Build.VERSION_CODES.TIRAMISU) {
+            // Download completion comes from Android's Downloads provider,
+            // which runs under a different UID. NOT_EXPORTED can suppress
+            // that notification on Android 13+, leaving a finished update
+            // waiting forever. Only the active DownloadManager ID is used;
+            // the APK still passes digest/package/version/signer checks.
             activity.registerReceiver(
                 downloadReceiver,
                 filter,
-                Context.RECEIVER_NOT_EXPORTED
+                Context.RECEIVER_EXPORTED
             );
         } else {
             activity.registerReceiver(

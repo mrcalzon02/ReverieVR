@@ -1,5 +1,17 @@
 # Changelog
 
+## November 26, 2026 demo beta candidate
+
+- Bring current main's game input, campaign, fishing, stockroom and photographic
+  reconnaissance improvements into a new unified signed phone beta. The
+  [demo release record](docs/records/2026-11-26-demo-beta.md) identifies the prior
+  published source, included work and validation boundaries.
+- Correct the Bundled Game Library's obsolete Development-logging requirement.
+- Fix Android 13+ DownloadManager completion delivery while preserving APK
+  identity, digest, version and permanent-signer verification.
+- Exercise the existing installed-game, recovery and functional workflows on
+  explicit release requests. No performance refactor is included in this pass.
+
 - Breakwater audio overhaul: import 46 normalized sounds from the approved
   shared library and first-party derivatives; add contextual control feedback,
   actual impact/support reports, and seven scene-driven environmental layers.

@@ -83,6 +83,23 @@ After the first stable-signed build is installed:
 
 **Recovery from the earlier updater mismatch:** Existing installed builds still compare `versionCode` to `run * 1000 + attempt` and will reject newer timestamp-numbered APKs before installation. For this one transition, download the **headset** APK directly from an authoritative GitHub Release using Android's browser/files UI and install it over the existing app; do not uninstall or clear app data. Android enforces signer/version continuity. Once this corrected build is installed, subsequent in-app updates use the published release's explicit Android versionCode. If Android declines the install, inspect the actual package/signing/version rejection instead of uninstalling blindly.
 
+## Android 13+ download-completion delivery
+
+`UpdateInstaller` registers its DownloadManager completion receiver with
+`RECEIVER_EXPORTED` on Android 13 and newer. Downloads completes in the
+platform's separate provider process, so `RECEIVER_NOT_EXPORTED` can prevent
+the app from receiving completion even though the APK finished downloading.
+The receiver still accepts only the active download ID, resolves its URI
+through DownloadManager, and runs all APK identity/version/digest/signature
+checks before requesting Android installation. Earlier Android versions keep
+their existing registration path.
+
+This follows Android's [context-registered broadcast guidance](https://developer.android.com/develop/background-work/background-tasks/broadcasts)
+and the AOSP Android 13 [Downloads provider identity](https://android.googlesource.com/platform/packages/providers/DownloadProvider/+/refs/tags/android-13.0.0_r1/AndroidManifest.xml)
+and [broadcast delivery](https://android.googlesource.com/platform/packages/providers/DownloadProvider/+/refs/tags/android-13.0.0_r1/src/com/android/providers/downloads/RealSystemFacade.java).
+Actual Android 13+/Galaxy A14 download-to-installer delivery remains a device
+acceptance check; host selection tests do not establish that device result.
+
 ## CI invariants
 
 Published phone-test APKs now:

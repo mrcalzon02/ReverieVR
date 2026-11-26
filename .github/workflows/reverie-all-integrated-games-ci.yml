@@ -1,13 +1,14 @@
 name: ReverieVR all integrated games — functional diagnostics
 
 # Source-level game behavior checks. The independent hub Android CI executes
-# EVERY registered native library via Java/JNI/GLES2 and archives 15 frames.
+# EVERY registered native library via Java/JNI/GLES2 and archives its frame.
 # No cosmetic screenshot-diff/visual-style test blocks functional acceptance.
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - '.github/phone-test-trigger'
       - '.github/workflows/reverie-all-integrated-games-ci.yml'
       - 'modules/game-identity-matrix.json'
       - 'scripts/ci/verify-integrated-game-functional-coverage.py'
@@ -29,7 +30,7 @@ permissions:
 
 jobs:
   verify-registry:
-    name: All 16 native game IDs have real runtime or logic acceptance
+    name: All registered native game IDs have real runtime or logic acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
