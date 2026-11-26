@@ -380,13 +380,14 @@ public final class HubGameModulesInstrumentedTest {
             for(NativeModuleRuntime.Descriptor module:games){
                 GameModuleRegistry.Entry info=GameModuleRegistry.find(module.id);
                 assertNotNull("Unknown compiled native game "+module.id,info);
-                boolean development=new ReveriePreferences(activity)
-                    .getLoggingMode()==LoggingMode.DEVELOPMENT;
                 String label=module.displayName+" — Included";
-                if(info.developmentOnly&&!development)
-                    label+=" (enable Development logging mode to launch)";
+                if(info.developmentOnly)
+                    label+=" (early access)";
                 assertNotNull("Bundled game missing from library: "+module.id,
                     findText(root,label));
+                assertNull("Bundled game incorrectly requires Development logging: "+module.id,
+                    findText(root,module.displayName
+                        +" — Included (enable Development logging mode to launch)"));
             }
             assertNull("Retired remote catalog button still visible",
                 findText(root,"Check releases"));
